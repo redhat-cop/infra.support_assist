@@ -1,0 +1,9 @@
+ansible_collections
+*.tar.gz
+*.pyc
+id_rsa*
+.vscode
+ansible.cfg
+.ansible/
+.devcontainer/
+.venv
