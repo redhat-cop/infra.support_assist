@@ -52,7 +52,7 @@ Releasing the current major version happens from the `devel` branch.
 
 We welcome community contributions to this collection. If you find problems, please open an issue or create a PR.
 
-More information about contributing can be found in our [Contribution Guidelines.](https://github.com/redhat-cop/support_assist/blob/devel/.github/CONTRIBUTING.md)
+More information about contributing can be found in our [Contribution Guidelines.](https://github.com/redhat-cop/infra.support_assist/blob/devel/.github/CONTRIBUTING.md)
 
 ## Code of Conduct
 
