@@ -1,7 +1,7 @@
 ---
 namespace: infra
 name: support_assist
-version: 1.0.0-devel
+version: 0.1.0-devel
 description: Ansible Collection that will gather various reports/outputs that are commonly asked for in Red Hat Support Cases
 readme: README.md
 authors:
