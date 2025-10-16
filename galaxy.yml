@@ -9,7 +9,9 @@ authors:
 repository: https://github.com/redhat-cop/infra.support_assist
 issues: https://github.com/redhat-cop/infra.support_assist/issues
 documentation: https://github.com/redhat-cop/infra.support_assist/docs
-build_ignore: []
+build_ignore:
+  - .github
+  - "*.tar.gz"
 license:
   - GPL-3.0-or-later
 tags:
