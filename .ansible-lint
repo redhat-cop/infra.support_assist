@@ -13,6 +13,7 @@ exclude_paths:
   - .github/
   - changelogs/
   - .ansible/
+  - tests/
 
 parseable: true
 # quiet: true
