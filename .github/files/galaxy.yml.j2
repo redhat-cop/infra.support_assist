@@ -1,14 +1,14 @@
 ---
-namespace: infra
-name: support_assist
-version: 0.1.0-devel
+namespace: {{ collection_namespace }}
+name: {{ collection_name }}
+version: {{ collection_version }}
 description: Ansible Collection that will gather various reports/outputs that are commonly asked for in Red Hat Support Cases
 readme: README.md
 authors:
   - Lenny Shirley @lennysh
-repository: https://github.com/redhat-cop/infra.support_assist
-issues: https://github.com/redhat-cop/infra.support_assist/issues
-documentation: https://github.com/redhat-cop/infra.support_assist/docs
+repository: {{ collection_repo }}
+issues: {{ collection_repo }}issues
+documentation: {{ collection_repo }}docs
 build_ignore:
   - galaxy.yml.j2
   - release.yml
@@ -24,5 +24,5 @@ tags:
   - support
   - sosreport
   - mustgather
-dependencies: {}
+dependencies: []
 ...
