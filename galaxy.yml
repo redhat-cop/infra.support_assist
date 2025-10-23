@@ -18,6 +18,9 @@ build_ignore:
 license:
   - GPL-3.0-or-later
 tags:
+  - tools
+  - linux
+  - infrastructure
   - support
   - sosreport
   - mustgather
