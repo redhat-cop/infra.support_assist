@@ -1,0 +1,28 @@
+---
+namespace: {{ collection_namespace }}
+name: {{ collection_name }}
+version: {{ collection_version }}
+description: Ansible Collection that will gather various reports/outputs that are commonly asked for in Red Hat Support Cases
+readme: README.md
+authors:
+  - Lenny Shirley @lennysh
+repository: {{ collection_repo }}
+issues: {{ collection_repo }}issues
+documentation: {{ collection_repo }}docs
+build_ignore:
+  - galaxy.yml.j2
+  - release.yml
+  - .github
+  - "*.tar.gz"
+  - tests/*
+license:
+  - GPL-3.0-or-later
+tags:
+  - tools
+  - linux
+  - infrastructure
+  - support
+  - sosreport
+  - mustgather
+dependencies: []
+...
