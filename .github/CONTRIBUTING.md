@@ -13,7 +13,7 @@ Ensure you install dependencies collections (which should be pulled when install
 
 Python's pre-commit tool can be installed, and hooks installed, to cleanup whitespace, newlines, and run yamllint and ansible-lint against your local changes before committing. This will help you avoid failures in the github workflows.
 
-1. Create a local virtual environment for controller_configurations (suggested, its your system!)
+1. Create a local virtual environment for support_assist (suggested, its your system!)
 2. Use pip to install pre-commit in your environment of choice: `pip install pre-commit`
 3. Install pre-commit hooks with `pre-commit install --install-hooks -c .pre-commit-config.yaml`
 4. With hooks installed, they will be run automatically when you call `git commit`, blocking commit if any hooks fail.
