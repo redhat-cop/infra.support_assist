@@ -1,0 +1,7 @@
+---
+- name: Validate needed information was provided
+  ansible.builtin.assert:
+    that:
+      - redhat_token_refresh_api_offline_token is defined and redhat_token_refresh_api_offline_token | length > 0
+    fail_msg: "Offline Red Hat API token was NOT provided!"
+...

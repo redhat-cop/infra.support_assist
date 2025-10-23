@@ -5,13 +5,16 @@ version: 0.1.0-devel
 description: Ansible Collection that will gather various reports/outputs that are commonly asked for in Red Hat Support Cases
 readme: README.md
 authors:
-  - Lenny Shirley
+  - Lenny Shirley @lennysh
 repository: https://github.com/redhat-cop/infra.support_assist
 issues: https://github.com/redhat-cop/infra.support_assist/issues
 documentation: https://github.com/redhat-cop/infra.support_assist/docs
 build_ignore:
+  - galaxy.yml.j2
+  - release.yml
   - .github
   - "*.tar.gz"
+  - tests/*
 license:
   - GPL-3.0-or-later
 tags:

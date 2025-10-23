@@ -1,0 +1,9 @@
+---
+- name: Pre-validate needed information was provided
+  run_once: true
+  ansible.builtin.assert:
+    that:
+      - case_id is defined and case_id | length > 0
+    success_msg: "Case ID: {{ case_id }}"
+    fail_msg: "Case ID (case_id) was NOT provided!"
+...

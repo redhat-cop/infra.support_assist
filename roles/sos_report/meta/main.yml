@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  author: Lenny Shirley
+  description: Gather's SOS Report's from managed nodes
+  company: Red Hat
+  issue_tracker_url: https://github.com/redhat-cop/infra.support_assist/issues
+  license: GPL-3.0-or-later
+  min_ansible_version: !!str 2.15
+  galaxy_tags: []
+dependencies: []
+...

@@ -1,0 +1,45 @@
+---
+- name: "Upload attachment to case: {{ case_id }}"
+  loop: "{{ files_to_upload }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: upload_cli_result
+  no_log: true
+  ignore_errors: true
+  changed_when: upload_cli_result.rc == 0
+  vars:
+    __upload_description: "Gathered from '{{ item.fqdn }}' using the 'infra.support_assist' Ansible Collection. Inventory Hostname: '{{ item.hostname }}'"
+  ansible.builtin.shell: |
+    curl -s -X POST \
+      -w "\nHTTP_STATUS:%{http_code}" \
+      --max-time {{ case_file_upload_timeout }} \
+      -H "Authorization: Bearer {{ redhat_token_refresh_api_access_token }}" \
+      -F "file=@{{ item.path }};filename={{ item.path | basename }}" \
+      -F "description={{ __upload_description }}" \
+      "https://api.access.redhat.com/support/v1/cases/{{ case_id }}/attachments/"
+
+- name: "Parse curl output from loop"
+  ansible.builtin.set_fact:
+    __curl_stdout: "{{ upload_cli_result.results[0].stdout }}"
+    __curl_stderr: "{{ upload_cli_result.results[0].stderr }}"
+    __curl_rc: "{{ upload_cli_result.results[0].rc }}"
+
+- name: "Extract HTTP status and response body"
+  ansible.builtin.set_fact:
+    upload_status: "{{ (__curl_stdout | regex_search('HTTP_STATUS:(\\d+)', '\\1') | first | default(0)) | int }}"
+    upload_body_raw: "{{ __curl_stdout | regex_replace('\\nHTTP_STATUS:.*$', '') }}"
+
+- name: "Fail if curl command failed or status not 20x"
+  ansible.builtin.fail:
+    msg: |
+      Upload failed!
+      Curl Command Return Code: {{ __curl_rc }}
+      HTTP Status: {{ upload_status }}
+      Stderr: {{ __curl_stderr }}
+      Response Body: {{ upload_body_raw }}
+  when: __curl_rc | int != 0 or upload_status | int not in [200, 201]
+
+- name: "Set final JSON response from successful upload"
+  ansible.builtin.set_fact:
+    upload_result_json: "{{ upload_body_raw }}"
+...

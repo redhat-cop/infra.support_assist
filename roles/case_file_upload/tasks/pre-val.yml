@@ -1,0 +1,24 @@
+---
+- name: Pre-validation | Red Hat Refresh API Token Provided
+  run_once: true
+  ansible.builtin.assert:
+    that:
+      - redhat_token_refresh_api_access_token is defined and redhat_token_refresh_api_access_token | length > 0
+    fail_msg: "redhat_token_refresh_api_access_token was NOT provided!"
+
+- name: Pre-validation | Case ID Provided
+  run_once: true
+  ansible.builtin.assert:
+    that:
+      - case_id is defined and case_id | length > 0
+    success_msg: "Case ID: {{ case_id }}"
+    fail_msg: "case_id was NOT provided!"
+
+- name: Pre-validation | Files to Upload Provided
+  run_once: true
+  ansible.builtin.assert:
+    that:
+      - files_to_upload is defined and files_to_upload | length > 0
+    success_msg: "Files to Upload: {{ files_to_upload | length }}"
+    fail_msg: "files_to_upload was NOT provided!"
+...

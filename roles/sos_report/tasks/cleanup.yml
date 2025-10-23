@@ -1,0 +1,16 @@
+---
+- name: Check for old SOS Reports
+  ansible.builtin.find:
+    paths: /var/tmp
+    patterns: sosreport-*.tar.*
+  register: sos_reports
+
+- name: Delete old SOS Reports (if any were found)
+  loop: "{{ sos_reports.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+...

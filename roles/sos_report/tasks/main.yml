@@ -1,0 +1,20 @@
+---
+- name: Pre-Validation
+  ansible.builtin.include_tasks: pre-val.yml
+
+- name: Install
+  ansible.builtin.include_tasks: install.yml
+
+- name: Block
+  block:
+    - name: Generate
+      ansible.builtin.include_tasks: generate.yml
+
+    - name: Fetch
+      ansible.builtin.include_tasks: fetch.yml
+
+  always:
+    - name: Cleanup
+      when: sos_report_cleanup | bool | default(true)
+      ansible.builtin.include_tasks: cleanup.yml
+...

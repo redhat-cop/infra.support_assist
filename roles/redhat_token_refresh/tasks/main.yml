@@ -1,0 +1,11 @@
+---
+- name: Pre-Validation
+  ansible.builtin.include_tasks: pre-val.yml
+
+- name: Check token cache
+  ansible.builtin.include_tasks: check_cache.yml
+
+- name: Refresh Token (only if needed)
+  when: not token_is_valid | default(false)
+  ansible.builtin.include_tasks: refresh.yml
+...

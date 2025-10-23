@@ -1,0 +1,37 @@
+---
+- name: Gather SOS Report(s)
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Call sos_report role
+      ansible.builtin.include_role:
+        name: infra.support_assist.sos_report
+
+- name: Upload SOS Report(s) to Red Hat Support Case Portal
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Upload Block
+      when:
+        - upload | bool | default(true)
+      block:
+        - name: Aggregate 'files_to_upload' data from all hosts
+          ansible.builtin.set_fact:
+            files_to_upload: |
+              {% set combined_list = [] %}
+              {% for host in groups['all'] %}
+              {%   if hostvars[host].files_to_upload is defined %}
+              {%     set _ = combined_list.extend(hostvars[host].files_to_upload) %}
+              {%   endif %}
+              {% endfor %}
+              {{ combined_list }}
+
+        - name: Call redhat_token_refresh role
+          ansible.builtin.import_role:
+            name: infra.support_assist.redhat_token_refresh
+
+        - name: Call case_file_upload role
+          ansible.builtin.import_role:
+            name: infra.support_assist.case_file_upload
+...

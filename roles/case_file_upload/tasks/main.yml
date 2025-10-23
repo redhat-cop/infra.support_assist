@@ -1,0 +1,7 @@
+---
+- name: Pre-Validation
+  ansible.builtin.include_tasks: pre-val.yml
+
+- name: Upload
+  ansible.builtin.include_tasks: upload.yml
+...

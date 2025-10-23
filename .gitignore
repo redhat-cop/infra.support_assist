@@ -7,3 +7,5 @@ ansible.cfg
 .ansible/
 .devcontainer/
 .venv
+.redhat_offline_token*
+ignore_*
