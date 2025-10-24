@@ -9,7 +9,7 @@
 
     - name: Upload Block
       delegate_to: localhost
-      delegate_facts: true
+      # delegate_facts: true
       run_once: true
       when:
         - upload | bool | default(true)

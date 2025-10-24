@@ -1,5 +1,5 @@
 ---
-- name: Gather regular user id
+- name: Gather needed facts
   ansible.builtin.setup:
     filter:
       - 'ansible_user_id'
