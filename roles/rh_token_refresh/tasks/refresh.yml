@@ -1,5 +1,5 @@
 ---
-- name: Get Red Hat SSO access token
+- name: Refresh Token | Get Red Hat SSO access token
   ansible.builtin.uri:
     url: "{{ rh_token_refresh_api_token_url }}"
     method: POST
@@ -12,11 +12,11 @@
     status_code: 200
   register: token_response
 
-- name: Set access token fact
+- name: Refresh Token | Set access token fact
   ansible.builtin.set_fact:
     rh_token_refresh_api_access_token: "{{ token_response.json.access_token }}"
 
-- name: Cache the new token and timestamp locally
+- name: Refresh Token | Cache the new token and timestamp locally
   ansible.builtin.copy:
     content: |
       {

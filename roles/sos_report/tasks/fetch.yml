@@ -1,22 +1,22 @@
 ---
-- name: Find the generated SOS Report
+- name: Fetch | Find the generated SOS Report
   ansible.builtin.find:
     paths: /var/tmp
     patterns: sosreport-*.tar.xz
     age: -5m # Find reports created in the last 5 minutes to be safe
   register: found_sos_report
 
-- name: Case folder block
+- name: Fetch | Case folder block
   vars:
     __dest_path: "{{ sos_report_dest }}/case_{{ case_id }}/{{ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
   block:
-    - name: Ensure destination folder exists
+    - name: Fetch | Ensure destination folder exists
       ansible.builtin.file:
         name: "{{ __dest_path }}"
         state: directory
         mode: "0755"
 
-    - name: Fetch the SOS Report to the control node
+    - name: Fetch | Fetch the SOS Report to the control node
       when: found_sos_report.matched > 0
       loop: "{{ found_sos_report.files }}"
       loop_control:
@@ -27,14 +27,14 @@
         dest: "{{ __dest_path }}/"
         flat: true
 
-    - name: Build files_to_upload variable
+    - name: Fetch | Build case_updates_needed variable
       when: found_sos_report.matched > 0
       loop: "{{ found_sos_report.files }}"
       loop_control:
         label: "{{ item.path | basename }}"
       ansible.builtin.set_fact:
-        files_to_upload: >-
-          {{ files_to_upload | default([]) +
+        case_updates_needed: >-
+          {{ case_updates_needed | default([]) +
           [{
             'hostname': inventory_hostname,
             'fqdn': ansible_fqdn,

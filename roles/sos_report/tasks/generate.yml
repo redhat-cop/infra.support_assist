@@ -1,11 +1,11 @@
 ---
-- name: Gather needed facts
+- name: Generate | Gather needed facts
   ansible.builtin.setup:
     filter:
       - 'ansible_user_id'
       - 'ansible_fqdn'
 
-- name: Generate the SOS Report
+- name: Generate | Generate the SOS Report
   register: __sos_report_output
   changed_when: __sos_report_output.rc == 0
   become: true
@@ -15,11 +15,11 @@
       --label={{ inventory_hostname | lower }}
       {% if case_id != '' %} --case-id {{ case_id }}{% endif %}
 
-- name: Set SOS Report location variable
+- name: Generate | Set SOS Report location variable
   ansible.builtin.set_fact:
     sos_report_location: "{{ __sos_report_output.stdout | regex_search('.*/sosreport-.*.tar.xz') | regex_replace('\\t', '') }}"
 
-- name: View sosreport location on remote nodes
+- name: Generate | View sosreport location on remote nodes
   ansible.builtin.debug:
     msg: "Server-side SOS Report located at: {{ sos_report_location }}"
 ...

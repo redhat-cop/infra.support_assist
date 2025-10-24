@@ -13,13 +13,13 @@
       when:
         - upload | bool | default(true)
       block:
-        - name: Aggregate 'files_to_upload' data from all hosts
+        - name: Aggregate 'case_updates_needed' data from all hosts
           ansible.builtin.set_fact:
-            files_to_upload: |
+            case_updates_needed: |
               {% set combined_list = [] %}
               {% for host in groups['all'] %}
-              {%   if hostvars[host].files_to_upload is defined %}
-              {%     set _ = combined_list.extend(hostvars[host].files_to_upload) %}
+              {%   if hostvars[host].case_updates_needed is defined %}
+              {%     set _ = combined_list.extend(hostvars[host].case_updates_needed) %}
               {%   endif %}
               {% endfor %}
               {{ combined_list }}
@@ -28,7 +28,7 @@
           ansible.builtin.include_role:
             name: rh_token_refresh
 
-        - name: Call case_file_upload role
+        - name: Call rh_case_update role
           ansible.builtin.include_role:
-            name: case_file_upload
+            name: rh_case_update
 ...

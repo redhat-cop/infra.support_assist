@@ -1,4 +1,4 @@
-infra.support_assist.case_file_upload
+infra.support_assist.rh_case_update
 =========
 
 A brief description of the role goes here.

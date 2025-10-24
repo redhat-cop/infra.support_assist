@@ -13,7 +13,7 @@ This collection requires the following packages to be installed:
 * **On the Target Hosts** (for the `sos_report` role):
     * `sos`: This is required to generate the `sosreport` and is installed by the role.
 
-* **On the Control Node** (for the `case_file_upload` role):
+* **On the Control Node** (for the `rh_case_update` role):
     * `curl`: This is required to upload large files to the Red Hat support portal. The role uses `ansible.builtin.shell` to execute `curl` for robust, streaming uploads.
 
 ## Installing this collection

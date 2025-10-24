@@ -1,0 +1,3 @@
+---
+rh_case_update_timeout: "{{ upload_timeout | default(1800) }}"  # Timeout for file uploads in seconds (default: 1800 seconds = 30 minutes)
+...

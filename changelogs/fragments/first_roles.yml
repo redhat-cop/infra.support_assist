@@ -2,5 +2,5 @@
 major_changes:
 - Added the `rh_token_refresh` role to handle Red Hat token refresh logic.
 - Added the `sos_report` role to gather SOS reports from managed hosts.
-- Added the `case_file_upload` role to upload files to Red Hat Support Case Portal.
+- Added the `rh_case_update` role to upload files to Red Hat Support Case Portal.
 - Created the `sos_report.yml` playbook to gather and upload SOS reports to Red Hat Support Case Portal.
