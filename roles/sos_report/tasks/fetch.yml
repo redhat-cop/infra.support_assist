@@ -38,6 +38,6 @@
           [{
             'hostname': inventory_hostname,
             'fqdn': ansible_fqdn,
-            'path': __dest_path ~ '/' ~ item.path | basename
+            'attachment': __dest_path ~ '/' ~ item.path | basename
           }] }}
 ...

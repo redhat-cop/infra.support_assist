@@ -2,6 +2,10 @@
 - name: Pre-Validation
   ansible.builtin.include_tasks: pre-val.yml
 
-- name: Upload
-  ansible.builtin.include_tasks: upload.yml
+- name: Case Updates Loop
+  loop: "{{ case_updates_needed }}"
+  loop_control:
+    label: "Updating case with update from {{ case_update.hostname }}"
+    loop_var: case_update
+  ansible.builtin.include_tasks: case_updates_loop.yml
 ...
