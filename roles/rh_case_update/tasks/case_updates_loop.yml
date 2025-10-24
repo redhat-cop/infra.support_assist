@@ -4,4 +4,10 @@
     - case_update.attachment is defined
     - case_update.attachment | length > 0
   ansible.builtin.include_tasks: attachment.yml
+
+- name: Case Updates Loop | Comment Update
+  when:
+    - case_update.comment is defined
+    - case_update.comment | length > 0
+  ansible.builtin.include_tasks: comment.yml
 ...
