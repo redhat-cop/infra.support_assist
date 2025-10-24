@@ -1,12 +1,12 @@
 ---
 - name: Check for an existing local token cache file
   ansible.builtin.stat:
-    path: "{{ redhat_token_refresh_token_cache_file }}"
+    path: "{{ rh_token_refresh_token_cache_file }}"
   register: token_file_stat
 
 - name: Read the cached token if the file exists
   ansible.builtin.set_fact:
-    cached_token_data: "{{ lookup('file', redhat_token_refresh_token_cache_file) | from_json | default({}) }}"
+    cached_token_data: "{{ lookup('file', rh_token_refresh_token_cache_file) | from_json | default({}) }}"
   when: token_file_stat.stat.exists
 
 - name: Determine if the cached token is still valid
@@ -15,7 +15,7 @@
     - cached_token_data is defined
     - cached_token_data.timestamp is defined
   ansible.builtin.set_fact:
-    token_is_valid: "{{ ((lookup('pipe', 'date +%s') | int) - (cached_token_data.timestamp | int)) < redhat_token_refresh_token_max_age_seconds }}"
+    token_is_valid: "{{ ((lookup('pipe', 'date +%s') | int) - (cached_token_data.timestamp | int)) < rh_token_refresh_token_max_age_seconds }}"
 
 - name: Use the valid cached token if available
   when:
@@ -23,5 +23,5 @@
     - cached_token_data is defined
     - cached_token_data.token is defined
   ansible.builtin.set_fact:
-    redhat_token_refresh_api_access_token: "{{ cached_token_data.token }}"
+    rh_token_refresh_api_access_token: "{{ cached_token_data.token }}"
 ...

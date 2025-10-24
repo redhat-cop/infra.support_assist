@@ -1,4 +1,0 @@
----
-redhat_token_refresh_api_base_url: "https://api.access.redhat.com"
-redhat_token_refresh_api_token_url: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
-...
