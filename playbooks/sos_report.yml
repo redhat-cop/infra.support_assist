@@ -5,7 +5,7 @@
   tasks:
     - name: Call sos_report role
       ansible.builtin.include_role:
-        name: infra.support_assist.sos_report
+        name: sos_report
 
 - name: Upload SOS Report(s) to Red Hat Support Case Portal
   hosts: localhost
@@ -27,11 +27,11 @@
               {% endfor %}
               {{ combined_list }}
 
-        - name: Call redhat_token_refresh role
-          ansible.builtin.import_role:
-            name: infra.support_assist.redhat_token_refresh
+        - name: Call rh_token_refresh role
+          ansible.builtin.include_role:
+            name: rh_token_refresh
 
         - name: Call case_file_upload role
-          ansible.builtin.import_role:
-            name: infra.support_assist.case_file_upload
+          ansible.builtin.include_role:
+            name: case_file_upload
 ...

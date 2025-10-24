@@ -13,7 +13,7 @@
     curl -s -X POST \
       -w "\nHTTP_STATUS:%{http_code}" \
       --max-time {{ case_file_upload_timeout }} \
-      -H "Authorization: Bearer {{ redhat_token_refresh_api_access_token }}" \
+      -H "Authorization: Bearer {{ rh_token_refresh_api_access_token }}" \
       -F "file=@{{ item.path }};filename={{ item.path | basename }}" \
       -F "description={{ __upload_description }}" \
       "https://api.access.redhat.com/support/v1/cases/{{ case_id }}/attachments/"

@@ -3,8 +3,8 @@
   run_once: true
   ansible.builtin.assert:
     that:
-      - redhat_token_refresh_api_access_token is defined and redhat_token_refresh_api_access_token | length > 0
-    fail_msg: "redhat_token_refresh_api_access_token was NOT provided!"
+      - rh_token_refresh_api_access_token is defined and rh_token_refresh_api_access_token | length > 0
+    fail_msg: "rh_token_refresh_api_access_token was NOT provided!"
 
 - name: Pre-validation | Case ID Provided
   run_once: true
