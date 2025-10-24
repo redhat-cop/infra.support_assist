@@ -1,5 +1,5 @@
 ---
-- name: "Comment | Add comment to case {{ case_id ~ ' from ' ~ case_update.hostname }}"
+- name: "Comment | Add comment to case {{ case_id }}"
   ansible.builtin.uri:
     url: "https://api.access.redhat.com/support/v1/cases/{{ case_id }}/comments"
     method: POST

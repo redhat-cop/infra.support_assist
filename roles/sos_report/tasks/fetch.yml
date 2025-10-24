@@ -36,8 +36,11 @@
         case_updates_needed: >-
           {{ case_updates_needed | default([]) +
           [{
-            'hostname': inventory_hostname,
-            'fqdn': ansible_fqdn,
-            'attachment': __dest_path ~ '/' ~ item.path | basename
+            'attachment': __dest_path ~ '/' ~ item.path | basename,
+            'attachmentDescription': (
+              "Gathered from '" ~ ansible_fqdn
+              ~ "' using the 'infra.support_assist' Ansible Collection. Inventory Hostname: '"
+              ~ inventory_hostname ~ "'"
+            )
           }] }}
 ...
