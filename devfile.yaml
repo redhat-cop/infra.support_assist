@@ -1,3 +1,4 @@
+---
 schemaVersion: 2.2.2
 metadata:
   name: infra.support_assist-2a33086b
@@ -13,3 +14,4 @@ components:
       env:
         - name: KUBEDOCK_ENABLED
           value: "true"
+...
