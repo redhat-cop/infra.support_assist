@@ -13,12 +13,4 @@
       - case_id is defined and case_id | length > 0
     success_msg: "Case ID: {{ case_id }}"
     fail_msg: "case_id was NOT provided!"
-
-- name: Pre-validation | Ensure Red Hat Case Updates needed was provided
-  run_once: true
-  ansible.builtin.assert:
-    that:
-      - case_updates_needed is defined and case_updates_needed | length > 0
-    success_msg: "Files to Upload: {{ case_updates_needed | length }}"
-    fail_msg: "case_updates_needed was NOT provided!"
 ...

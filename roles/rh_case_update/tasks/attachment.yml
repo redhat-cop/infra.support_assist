@@ -1,5 +1,5 @@
 ---
-- name: "Attachment Upload | Upload attachment to case: {{ case_id }}" # noqa: command-instead-of-module
+- name: "Attachment Upload | Upload attachment to case {{ case_id ~ ' from ' ~ case_update.hostname }}" # noqa: command-instead-of-module
   register: upload_cli_result
   no_log: true
   ignore_errors: true
