@@ -87,7 +87,7 @@ This collection provides three main playbooks for common operations:
 You can also use the roles individually in your own custom playbooks. For detailed variable lists, requirements, and usage examples, see the README in each role's directory.
 
 * **[sos_report](roles/sos_report/README.md)**: Installs `sos`, generates a `sosreport` on target hosts, and fetches it.
-* **[/ocp_must_gather](roles/ocp_must_gather/README.md)**: Logs into an OpenShift cluster, runs `oc adm must-gather`, and archives the result.
+* **[ocp_must_gather](roles/ocp_must_gather/README.md)**: Logs into an OpenShift cluster, runs `oc adm must-gather`, and archives the result.
 * **[rh_case_update](roles/rh_case_update/README.md)**: Uploads files or adds comments to a Red Hat Support Case.
 * **[rh_token_refresh](roles/rh_token_refresh/README.md)**: Handles Red Hat API token authentication and caching.
 
