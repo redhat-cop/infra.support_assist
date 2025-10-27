@@ -12,4 +12,7 @@ ocp_must_gather_image: ""
 
 # Additional options for the oc adm must-gather command
 ocp_must_gather_options: ""
+
+# Whether to validate SSL certificates when connecting to the OpenShift cluster
+ocp_must_gather_validate_ssl: true
 ...
