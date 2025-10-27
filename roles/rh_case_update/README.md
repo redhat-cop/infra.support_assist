@@ -1,38 +1,134 @@
-infra.support_assist.rh_case_update
-=========
+# infra.support_assist.rh_case_update
 
-A brief description of the role goes here.
+This role updates a Red Hat Support Case by uploading attachments or adding comments. It is designed to run on `localhost` and iterates over a list of updates defined in the `case_updates_needed` variable.
 
-Requirements
-------------
+This role uses `curl` via `ansible.builtin.shell` for file uploads to ensure support for large files and streaming.
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+## Requirements
 
-Role Variables
---------------
+* **On Control Node:**
+    * `curl`: The `curl` command-line utility must be installed and in the system's `PATH`.
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+## Role Variables
 
-Dependencies
-------------
+### Input Variables
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+* `case_id`:
+    * **(Required)** The Red Hat Support Case number (e.g., `01234567`).
+    * Type: `string`
 
-Example Playbook
-----------------
+* `rh_token_refresh_api_access_token`:
+    * **(Required)** A valid Red Hat API access token. This is typically provided by running the `infra.support_assist.rh_token_refresh` role first.
+    * Type: `string`
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+* `rh_case_update_timeout`:
+    * The timeout in seconds for each `curl` file upload command.
+    * Default: `{{ upload_timeout | default(1800) }}` (Inherits `upload_timeout` var, defaults to 1800 seconds / 30 minutes)
+    * Type: `int`
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+* `case_updates_needed`:
+    * **(Required)** A list of objects, where each object defines either an attachment to upload or a comment to add.
+    * Type: `list`
+    * **Object Structure:**
+        * `attachment`: (Optional) The full path to the local file to be uploaded.
+        * `attachmentDescription`: (Optional) A description for the file being attached.
+        * `comment`: (Optional) The text of the comment to add to the case.
+        * `commentType`: (Optional) The format of the comment. Can be `markdown` (default) or `plaintext`.
 
-License
--------
+## Dependencies
+
+* This role **must** be run after `infra.support_assist.rh_token_refresh` to populate the required `rh_token_refresh_api_access_token` fact.
+
+## Example Playbook
+
+### Example 1: Add a comment
+
+```yaml
+- name: Add comment to Red Hat Case
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    case_id: "01234567"
+    offline_token: "YOUR_OFFLINE_TOKEN_HERE" # Used by rh_token_refresh
+    case_updates_needed:
+      - comment: "This is a test comment added via Ansible."
+        commentType: "plaintext"
+
+  tasks:
+    - name: Call rh_token_refresh role
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_token_refresh
+
+    - name: Call rh_case_update role
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_case_update
+```
+
+### Example 2: Upload a local file
+
+```yaml
+- name: Upload file to Red Hat Case
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    case_id: "01234567"
+    offline_token: "YOUR_OFFLINE_TOKEN_HERE"
+    case_updates_needed:
+      - attachment: "/var/log/my-custom-app.log"
+        attachmentDescription: "Custom log file from my-server-01"
+
+  tasks:
+    - name: Call rh_token_refresh role
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_token_refresh
+
+    - name: Call rh_case_update role
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_case_update
+```
+
+### Example 3: Upload multiple files and add a comment
+
+```yaml
+- name: Perform multiple case updates
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    case_id: "01234567"
+    offline_token: "YOUR_OFFLINE_TOKEN_HERE"
+    case_updates_needed:
+      - attachment: "/tmp/sos_reports/case_01234567/server1/sosreport-server1.tar.xz"
+        attachmentDescription: "SOS Report from server1"
+      - attachment: "/tmp/sos_reports/case_01234567/server2/sosreport-server2.tar.xz"
+        attachmentDescription: "SOS Report from server2"
+      - comment: |
+          ### Automation Complete
+          Attached are the `sosreport` files from `server1` and `server2`.
+          
+          * `server1.example.com`
+          * `server2.example.com`
+        commentType: "markdown"
+
+  tasks:
+    - name: Call rh_token_refresh role
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_token_refresh
+
+    - name: Call rh_case_update role
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_case_update
+```
+
+## License
 
 GPL-3.0-or-later
 
-Author Information
-------------------
+## Author Information
 
 - Lenny Shirley

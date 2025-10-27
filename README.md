@@ -2,10 +2,17 @@
 
 This Ansible Collection will gather various reports/outputs that are commonly asked for in Red Hat Support Cases, and can optionally upload them directly to the Support Case Portal.
 
+This collection currently includes the following playbooks and roles:
+* `sos_report`: Gathers a `sosreport` from one or more target hosts.
+* `ocp_must_gather`: Gathers an `oc adm must-gather` archive from an OpenShift cluster.
+* `rh_case_update`: Uploads files and/or adds comments to a Red Hat Support Case.
+* `rh_token_refresh`: Handles Red Hat API token authentication.
+
 ## Requirements
 
 ### Ansible Collections
-This collection has no external Ansible Collection dependencies.
+This collection requires the following Ansible Collections to be installed:
+* `community.general` (for the `archive` module used in the `ocp_must_gather` role)
 
 ### System Dependencies
 This collection requires the following packages to be installed:
@@ -13,8 +20,9 @@ This collection requires the following packages to be installed:
 * **On the Target Hosts** (for the `sos_report` role):
     * `sos`: This is required to generate the `sosreport` and is installed by the role.
 
-* **On the Control Node** (for the `rh_case_update` role):
-    * `curl`: This is required to upload large files to the Red Hat support portal. The role uses `ansible.builtin.shell` to execute `curl` for robust, streaming uploads.
+* **On the Control Node** (or execution node):
+    * `curl` (for the `rh_case_update` role): This is required to upload large files to the Red Hat support portal. The role uses `ansible.builtin.shell` to execute `curl` for robust, streaming uploads.
+    * `oc` (for the `ocp_must_gather` role): The OpenShift CLI (`oc`) must be installed and in the system's `PATH`. This role runs on `localhost` (the control node) to execute `oc` commands.
 
 ## Installing this collection
 
@@ -29,7 +37,8 @@ You can also include it in a `requirements.yml` file and install it with `ansibl
 ```yaml
 ---
 collections:
-  - name: https://github.com/redhat-cop/infra.support_assist.git
+  - name: infra.support_assist
+    source: https://github.com/redhat-cop/infra.support_assist.git
     type: git
     # If you need a specific version of the collection, you can specify like this:
     # version: ...
@@ -37,57 +46,50 @@ collections:
 
 ## Usage
 
-This collection includes a primary playbook, `infra.support_assist.sos_report`, which runs all the roles in the correct order. Here are the recommended ways to run it.
+This collection includes primary playbooks that orchestrate the roles in the correct order. For detailed information on role-specific variables and advanced usage, please see the `README.md` file within each role's directory.
 
-### Option 1: Using ansible-core (CLI)
+### Preparing Your Offline Token
 
-This method is ideal for local execution or simple, command-line-driven automation.
+All playbooks that upload to a support case require a Red Hat Offline Token. The playbooks will look for it in this order:
+1.  An extra-var named `offline_token`.
+2.  An environment variable named `REDHAT_OFFLINE_TOKEN`.
 
-1.  **Prepare Your Offline Token:**
-    You must provide your Red Hat Offline Token. The playbook will look for it in this order:
-    1.  An extra-var named `offline_token`.
-    2.  An environment variable named `REDHAT_OFFLINE_TOKEN`.
+### Playbooks
 
-2.  **Run the Playbook:**
-    Execute the collection's built-in playbook using its Fully Qualified Collection Name (FQCN).
+This collection provides three main playbooks for common operations:
 
-    **Example (passing token as an extra-var):**
-    ```shell
-    ansible-playbook -i inventory infra.support_assist.sos_report \
-      -e case_id=04288106 \
-      -e upload=true \
-      -e clean=true \
-      -e offline_token=YOUR_OFFLINE_TOKEN_HERE
-    ```
+* **`infra.support_assist.sos_report`**: Gathers `sosreport`s from all hosts in your inventory, fetches them to the control node, and uploads them to the specified case.
+    * **Role-specific documentation:** [roles/sos_report/README.md](roles/sos_report/README.md)
+    * **Example (using an environment variable):**
+        ```shell
+        export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
+        
+        ansible-playbook -i inventory infra.support_assist.sos_report \
+          -e case_id=01234567 \
+          -e upload=true \
+          -e clean=true
+        ```
 
-    **Example (using an environment variable):**
-    ```shell
-    export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
-    
-    ansible-playbook -i inventory infra.support_assist.sos_report \
-      -e case_id=04288106 \
-      -e upload=true \
-      -e clean=true
-    ```
+* **`infra.support_assist.ocp_must_gather`**: Runs `oc adm must-gather` against a target OpenShift cluster, archives the result, and uploads it to the specified case. This playbook runs on `localhost`.
+    * **Role-specific documentation:** [roles/ocp_must_gather/README.md](roles/ocp_must_gather/README.md)
+    * **Example (passing token as an extra-var):**
+        ```shell
+        ansible-playbook -i inventory infra.support_assist.ocp_must_gather \
+          -e case_id=01234567 \
+          -e cluster_name=my-ocp-cluster \
+          -e ocp_must_gather_server_url="https://api.my-ocp-cluster.com:6443" \
+          -e ocp_must_gather_token="sha256~..." \
+          -e offline_token=YOUR_OFFLINE_TOKEN_HERE
+        ```
 
-    * `case_id`: (Required) The Red Hat Support Case number to associate the report with.
-    * `upload`: (Optional) Set to `true` to upload the report(s). Defaults to `true`.
-    * `clean`: (Optional) Set to `true` to remove the `sosreport` from the target hosts after fetching. Defaults to `false`.
+### Roles
 
-### Option 2: Using Ansible Automation Platform (AAP)
+You can also use the roles individually in your own custom playbooks. For detailed variable lists, requirements, and usage examples, see the README in each role's directory.
 
-This method is recommended for integrating into a larger automated workflow, providing RBAC, and securely managing credentials.
-
-*(Configuration-as-code for AAP is currently in development and will be added to this repository.)*
-
-When complete, this repository will include configuration to automatically create:
-
-* **Custom Credential Type:** A new credential type in AAP specifically for "Red Hat Support Offline Token" to securely store and inject your token at runtime. This will be automatically mapped to the `offline_token` variable.
-* **Job Template:** A pre-configured Job Template ready to run the `infra.support_assist.sos_report` playbook.
-* **Survey:** The Job Template will include a survey to easily prompt for:
-    * `case_id`
-    * `upload` (as a checkbox)
-    * `clean` (as a checkbox)
+* **[sos_report](roles/sos_report/README.md)**: Installs `sos`, generates a `sosreport` on target hosts, and fetches it.
+* **[/ocp_must_gather](roles/ocp_must_gather/README.md)**: Logs into an OpenShift cluster, runs `oc adm must-gather`, and archives the result.
+* **[rh_case_update](roles/rh_case_update/README.md)**: Uploads files or adds comments to a Red Hat Support Case.
+* **[rh_token_refresh](roles/rh_token_refresh/README.md)**: Handles Red Hat API token authentication and caching.
 
 ## Release and Upgrade Notes
 
@@ -103,7 +105,6 @@ Releasing the current major version happens from the `devel` branch.
 
 ## Roadmap (in no specific order)
 
-  - Add a role for running `must-gather` commands.
   - Add support for attaching other common diagnostic files.
   - Add support for grabbing output from one more more API calls
 
