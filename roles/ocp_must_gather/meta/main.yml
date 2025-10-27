@@ -1,0 +1,16 @@
+---
+galaxy_info:
+  author: Lenny Shirley
+  description: Runs 'oc adm must-gather' against an OpenShift cluster and retrieves the archive.
+  company: Red Hat
+  license: GPL-3.0-or-later
+  min_ansible_version: 2.15.0
+  platforms: []
+  galaxy_tags:
+    - openshift
+    - kubernetes
+    - diagnostics
+    - support
+    - mustgather
+dependencies: []
+...

@@ -1,0 +1,3 @@
+---
+major_changes:
+  - Added the `ocp_must_gather` role to log into an OpenShift cluster, run `oc adm must-gather`, and archive the result.
