@@ -9,6 +9,8 @@
   register: __sos_report_output
   changed_when: __sos_report_output.rc == 0
   become: true
+  async: 1800 # Allow up to 30 minutes for sos to run
+  poll: 10 # Check every 10 seconds
   ansible.builtin.command: >
     sos report --batch
       {% if sos_report_aap_containerized | bool %} -k aap_containerized.username={{ ansible_user_id }}{% endif %}

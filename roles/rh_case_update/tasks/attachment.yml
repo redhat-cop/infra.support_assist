@@ -4,6 +4,8 @@
   no_log: true
   ignore_errors: true
   changed_when: upload_cli_result.rc == 0
+  async: "{{ rh_case_update_timeout | int + 60 }}" # Allow up to rh_case_update_timeout + 1 minute for attachment upload
+  poll: 10 # Check every 10 seconds
   ansible.builtin.shell: |
     curl -s -X POST \
       -w "\nHTTP_STATUS:%{http_code}" \
@@ -15,9 +17,9 @@
 
 - name: Attachment Upload | Parse curl output from loop
   ansible.builtin.set_fact:
-    __curl_stdout: "{{ upload_cli_result.stdout }}"
-    __curl_stderr: "{{ upload_cli_result.stderr }}"
-    __curl_rc: "{{ upload_cli_result.rc }}"
+    __curl_stdout: "{{ upload_cli_result.stdout | default('N/A') }}"
+    __curl_stderr: "{{ upload_cli_result.stderr | default('N/A') }}"
+    __curl_rc: "{{ upload_cli_result.rc | default('N/A') }}"
 
 - name: Attachment Upload | Extract HTTP status and response body
   ansible.builtin.set_fact:
