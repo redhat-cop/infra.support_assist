@@ -1,0 +1,15 @@
+---
+- name: Pre-Validation
+  ansible.builtin.include_tasks: pre-val.yml
+
+- name: Block for Must Gather execution and cleanup
+  block:
+    - name: Login to OpenShift Cluster
+      ansible.builtin.include_tasks: login.yml
+
+    - name: Generate Must Gather
+      ansible.builtin.include_tasks: generate.yml
+
+    - name: Fetch Must Gather Archive
+      ansible.builtin.include_tasks: fetch.yml
+...

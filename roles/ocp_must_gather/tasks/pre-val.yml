@@ -1,0 +1,48 @@
+---
+- name: Pre-Validation | Ensure cluster_name is defined
+  ansible.builtin.assert:
+    that:
+      - cluster_name is defined
+      - cluster_name | length > 0
+    fail_msg: "The 'cluster_name' variable is required for the ocp_must_gather role."
+
+- name: Pre-Validation | Ensure ocp_must_gather_token is defined
+  ansible.builtin.assert:
+    that:
+      - ocp_must_gather_token is defined
+      - ocp_must_gather_token | length > 0
+    fail_msg: "The 'ocp_must_gather_token' variable is required for the ocp_must_gather role."
+
+- name: Pre-Validation | Ensure ocp_must_gather_server_url is defined
+  ansible.builtin.assert:
+    that:
+      - ocp_must_gather_server_url is defined
+      - ocp_must_gather_server_url | length > 0
+    fail_msg: "The 'ocp_must_gather_server_url' variable is required for the ocp_must_gather role."
+
+- name: Pre-Validation | Ensure case_id is defined
+  ansible.builtin.assert:
+    that:
+      - case_id is defined
+      - case_id | length > 0
+    fail_msg: "The 'case_id' variable is required for the ocp_must_gather role."
+
+- name: Pre-Validation | Check if 'oc' command exists on execution host
+  ansible.builtin.command: command -v oc
+  register: oc_check
+  changed_when: false
+  ignore_errors: true
+
+- name: Pre-Validation | Fail if 'oc' command not found
+  ansible.builtin.fail:
+    msg: >
+      The 'oc' command was not found on the execution host ({{ inventory_hostname }}).
+      Please ensure the OpenShift CLI is installed and in the system's PATH.
+  when: oc_check.rc != 0
+
+- name: Pre-Validation | Ensure temporary destination directory exists on execution host
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_dest_dir }}"
+    state: directory
+    mode: '0755'
+...

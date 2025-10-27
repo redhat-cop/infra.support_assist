@@ -1,0 +1,37 @@
+---
+- name: Generate | Ensure temporary destination directory is empty first
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_dest_dir }}"
+    state: absent
+
+- name: Generate | Re-ensure temporary destination directory exists
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_dest_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Generate | Run oc adm must-gather
+  ansible.builtin.command: >
+    oc adm must-gather
+    --dest-dir={{ ocp_must_gather_dest_dir }}
+    {% if ocp_must_gather_image | length > 0 %}--image={{ ocp_must_gather_image }}{% endif %}
+    {{ ocp_must_gather_options }}
+  register: must_gather_result
+  changed_when: must_gather_result.rc == 0
+  async: 1800 # Allow up to 30 minutes for must-gather to run
+  poll: 10 # Check every 10 seconds
+
+- name: Generate | Fail if must-gather command failed
+  ansible.builtin.fail:
+    msg: |
+      'oc adm must-gather' command failed!
+      Return Code: {{ must_gather_result.rc }}
+      Stdout: {{ must_gather_result.stdout | default('N/A') }}
+      Stderr: {{ must_gather_result.stderr | default('N/A') }}
+  when: must_gather_result.rc != 0
+
+- name: Generate | Debug must-gather output (optional)
+  ansible.builtin.debug:
+    var: must_gather_result
+    verbosity: 1
+...
