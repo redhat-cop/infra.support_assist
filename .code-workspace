@@ -1,14 +1,15 @@
 {
     "settings": {
         "ansible.lightspeed.suggestions.enabled": true,
-        "ansible.lightspeed.enabled": true
+        "ansible.lightspeed.enabled": true,
+		"ansible.python.interpreterPath": "/bin/python3.11"
     },
     "extensions": {
         "recommendations": [
             "redhat.ansible",
             "redhat.vscode-yaml",
             "redhat.vscode-openshift-connector",
-            "eamodio.gitlens",
+            "eamodio.gitlens"
         ]
     },
 }
