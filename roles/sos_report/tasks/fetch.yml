@@ -7,6 +7,7 @@
   register: found_sos_report
 
 - name: Fetch | Case folder block
+  when: found_sos_report.matched > 0
   vars:
     __dest_path: "{{ sos_report_dest }}/case_{{ case_id }}/{{ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
   block:
@@ -17,7 +18,6 @@
         mode: "0755"
 
     - name: Fetch | Fetch the SOS Report to the control node
-      when: found_sos_report.matched > 0
       loop: "{{ found_sos_report.files }}"
       loop_control:
         label: "{{ item.path | basename }}"
@@ -28,7 +28,6 @@
         flat: true
 
     - name: Fetch | Build case_updates_needed variable
-      when: found_sos_report.matched > 0
       loop: "{{ found_sos_report.files }}"
       loop_control:
         label: "{{ item.path | basename }}"

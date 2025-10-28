@@ -17,7 +17,7 @@
           ansible.builtin.set_fact:
             case_updates_needed: |
               {% set combined_list = [] %}
-              {% for host in groups['all'] %}
+              {% for host in ansible_play_hosts %}
               {%   if hostvars[host].case_updates_needed is defined %}
               {%     set _ = combined_list.extend(hostvars[host].case_updates_needed) %}
               {%   endif %}

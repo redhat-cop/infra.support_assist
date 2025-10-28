@@ -24,8 +24,12 @@ jobs:
   sanity:
     uses: ansible/ansible-content-actions/.github/workflows/sanity.yaml@main
   unit-galaxy:
+    needs:
+      - ansible-lint
     uses: ansible/ansible-content-actions/.github/workflows/unit.yaml@main
   unit-source:
+    needs:
+      - ansible-lint
     uses: ansible-network/github_actions/.github/workflows/unit_source.yml@main
     # with:
     #   collection_pre_install: >-
@@ -46,7 +50,7 @@ jobs:
           set([
           '${{ needs.changelog.result }}',
           '${{ needs.sanity.result }}',
-          '${{ needs.unit-galaxy.result }}'
-          '${{ needs.ansible-lint.result }}'
+          '${{ needs.unit-galaxy.result }}',
+          '${{ needs.ansible-lint.result }}',
           '${{ needs.unit-source.result }}'
           ])"

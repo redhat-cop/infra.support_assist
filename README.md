@@ -124,7 +124,7 @@ Releasing the current major version happens from the `devel` branch.
 ## Roadmap (in no specific order)
 
   - Add support for attaching other common diagnostic files.
-  - Add support for grabbing output from one more more API calls
+  - Add support for grabbing output from one or more API calls
 
 ## Contributing to this collection
 

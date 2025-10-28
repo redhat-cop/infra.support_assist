@@ -18,6 +18,7 @@
     {{ ocp_must_gather_options }}
   register: must_gather_result
   changed_when: must_gather_result.rc == 0
+  failed_when: must_gather_result.rc != 0
   async: 1800 # Allow up to 30 minutes for must-gather to run
   poll: 10 # Check every 10 seconds
 

@@ -11,10 +11,12 @@
     return_content: true
     status_code: 200
   register: token_response
+  no_log: true
 
 - name: Refresh Token | Set access token fact
   ansible.builtin.set_fact:
     rh_token_refresh_api_access_token: "{{ token_response.json.access_token }}"
+  no_log: true
 
 - name: Refresh Token | Cache the new token and timestamp locally
   ansible.builtin.copy:
@@ -25,4 +27,5 @@
       }
     dest: "{{ rh_token_refresh_token_cache_file }}"
     mode: '0600' # Set secure permissions for the token file.
+  no_log: true
 ...

@@ -1,1 +1,1 @@
-# TO-DO: add python packages that are required for this collection
+ansible-lint>=24.2.0
