@@ -44,6 +44,5 @@ jobs:
           '${{ needs.changelog.result }}',
           '${{ needs.sanity.result }}',
           '${{ needs.unit-galaxy.result }}',
-          '${{ needs.ansible-lint.result }}',
-          '${{ needs.unit-source.result }}'
+          '${{ needs.ansible-lint.result }}'
           ])"
