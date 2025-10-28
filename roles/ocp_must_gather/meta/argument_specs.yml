@@ -1,0 +1,50 @@
+---
+argument_specs:
+  main:
+    short_description: Auto-generated specs for ocp_must_gather role - main entry point
+    description:
+      - Runs 'oc adm must-gather' against an OpenShift cluster and retrieves the archive.
+    author:
+      - Lenny Shirley
+    options:
+      case_id:
+        description: 'Variable used in included task file: pre-val.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      cluster_name:
+        description: 'Variable used in included task file: pre-val.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      ocp_must_gather_dest_dir:
+        description: 'Directory path (default: ''/tmp/must-gather-output'')'
+        type: path
+        default: /tmp/must-gather-output
+        version_added: 0.1.0-devel
+      ocp_must_gather_image:
+        description: Configuration value for ocp must gather image
+        type: str
+        default: ''
+        version_added: 0.1.0-devel
+      ocp_must_gather_options:
+        description: Configuration option (empty by default)
+        type: str
+        default: ''
+        version_added: 0.1.0-devel
+      ocp_must_gather_server_url:
+        description: 'Variable used in included task file: login.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      ocp_must_gather_token:
+        description: 'Variable used in included task file: login.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      ocp_must_gather_validate_ssl:
+        description: SSL/TLS configuration (enabled by default)
+        type: bool
+        default: true
+        version_added: 0.1.0-devel
+...

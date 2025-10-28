@@ -1,0 +1,77 @@
+---
+argument_specs:
+  main:
+    short_description: Auto-generated specs for rh_case_update role - main entry point
+    description:
+      - Uploads files or adds comments to a Red Hat Support Case
+    author:
+      - Lenny Shirley
+    options:
+      attachment:
+        description: 'Variable used in included task file: case_updates_loop.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      case_id:
+        description: 'Variable used in included task file: pre-val.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      case_updates_needed:
+        description: Variable used in main entry point
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      comment:
+        description: 'Variable used in included task file: case_updates_loop.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      rh_case_update_timeout:
+        description: 'Timeout value in seconds (default: ''{{ upload_timeout | default(1800) }}'')'
+        type: str
+        default: '{{ upload_timeout | default(1800) }}'
+        version_added: 0.1.0-devel
+      rh_token_refresh_api_access_token:
+        description: 'Variable used in included task file: pre-val.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      upload_body_raw:
+        description: 'Variable used in included task file: attachment.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+  ignore_upload_uri:
+    short_description: Auto-generated specs for rh_case_update role - ignore_upload_uri entry point
+    description:
+      - Uploads files or adds comments to a Red Hat Support Case
+    author:
+      - Lenny Shirley
+    options:
+      case_id:
+        description: Variable used in ignore_upload_uri entry point
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      case_updates_needed:
+        description: Variable used in ignore_upload_uri entry point
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      clean_result:
+        description: Variable used in ignore_upload_uri entry point
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      rh_case_update_timeout:
+        description: 'Timeout value in seconds (default: ''{{ upload_timeout | default(1800) }}'')'
+        type: str
+        default: '{{ upload_timeout | default(1800) }}'
+        version_added: 0.1.0-devel
+      rh_token_refresh_api_access_token:
+        description: Variable used in ignore_upload_uri entry point
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+...

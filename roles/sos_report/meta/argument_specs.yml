@@ -1,0 +1,30 @@
+---
+argument_specs:
+  main:
+    short_description: Auto-generated specs for sos_report role - main entry point
+    description:
+      - Gather's SOS Report's from managed nodes
+    author:
+      - Lenny Shirley
+    options:
+      case_id:
+        description: 'Variable used in included task file: fetch.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      sos_report_aap_containerized:
+        description: 'Port number for network connection (default: ''{{ containerized | default(false) | bool }}'')'
+        type: str
+        default: '{{ containerized | default(false) | bool }}'
+        version_added: 0.1.0-devel
+      sos_report_cleanup:
+        description: 'Port number for network connection (default: ''{{ clean | default(true) | bool }}'')'
+        type: str
+        default: '{{ clean | default(true) | bool }}'
+        version_added: 0.1.0-devel
+      sos_report_dest:
+        description: 'Port number for network connection (default: ''/tmp/sos_reports'')'
+        type: str
+        default: /tmp/sos_reports
+        version_added: 0.1.0-devel
+...

@@ -1,0 +1,40 @@
+---
+argument_specs:
+  main:
+    short_description: Auto-generated specs for rh_token_refresh role - main entry point
+    description:
+      - Retrieve a refresh token for the Red Hat API using an offline token.
+    author:
+      - Lenny Shirley
+    options:
+      rh_token_refresh_api_base_url:
+        description: 'Authentication token (default: ''https://api.access.redhat.com'') (defined in vars)'
+        type: str
+        default: https://api.access.redhat.com
+        version_added: 0.1.0-devel
+      rh_token_refresh_api_offline_token:
+        description: Authentication token (configured with default value)
+        type: str
+        default: '{{ offline_token | default(lookup(''env'', ''REDHAT_OFFLINE_TOKEN'')) }}'
+        version_added: 0.1.0-devel
+      rh_token_refresh_api_token_url:
+        description: Authentication token (configured with default value) (defined in vars)
+        type: str
+        default: https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token
+        version_added: 0.1.0-devel
+      rh_token_refresh_token_cache_file:
+        description: 'Authentication token (default: ''/tmp/redhat_refresh_token.json'')'
+        type: path
+        default: /tmp/redhat_refresh_token.json
+        version_added: 0.1.0-devel
+      rh_token_refresh_token_max_age_seconds:
+        description: 'Authentication token (default: 900)'
+        type: int
+        default: 900
+        version_added: 0.1.0-devel
+      timestamp:
+        description: 'Variable used in included task file: check_cache.yml'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+...
