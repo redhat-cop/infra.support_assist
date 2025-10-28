@@ -1,7 +1,7 @@
 ---
 galaxy_info:
   author: Lenny Shirley
-  description: Uploads files to a Red Hat Case
+  description: Uploads files or adds comments to a Red Hat Support Case
   company: Red Hat
   issue_tracker_url: https://github.com/redhat-cop/infra.support_assist/issues
   license: GPL-3.0-or-later
