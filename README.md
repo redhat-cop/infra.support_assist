@@ -1,5 +1,7 @@
 # Ansible Collection - infra.support_assist
 
+[![GitHub last commit](https://img.shields.io/github/last-commit/redhat-cop/infra.support_assist.svg)](https://github.com/redhat-cop/infra.support_assist/commits/main) [![GitHub license](https://img.shields.io/github/license/redhat-cop/infra.support_assist.svg)](https://github.com/redhat-cop/infra.support_assist/blob/main/LICENSE) [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](https://github.com/redhat-cop/infra.support_assist/pulls) ![GitHub contributors](https://img.shields.io/github/contributors/redhat-cop/infra.support_assist) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/redhat-cop/infra.support_assist/update-compatibility-md-tables.yml) ![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/redhat-cop/infra.support_assist)
+
 This Ansible Collection will gather various reports/outputs that are commonly asked for in Red Hat Support Cases, and can optionally upload them directly to the Support Case Portal.
 
 This collection currently includes the following playbooks and roles:
