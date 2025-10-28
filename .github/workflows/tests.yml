@@ -30,7 +30,7 @@ jobs:
   unit-source:
     needs:
       - ansible-lint
-    uses: ansible-network/github_actions/.github/workflows/unit_source.yml@main
+    uses: ansible/ansible-content-actions/.github/workflows/unit.yaml@main
     with:
       collection_pre_install: >-
         git+https://github.com/ansible-collections/community.general.git
