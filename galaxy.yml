@@ -24,5 +24,6 @@ tags:
   - support
   - sosreport
   - mustgather
-dependencies: {}
+dependencies:
+  community.general: ">=11.4.0"
 ...

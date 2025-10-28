@@ -40,12 +40,6 @@ The following variables control the behavior of this role:
     * Default: `"/tmp/must-gather-output"`
     * Type: `path`
 
-* `ocp_must_gather_clean`:
-    * Whether to remove the temporary `ocp_must_gather_dest_dir` from the execution host after the archive is created.
-    * Default: `{{ clean | default(false) | bool }}` (Inherits `clean` var, defaults to `false`)
-    * Type: `bool`
-    * *Note: This feature is not yet fully implemented in the tasks.*
-
 * `ocp_must_gather_image`:
     * A custom must-gather image to use (e.g., `registry.redhat.io/openshift-service-mesh/servicemesh-must-gather-rhel8:1.2`).
     * Default: `""` (Uses the cluster's default must-gather image)

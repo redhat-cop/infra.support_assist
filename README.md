@@ -82,6 +82,24 @@ This collection provides three main playbooks for common operations:
           -e offline_token=YOUR_OFFLINE_TOKEN_HERE
         ```
 
+* **`infra.support_assist.rh_case_update`**: A utility playbook to upload local files or add comments to a case without gathering new diagnostics. This playbook runs on `localhost`.
+    * **Role-specific documentation:** [roles/rh_case_update/README.md](roles/rh_case_update/README.md)
+    * **Example (uploading a local file):**
+      ```shell
+      # Assuming REDHAT_OFFLINE_TOKEN is set as an environment variable
+      ansible-playbook infra.support_assist.rh_case_update \
+        -e case_id=01234567 \
+        -e "case_updates_needed=[{'attachment': '/path/to/local/file.log', 'attachmentDescription': 'Manual log file upload.'}]"
+      ```
+
+    * **Example (adding a comment):**
+      ```shell
+      # Assuming REDHAT_OFFLINE_TOKEN is set as an environment variable
+      ansible-playbook infra.support_assist.rh_case_update \
+        -e case_id=01234567 \
+        -e "case_updates_needed=[{'comment': 'Adding a comment via playbook.', 'commentType': 'plaintext'}]"
+      ```
+
 ### Roles
 
 You can also use the roles individually in your own custom playbooks. For detailed variable lists, requirements, and usage examples, see the README in each role's directory.

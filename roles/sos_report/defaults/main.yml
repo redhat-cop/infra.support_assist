@@ -5,5 +5,5 @@ sos_report_dest: "/tmp/sos_reports"
 
 sos_report_aap_containerized: "{{ containerized | default(false) | bool }}"
 
-sos_report_cleanup: "{{ clean | default(false) | bool }}"
+sos_report_cleanup: "{{ clean | default(true) | bool }}"
 ...

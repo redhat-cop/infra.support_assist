@@ -4,9 +4,6 @@
 # Temporary directory on the execution host (where 'oc' runs)
 ocp_must_gather_dest_dir: "/tmp/must-gather-output"
 
-# Whether to clean up the temporary directory on the execution host
-ocp_must_gather_clean: "{{ clean | default(false) | bool }}"
-
 # Custom must-gather image (default is none, uses cluster default)
 ocp_must_gather_image: ""
 

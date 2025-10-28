@@ -15,6 +15,6 @@
 
   always:
     - name: Cleanup
-      when: sos_report_cleanup | bool | default(true)
+      when: sos_report_cleanup | bool
       ansible.builtin.include_tasks: cleanup.yml
 ...
