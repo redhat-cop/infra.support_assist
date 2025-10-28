@@ -5,7 +5,8 @@ metadata:
 components:
   - name: tooling-container
     container:
-      image: ghcr.io/ansible/ansible-devspaces:latest
+      # image: ghcr.io/ansible/ansible-devspaces:latest
+      image: registry.redhat.io/ansible-automation-platform-tech-preview/ansible-devspaces-rhel9
       memoryRequest: 256M
       memoryLimit: 6Gi
       cpuRequest: 250m
