@@ -31,9 +31,9 @@ jobs:
     needs:
       - ansible-lint
     uses: ansible-network/github_actions/.github/workflows/unit_source.yml@main
-    # with:
-    #   collection_pre_install: >-
-    #     git+https://github.com/ansible-collections/ansible.utils.git
+    with:
+      collection_pre_install: >-
+        git+https://github.com/ansible-collections/community.general.git
   all_green:
     if: ${{ always() }}
     needs:
