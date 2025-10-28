@@ -1,7 +1,7 @@
 ---
 schemaVersion: 2.2.2
 metadata:
-  name: infra.support_assist-2a33086b
+  name: infra-support_assist-devspace
 components:
   - name: tooling-container
     container:

@@ -1,0 +1,14 @@
+{
+    "settings": {
+        "ansible.lightspeed.suggestions.enabled": true,
+        "ansible.lightspeed.enabled": true
+    },
+    "extensions": {
+        "recommendations": [
+            "redhat.ansible",
+            "redhat.vscode-yaml",
+            "redhat.vscode-openshift-connector",
+            "eamodio.gitlens",
+        ]
+    },
+}
