@@ -51,6 +51,12 @@ collections:
 This collection includes primary playbooks that orchestrate the roles in the correct order. For detailed information on role-specific variables and advanced usage, please see the `README.md` file within each role's directory.
 
 ### Preparing Your Offline Token
+> **💡 How to Generate a Red Hat Offline Token**
+>
+> 1.  Navigate to the Red Hat API Token management page: [https://access.redhat.com/management/api](https://access.redhat.com/management/api)
+> 2.  Click the **"Generate Token"** button.
+> 3.  Log in with your Red Hat customer portal credentials if prompted.
+> 4.  A new offline token will be generated. **Copy this token immediately**, as Red Hat notes, "Tokens are only displayed once and are not stored. They will expire after 30 days of inactivity".
 
 All playbooks that upload to a support case require a Red Hat Offline Token. The playbooks will look for it in this order:
 1.  An extra-var named `offline_token`.
