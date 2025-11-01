@@ -141,6 +141,7 @@ Releasing the current major version happens from the `devel` branch.
   - [ ] Add more CLI parameter options to the `sos_report` role (particularly `clean|mask`, etc.)
   - [ ] Make it easier to pick a defined scope if needed to the `ocp_must_gather` role (would replace/compliment the `container image` option)
   - [ ] Add the ability to actually open a **NEW** Red Hat Support Case (might warrant a role rename on `rh_case_update`)
+  - [ ] Add the ability to the `sos_report` role to automatically/dynamically add more hosts to the running inventory if discovered running against a cluster (and some of the cluster hosts are missing)
 
 ## Contributing to this collection
 
