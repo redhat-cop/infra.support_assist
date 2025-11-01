@@ -129,10 +129,18 @@ We plan to regularly release new minor or bugfix versions once new features or b
 
 Releasing the current major version happens from the `devel` branch.
 
-## Roadmap (in no specific order)
+## To Do / Roadmap (in no specific order)
 
-  - Add support for attaching other common diagnostic files.
-  - Add support for grabbing output from one or more API calls
+  - [x] Add a role to use an offline token to get a refresh token for the Red Hat API
+  - [x] Add a role that can upload files, or add comments to a Red Hat Support Case
+  - [x] Add a role that will run `sos report` on one or more hosts
+  - [x] Add a role that will run `oc adm must-gather` on an OpenShift cluster
+  - [x] Add a playbook that can be used to attach other requested files to a Red Hat Support Case
+  - [x] Add a playbook that can be used to add comments in either `markdown` or `plaintext` to a Red Hat Support Case
+  - [ ] Add a role for grabbing output from one or more Ansible Automation Platform API endpoints
+  - [ ] Add more CLI parameter options to the `sos_report` role (particularly `clean|mask`, etc.)
+  - [ ] Make it easier to pick a defined scope if needed to the `ocp_must_gather` role (would replace/compliment the `container image` option)
+  - [ ] Add the ability to actually open a **NEW** Red Hat Support Case (might warrant a role rename on `rh_case_update`)
 
 ## Contributing to this collection
 
