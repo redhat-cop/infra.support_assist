@@ -14,9 +14,9 @@
       block:
         - name: Call rh_token_refresh role
           ansible.builtin.include_role:
-            name: rh_token_refresh
+            name: infra.support_assist.rh_token_refresh
 
         - name: Call rh_case_update role
           ansible.builtin.include_role:
-            name: rh_case_update
+            name: infra.support_assist.rh_case_update
 ...
