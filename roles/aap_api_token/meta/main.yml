@@ -1,0 +1,17 @@
+---
+galaxy_info:
+  author: Lenny Shirley
+  description: Get's a token for AAP using username and password
+  company: Red Hat
+  license: GPL-3.0-or-later
+  min_ansible_version: 2.15.0
+  platforms: []
+  galaxy_tags:
+    - aap
+    - controller
+    - hub
+    - eda
+    - diagnostics
+    - api
+dependencies: []
+...

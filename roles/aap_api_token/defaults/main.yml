@@ -1,0 +1,11 @@
+---
+aap_gateway_url: "{{ lookup('env', 'AAP_GATEWAY_URL') | default('', true) }}"
+aap_controller_url: "{{ lookup('env', 'AAP_CONTROLLER_URL') | default('', true) }}"
+aap_username: "{{ lookup('env', 'AAP_USERNAME') | default('', true) }}"
+aap_password: "{{ lookup('env', 'AAP_PASSWORD') | default('', true) }}"
+aap_token: "{{ lookup('env', 'AAP_TOKEN') | default('', true) }}"
+aap_validate_certs: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(true, true) | bool }}"
+aap_hostname: "{{ aap_gateway_url | default(aap_controller_url, true) | urlsplit('hostname') }}"
+
+aap_api_token_no_log: false
+...

@@ -1,0 +1,23 @@
+---
+# - name: Set facts
+#   ansible.builtin.include_tasks: set_facts.yml
+
+- name: Pre-Validation
+  ansible.builtin.include_tasks: pre_val.yml
+
+- name: Controller Version Detection
+  when: aap_controller_full_version is not defined
+  ansible.builtin.include_tasks: controller/get_version.yml
+
+- name: Get Token Block
+  when:
+    - __get_token | default(true)
+    - aap_token is not defined or aap_token | length == 0
+  block:
+    - name: Get Token Block | Determine which collection is needed based on Controller version
+      ansible.builtin.set_fact:
+        __collection_needed: "{{ 'controller' if aap_controller_full_version is version('4.6.0', '<') else 'platform' }}"
+
+    - name: Get Token Block | Get Token
+      ansible.builtin.include_tasks: "{{ __collection_needed }}/get_token.yml"
+...

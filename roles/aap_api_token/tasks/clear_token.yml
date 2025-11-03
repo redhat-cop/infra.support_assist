@@ -1,0 +1,19 @@
+---
+- name: Clear Token Block
+  when:
+    - __clear_token | default(false)
+    - aap_token is defined
+    - aap_token | length > 0
+  block:
+    - name: Clear Token Block | Controller Version Detection
+      when: aap_controller_full_version is not defined
+      ansible.builtin.include_tasks: controller/get_version.yml
+
+    - name: Clear Token Block | Determine which collection is needed based on Controller version
+      when: __collection_needed is not defined
+      ansible.builtin.set_fact:
+        __collection_needed: "{{ 'controller' if aap_controller_full_version is version('4.6.0', '<') else 'platform' }}"
+
+    - name: Clear Token Block | Clear Token
+      ansible.builtin.include_tasks: "{{ __collection_needed }}/clear_token.yml"
+...

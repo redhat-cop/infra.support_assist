@@ -1,0 +1,60 @@
+---
+# tasks file for determining AAP Controller version by trying multiple ping endpoints
+# Sets 'aap_controller_full_version' and 'aap_controller_needs_legacy_paths' facts.
+
+- name: Controller Version Detection | Try to get Controller version from newer API path (/api/controller/v2/ping/)
+  block:
+    - name: Controller Version Detection | Attempt newer Controller ping endpoint
+      ansible.builtin.uri:
+        url: "{{ aap_gateway_url | default(aap_controller_url) }}/api/controller/v2/ping/"
+        method: GET
+        headers:
+          Accept: "application/json"
+        return_content: true
+        validate_certs: "{{ aap_validate_certs }}"
+        status_code: 200
+      register: ping_result_new
+      no_log: "{{ aap_api_token_no_log | default(true) }}" # Token is in header
+
+    - name: Controller Version Detection | Set Controller version facts from newer path
+      ansible.builtin.set_fact:
+        aap_controller_full_version: "{{ ping_result_new.json.version }}"
+        aap_controller_needs_legacy_paths: "{{ ping_result_new.json.version is version('4.6.0', '<') }}"
+        _ping_successful: true
+      when: ping_result_new.status == 200 and ping_result_new.json.version is defined
+
+  rescue:
+    - name: Controller Version Detection | Attempt older Controller ping endpoint (/api/v2/ping/) after newer failed
+      ansible.builtin.uri:
+        url: "{{ aap_gateway_url | default(aap_controller_url) }}/api/v2/ping/"
+        method: GET
+        headers:
+          Accept: "application/json"
+        return_content: true
+        validate_certs: "{{ aap_validate_certs }}"
+        status_code: 200
+      register: ping_result_old
+      no_log: "{{ aap_api_token_no_log | default(true) }}" # Token is in header
+      ignore_errors: true # Ignore failure here so we can check status below
+
+    - name: Controller Version Detection | Set Controller version facts from older path
+      ansible.builtin.set_fact:
+        aap_controller_full_version: "{{ ping_result_old.json.version }}"
+        aap_controller_needs_legacy_paths: "{{ ping_result_old.json.version is version('4.6.0', '<') }}"
+        _ping_successful: true
+      when: ping_result_old.status == 200 and ping_result_old.json.version is defined
+
+- name: Controller Version Detection | Fail if Controller version could not be determined
+  ansible.builtin.fail:
+    msg: |
+      Could not determine AAP Controller version. Failed to query both:
+      1. {{ aap_gateway_url | default(aap_controller_url) }}/api/controller/v2/ping/ (Status: {{ ping_result_new.status | default('N/A') }})
+      2. {{ aap_gateway_url | default(aap_controller_url) }}/api/v2/ping/ (Status: {{ ping_result_old.status | default('N/A') }})
+      Ensure the aap_controller_url is correct, the API token is valid, and the Controller is reachable.
+  when: not _ping_successful | default(false)
+
+- name: Controller Version Detection | Display determined Controller version info (optional debug)
+  ansible.builtin.debug:
+    msg: "Detected AAP Controller Version: {{ aap_controller_full_version }}. Needs legacy paths: {{ aap_controller_needs_legacy_paths }}"
+  when: aap_controller_full_version is defined
+...

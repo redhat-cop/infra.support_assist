@@ -1,0 +1,29 @@
+---
+- name: Get Token | Set fact to clear token when done
+  ansible.builtin.set_fact:
+    __clear_token: true
+  tags:
+    - always
+
+- name: Get Token | Create a new token using controller username/password
+  ansible.controller.token:
+    description: 'Temporary token for infra.support_assist operations'
+    scope: "write"
+    state: present
+    controller_host: "{{ aap_hostname }}"
+    controller_username: "{{ aap_username }}"
+    controller_password: "{{ aap_password }}"
+    validate_certs: "{{ aap_validate_certs }}"
+  register: authtoken_res
+  changed_when: false
+  tags:
+    - always
+
+- ansible.builtin.debug:
+    var: authtoken_res
+
+- name: Set facts
+  ansible.builtin.set_fact:
+    aap_token: "{{ controller_token.token }}"
+    controller_oauthtoken: "{{ controller_token.token }}"
+...

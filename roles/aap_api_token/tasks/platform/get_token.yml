@@ -1,0 +1,21 @@
+---
+- name: Get Token | Set fact to clear token when done
+  ansible.builtin.set_fact:
+    __clear_token: true
+  tags:
+    - always
+
+- name: Get Token | Create a new token using gateway username/password
+  ansible.platform.token:
+    description: 'Temporary token for infra.support_assist operations'
+    scope: "write"
+    state: present
+    aap_hostname: "{{ aap_hostname }}"
+    aap_username: "{{ aap_username }}"
+    aap_password: "{{ aap_password }}"
+    aap_validate_certs: "{{ aap_validate_certs }}"
+  register: authtoken_res
+  changed_when: false
+  tags:
+    - always
+...
