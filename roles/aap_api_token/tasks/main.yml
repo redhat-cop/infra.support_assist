@@ -16,7 +16,8 @@
   block:
     - name: Get Token Block | Determine which collection is needed based on Controller version
       ansible.builtin.set_fact:
-        __collection_needed: "{{ 'controller' if aap_controller_full_version is version('4.6.0', '<') else 'platform' }}"
+        # __collection_needed: "{{ 'controller' if aap_controller_full_version is version('4.6.0', '<') else 'platform' }}"
+        __collection_needed: "{{ 'controller' if aap_controller_needs_legacy_paths else 'platform' }}"
 
     - name: Get Token Block | Get Token
       ansible.builtin.include_tasks: "{{ __collection_needed }}/get_token.yml"

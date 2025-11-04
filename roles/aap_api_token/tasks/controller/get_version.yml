@@ -19,7 +19,8 @@
     - name: Controller Version Detection | Set Controller version facts from newer path
       ansible.builtin.set_fact:
         aap_controller_full_version: "{{ ping_result_new.json.version }}"
-        aap_controller_needs_legacy_paths: "{{ ping_result_new.json.version is version('4.6.0', '<') }}"
+        # aap_controller_needs_legacy_paths: "{{ ping_result_new.json.version is version('4.6.0', '<') }}"
+        aap_controller_needs_legacy_paths: false
         _ping_successful: true
       when: ping_result_new.status == 200 and ping_result_new.json.version is defined
 
@@ -40,7 +41,8 @@
     - name: Controller Version Detection | Set Controller version facts from older path
       ansible.builtin.set_fact:
         aap_controller_full_version: "{{ ping_result_old.json.version }}"
-        aap_controller_needs_legacy_paths: "{{ ping_result_old.json.version is version('4.6.0', '<') }}"
+        # aap_controller_needs_legacy_paths: "{{ ping_result_old.json.version is version('4.6.0', '<') }}"
+        aap_controller_needs_legacy_paths: true
         _ping_successful: true
       when: ping_result_old.status == 200 and ping_result_old.json.version is defined
 
