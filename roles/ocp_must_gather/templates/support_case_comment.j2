@@ -1,0 +1,28 @@
+**`Hi Red Hat Support Team`,**
+
+The latest diagnostic logs have been automatically collected and attached by our Ansible automation for your review.
+
+---
+
+### Diagnostic Summary
+
+**Cluster Information**
+- **Name:** **`{{ cluster_name | default('N/A') }}`**
+- **ID:** **`{{ cluster_id_check.stdout | default('N/A') }}`**
+- **OpenShift Version:** **`{{ cluster_version_check.stdout | default('N/A') }}`**
+
+**Execution Details**
+{% if ocp_disconnected_mode | default(false) | bool %}
+- **Image Source:** **DISCONNECTED MIRROR REGISTRY**
+- **Registry Used:** **`{{ ocp_disconnected_registry | default('N/A') }}`**
+{% endif %}
+- **Image Used:** **`{% if ocp_disconnected_mode | default(false) | bool and ocp_disconnected_registry | length > 0 %}{{ ocp_disconnected_registry | trim }}{% elif __constructed_image is defined and __constructed_image | length > 0 %}{{ __constructed_image | trim }}{% else %}Default Data Collection{% endif %}`** 
+- **Time Window (--since):** **`{{ ocp_must_gather_since | default('Full History') }}`**
+- **Generated File:** **`{{ __must_gather_archive_name | default('N/A') }}`**
+
+---
+
+> _**NOTE:** Uploaded automatically via Ansible with Red Hat Support API integration._
+
+**Best regards,**  
+**_[Ansible Automation: infra.support_assist.ocp_must_gather](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/README.md)_**. 

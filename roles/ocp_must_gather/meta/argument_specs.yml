@@ -12,11 +12,6 @@ argument_specs:
         type: str
         required: true
         version_added: 0.1.0-devel
-      cluster_name:
-        description: 'Variable used in included task file: pre-val.yml'
-        type: str
-        required: true
-        version_added: 0.1.0-devel
       ocp_must_gather_dest_dir:
         description: 'Directory path (default: ''/tmp/must-gather-output'')'
         type: path
@@ -47,4 +42,14 @@ argument_specs:
         type: bool
         default: true
         version_added: 0.1.0-devel
+      ocp_disconnected_mode:
+        description: Set to true if running in a disconnected or air-gapped environment.
+        type: bool
+        default: false
+        version_added: 0.2.0-devel # Use a new version number
+      ocp_disconnected_registry:
+        description: The address of the mirror registry containing the must-gather images (e.g., myregistry.local/ocp/mirror). Required if ocp_disconnected_mode is true.
+        type: str
+        default: ''
+        version_added: 0.2.0-devel
 ...

@@ -1,3 +1,4 @@
+# roles/rh_case_create/vars/main.yml
 ---
 target_environment_local: "prod"
 rh_base_url_local: "https://access.redhat.com"

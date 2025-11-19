@@ -1,0 +1,134 @@
+---
+# Collect must-gather with more details for specific components in OpenShift clusters.
+# KCS(Solution) Reference: https://access.redhat.com/solutions/5459251
+# ============================================================================
+# --- MUST GATHER COMPONENT DEFINITIONS ---
+# ============================================================================
+must_gather_components:
+# 0. Red Hat Ansible Automation Platform (AAP)
+# KCS(Solution) Reference: https://access.redhat.com/solutions/6997224
+  aap:
+    purpose: "Data Collection for Red Hat Ansible Automation Platform on OpenShift"
+    version_command: "oc get csv -n aap -l 'operators.coreos.com/ansible-automation-platform-operator.aap=' -o jsonpath='{.items[0].spec.version}'"
+    image_base_prefix: "registry.redhat.io/ansible-automation-platform-"
+    tag_logic: "aap_dynamic_rhel"
+
+# 1. Red Hat OpenShift Service Mesh (OSSM)
+  ossm:
+    # Retrieve the highest installed version across all namespaces (-A), 
+    # then sort semantically (-V) to guarantee the latest version is captured.
+    purpose: "Data Collection for Red Hat OpenShift Service Mesh"
+    version_command: "oc get csv -n openshift-operators -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers 2>/dev/null | grep servicemeshoperator | awk '{print $2}' | sort -V | tail -1"
+    image_base: "registry.redhat.io/openshift-service-mesh/istio-must-gather-"
+    tag_logic: "version_rhel"
+
+# 2. OpenShift Virtualization (CNV)
+  cnv:
+    purpose: "Data Collection for OpenShift Container Native Virtualization"
+    version_command: "oc get csv -n openshift-cnv -l 'operators.coreos.com/kubevirt-hyperconverged.openshift-cnv=' -o=jsonpath='{.items[*].spec.version}'"
+    image_base: "registry.redhat.io/container-native-virtualization/cnv-must-gather-rhel9:v"
+    tag_logic: "version"
+
+# 3. Red Hat OpenShift Data Foundation (ODF)
+  odf:
+    purpose: "Data Collection for Red Hat OpenShift Data Foundation (ODF)"
+    version_command: "oc -n openshift-storage get deployment.apps/ocs-operator -o jsonpath='{.spec.template.metadata.annotations.operators\\.openshift\\.io/must-gather-image}'"
+    image_base: "" 
+    tag_logic: "raw"
+
+# 4. Red Hat OpenShift GitOps (GITOPS)
+  gitops:
+    purpose: "Data Collection for Red Hat OpenShift GitOps"
+    version_command: "oc get csv -n openshift-gitops -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers 2>/dev/null | awk '{print $2}' | sort -V | tail -1"
+    image_base: "registry.redhat.io/openshift-gitops-1/must-gather-rhel8:v"
+    tag_logic: "version"
+
+# 5. Red Hat OpenShift Logging (LOGGING)
+  logging:
+    purpose: "Data Collection for Red Hat OpenShift Logging"
+    version_command: "oc -n openshift-logging get deployment.apps/cluster-logging-operator -o jsonpath='{.spec.template.spec.containers[?(@.name == \"cluster-logging-operator\")].image}'"
+    image_base: "" # Base is not needed since the command output is the final URL
+    tag_logic: "raw" # Uses the entire command output as the final image URL
+
+# 6. Red Hat OpenShift AI (RHOAI)
+# KCS(Solution) Reference: https://access.redhat.com/solutions/7061604
+  rhoai:
+    purpose: "Data Collection for Red Hat OpenShift AI"
+    # FINAL ROBUST FIX: Use a custom column pipe to grep for the name and extract the version,
+    # as JSONPath filtering often fails on metadata.name.
+    version_command: "oc get csv -n redhat-ods-operator -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers | grep rhods-operator | awk '{print $2}'"
+    image_base: "registry.redhat.io/rhoai/odh-must-gather-rhel9:v"
+    tag_logic: "major_minor"
+
+# 7. Red Hat Advanced Cluster Management (RHACM)
+  rhacm:
+    purpose: "Data Collection for Red Hat Advanced Cluster Management for Kubernetes (RHACM)"
+    version_command: "oc get csv -n open-cluster-management -o jsonpath='{.items[0].spec.version}'"
+    image_base: "registry.redhat.io/rhacm2/acm-must-gather-rhel9:"
+    tag_logic: "version"
+
+# 8. LVM Operator (LVM)
+  lvm:
+    purpose: "Data Collection for the LVM Operator"
+    version_command: "oc get csv -n openshift-storage -l '[operators.coreos.com/lvm-operator.openshift-storage=](https://operators.coreos.com/lvm-operator.openshift-storage=)' -o jsonpath='{.items[0].spec.version}'"
+    image_base: "registry.redhat.io/lvms4/lvms-must-gather-rhel9:v"
+    tag_logic: "version"
+
+  # 9. OpenShift Serverless (SVLS)
+  svls:
+    purpose: "Data Collection for OpenShift Serverless"
+    version_command: "oc get csv -n openshift-serverless -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers 2>/dev/null | grep serverless-operator | awk '{print $2}' | sort -V | tail -1"
+    image_base: "registry.redhat.io/openshift-serverless-1/svls-must-gather-rhel8"
+    tag_logic: "version"
+
+# 10. Migration Toolkit for Containers (MTC)
+  mtc:
+    purpose: "Data Collection for the Migration Toolkit for Containers"
+    version_command: "oc get csv -n openshift-migration -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers 2>/dev/null | grep mtc-operator | awk '{print $2}' | sort -V | tail -1"
+    image_base: "registry.redhat.io/rhmtc/openshift-migration-must-gather-rhel8:v"
+    tag_logic: "version"
+
+# 11. OpenShift APIs for Data Protection (OADP)
+  oadp:
+    purpose: "Data Collection for OpenShift APIs for Data Protection (OADP)"
+    version_command: "oc get csv -n openshift-adp -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers 2>/dev/null | grep oadp-operator | awk '{print $2}' | sort -V | tail -1"
+    image_base: "registry.redhat.io/oadp/oadp-must-gather-rhel9:v"
+    tag_logic: "version"
+
+# 12. Local Storage Operator (LSO)
+  lso:
+    purpose: "Data Collection for Local Storage Operator (LSO)"
+    version_command: "oc get csv -n openshift-local-storage -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers 2>/dev/null | grep local-storage-operator | awk '{print $2}'"
+    image_base: "registry.redhat.io/openshift4/ose-local-storage-mustgather-rhel9:v"
+    tag_logic: "version"
+
+# 13. PTP Operator (PTP)
+  ptp:
+    purpose: "Data Collection for the PTP Operator"
+    # This command is verified to return the highest version string (e.g., 4.16.0-202510211319).
+    version_command: "oc get csv -n openshift-ptp -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers 2>/dev/null | grep ptp-operator | awk '{print $2}'"
+    image_base: "registry.redhat.io/openshift4/ptp-must-gather-rhel8:v"
+    tag_logic: "version"
+
+# 14. Secrets Store CSI Driver Operator (SEC)
+  sec:
+    purpose: "Data Collection for the Secrets Store CSI Driver Operator"
+    # This command is verified to return the highest version string (e.g., 4.16.0-202510211319).
+    version_command: "oc get csv -A -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers 2>/dev/null | grep secrets-store-csi-driver-operator | awk '{print $2}' | sort -V | tail -1"
+    image_base: "registry.redhat.io/openshift4/ose-secrets-store-csi-mustgather-rhel9:v"
+    tag_logic: "version"
+
+# 15. NUMA Resources Operator (NRO)
+  nro:
+    purpose: "Data Collection for the NUMA Resources Operator (NRO)"
+    version_command: "oc get csv -n openshift-numa-resources -l '[operators.coreos.com/numaresources-operator.openshift-numa-resources=](https://operators.coreos.com/numaresources-operator.openshift-numa-resources=)' -o jsonpath='{.items[0].spec.version}'"
+    image_base: "registry.redhat.io/numaresources/numaresources-must-gather-rhel9:v"
+    tag_logic: "version"
+
+# 16. Compliance Operator (COMPLIANCE)
+  compliance:
+    purpose: "Data Collection for the Compliance Operator"
+    version_command: "oc get csv -n openshift-compliance -o custom-columns=NAME:.metadata.name,VERSION:.spec.version --no-headers 2>/dev/null | grep compliance-operator | awk '{print $2}' | sort -V | tail -1"
+    image_base: "registry.redhat.io/compliance/openshift-compliance-must-gather-rhel8:"
+    tag_logic: "version"
+...

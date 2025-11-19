@@ -1,0 +1,112 @@
+# --- Fetch Must Gather Task File - (Archiving) ---
+---
+- name: Fetch | Print on screen must-gather archive initiation status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Initiating OpenShift Must-Gather Archive Creation Process"
+  run_once: true
+
+- name: Fetch | Set fact for the found directory path
+  ansible.builtin.set_fact:
+    _must_gather_source_path: "{{ ocp_must_gather_dest_dir }}"
+
+- name: Fetch | Get current UTC timestamp
+  ansible.builtin.shell: date -u +%Y-%m-%d-%H%M%S
+  register: utc_timestamp_result
+  changed_when: false
+
+- name: Fetch | Clean cluster_name variable
+  ansible.builtin.set_fact:
+    cluster_name_cleaned: "{{ cluster_name | default('') | lower | regex_replace('[^a-z0-9-]', '-') }}"
+
+- name: Fetch | Determine naming prefix based on collection scope (ACRONYM & BASELINE)
+  ansible.builtin.set_fact:
+    _scope_prefix: "{{ prefix_result | trim }}"
+  vars:
+    prefix_result: >-
+      {% set key = component_key | default('') | upper %}
+      {% set acronym = {
+        'AAP': 'AAP', 'OSSM': 'OSSM', 'CNV': 'CNV', 'ODF': 'ODF', 
+        'GITOPS': 'GITOPS', 'LOGGING': 'LOG', 'RHOAI': 'RHOAI', 'RHACM': 'RHACM', 
+        'LVM': 'LVM', 'SVLS': 'SVLS', 'MTC': 'MTC', 'LSO': 'LSO', 
+        'PTP': 'PTP', 'SECRETSTORE': 'SECRETSTORE', 'NRO': 'NRO', 
+        'COMPLIANCE': 'COMPLIANCE', 'OADP': 'OADP'
+      } %}
+      {% if component_key is defined and key | length > 0 %}
+        {{ acronym[key] | default(key) }}_
+      {% else %}
+        DEFAULT_
+      {% endif %}
+
+- name: Fetch | Calculate optional time prefix
+  ansible.builtin.set_fact:
+    _time_prefix: "{% if ocp_must_gather_since | default('') | length > 0 %}{{ ocp_must_gather_since | trim }}_{% else %}{% endif %}"
+
+- name: Fetch | Construct final archive name
+  ansible.builtin.set_fact:
+    __must_gather_archive_name: "{{ ('must-gather-' ~ _time_prefix ~ _scope_prefix ~ cluster_name_cleaned ~ '_' ~ utc_timestamp_result.stdout ~ '.tar.gz') | trim }}"
+
+- name: Fetch | Set fact for the found directory path
+  ansible.builtin.set_fact:
+    _ocp_must_gather_dest_dir: "{{ _must_gather_source_path }}"
+
+- name: Fetch | Create a compressed archive of the must-gather directory
+  community.general.archive:
+    path: "{{ _must_gather_source_path }}"
+    dest: "{{ ocp_must_gather_dest_dir }}/{{ __must_gather_archive_name }}"
+    format: gz
+    mode: "0644"
+  when: _must_gather_source_path is defined
+
+- name: Fetch | Render support case comment from Jinja template
+  ansible.builtin.set_fact:
+    case_comment: "{{ lookup('template', 'support_case_comment.j2') }}"
+
+- name: Fetch | Calculate conditional image path string
+  ansible.builtin.set_fact:
+    # Set the variable using a block and apply the trim at the end.
+    image_path: "{{ final_path | trim }}"
+  vars:
+    final_path: >-
+      {% if ocp_disconnected_mode | default(false) | bool and ocp_disconnected_registry | length > 0 %}
+        {{ ocp_disconnected_registry }}
+      {% elif __constructed_image | default('') | length > 0 %}
+        {{ __constructed_image }}
+      {% else %}
+        Default OCP Baseline
+      {% endif %}
+
+- name: Fetch | Add must-gather archive path and summary comment to case_updates_needed fact list
+  ansible.builtin.set_fact:
+    case_updates_needed: >-
+      {{
+        case_updates_needed | default([]) + [{
+          'hostname': cluster_name,
+          'attachment': _ocp_must_gather_dest_dir ~ '/' ~ __must_gather_archive_name,
+          'attachmentDescription': (
+            "OCP Data Collection: " ~ (ocp_must_gather_image | upper) ~ 
+            " | Cluster Name: " ~ cluster_name ~ 
+            " | Ver: " ~ (cluster_version_check.stdout | default('N/A')) ~
+            " | Since: " ~ (ocp_must_gather_since | default('Full History')) ~
+            " | DETAILS: See case comment for full report data."
+          ),
+          'comment': case_comment,
+          'commentType': 'markdown'
+        }]
+      }}
+  when: __must_gather_archive_name is defined
+
+- name: Fetch | Print on screen must-gather archive finalization status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "OpenShift Must-Gather Archive Creation Process Completed Successfully"
+  run_once: true
+...

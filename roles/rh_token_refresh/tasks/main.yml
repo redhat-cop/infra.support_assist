@@ -1,11 +1,31 @@
 ---
-- name: Pre-Validation
-  ansible.builtin.include_tasks: pre-val.yml
+- name: Main | Print on screen role execution status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Red Hat SSO Access Token Manager Role Execution"
+  run_once: true
 
-- name: Check token cache
-  ansible.builtin.include_tasks: check_cache.yml
+- name: Main | Pre-Validation
+  ansible.builtin.include_tasks: 1-pre_validation.yml
 
-- name: Refresh Token (only if needed)
+- name: Main | Check token cache
+  ansible.builtin.include_tasks: 2-check_cache.yml
+
+- name: Main | Refresh Token (only if needed)
   when: not token_is_valid | default(false)
-  ansible.builtin.include_tasks: refresh.yml
+  ansible.builtin.include_tasks: 3-refresh.yml
+
+- name: Main | Print on screen role completion status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Completed Red Hat SSO Access Token Manager Role Execution"
+  run_once: true
 ...

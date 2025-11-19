@@ -1,0 +1,23 @@
+---
+- name: Case Updates Loop | Print on screen role execution status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Case Updates Loop for Case ID {{ case_id }}"
+  run_once: true
+
+- name: Case Updates Loop | Attachment Upload
+  when:
+    - case_update.attachment is defined
+    - case_update.attachment | length > 0
+  ansible.builtin.include_tasks: 3-attachment.yml
+
+- name: Case Updates Loop | Comment Update
+  when:
+    - case_update.comment is defined
+    - case_update.comment | length > 0
+  ansible.builtin.include_tasks: 4-comment.yml
+...

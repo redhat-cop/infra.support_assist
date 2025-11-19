@@ -1,0 +1,39 @@
+---
+argument_specs:
+  main:
+    short_description: Auto-generated specs for rh_case_create role - main entry point
+    description:
+      - Validates and creates a new Red Hat Support Case via API.
+    author:
+      - Diego Felipe Mateus
+  options:
+      # --- VARIABLES PASSED FROM SURVEY/USER INPUT ---
+      case_summary:
+        type: str
+        required: true
+      case_product:
+        type: str
+        required: true
+      case_description:
+        type: str
+        required: true
+      case_product_version:
+        type: str
+        required: true
+      case_type:
+        type: str
+        required: true
+      case_severity:
+        type: str
+        required: true
+      # --- VARIABLES PASSED AS FACTS/HIGH-LEVEL VARS (Keep optional or define defaults) ---
+      rh_token_refresh_api_access_token:
+        type: str
+        required: false # It's a fact, so it shouldn't be required here
+      accountNumberRef:
+        type: str
+        required: false # It's a fact
+      cluster_id:
+        type: str
+        required: false # It's an optional input
+...
