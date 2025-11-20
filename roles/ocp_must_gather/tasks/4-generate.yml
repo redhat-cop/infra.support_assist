@@ -10,17 +10,6 @@
     message_text: "Initiating OpenShift Must-Gather Data Collection Process"
   run_once: true
 
-- name: Generate | Ensure temporary destination directory is empty first
-  ansible.builtin.file:
-    path: "{{ ocp_must_gather_dest_dir }}"
-    state: absent
-
-- name: Generate | Re-ensure temporary destination directory exists
-  ansible.builtin.file:
-    path: "{{ ocp_must_gather_dest_dir }}"
-    state: directory
-    mode: '0755'
-
 - name: "Generate | DEBUG: Preparing Final Cluster Execution Command"
   ansible.builtin.debug:
     msg: |

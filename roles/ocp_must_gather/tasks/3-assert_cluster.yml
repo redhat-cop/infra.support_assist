@@ -168,8 +168,28 @@
     __constructed_image: "{{ ocp_must_gather_image_custom | default('') | trim }}"
   when: selected_component_config is defined
 
+- name: Assert Cluster | Print constructed Must-Gather image details
+  ansible.builtin.debug:
+    msg:
+      - "Component Key: {{ __component_key }}"
+      - "Component Purpose: {{ __component_purpose }}"
+      - "Component Version: {{ __component_version }}"
+      - "Constructed Must-Gather Image: {{ __constructed_image }}"
+  when: selected_component_config is defined
+
+- name: Assert Cluster | Ensure temporary destination directory is empty first
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_dest_dir | default('/runner/project/must-gather') }}"
+    state: absent
+
+- name: Assert Cluster | Re-ensure temporary destination directory exists
+  ansible.builtin.file:
+    path: "{{ ocp_must_gather_dest_dir | default('/runner/project/must-gather') }}"
+    state: directory
+    mode: '0755'
+
 - name: Assert Cluster | Get Filesystem Stats using 'df' command
-  ansible.builtin.shell: "df -kP {{ ocp_must_gather_dest_dir }} | awk 'NR==2 {print $4}'"
+  ansible.builtin.shell: "df -kP {{ ocp_must_gather_dest_dir | default('/runner/project/must-gather') }} | awk 'NR==2 {print $4}'"
   register: df_result
   changed_when: false
   run_once: true
@@ -187,7 +207,7 @@
       - must_gather_space_available | int > 5000000000 
     fail_msg: >
       [FATAL] Insufficient local disk space on the Execution Host (EE). 
-      Target directory '{{ ocp_must_gather_dest_dir }}' has only 
+      Target directory '{{ ocp_must_gather_dest_dir | default('/runner/project/must-gather') }}' has only 
       {{ (must_gather_space_available | int / (1024*1024*1024)) | round(2) }} GB available. 
       Please ensure at least 5 GB is free.
     success_msg: "PASSED! Oh, Yes! => Disk space validation succeeded. At least 5 GB is available for must-gather output. Proceeding..."
@@ -197,10 +217,13 @@
 - name: Assert Cluster | Print available space for must-gather output
   ansible.builtin.debug:
     msg: >
-      Available disk space on {{ inventory_hostname }} for must-gather output at '{{ ocp_must_gather_dest_dir }}': 
+      Available disk space on {{ inventory_hostname }} for must-gather output at '{{ ocp_must_gather_dest_dir | default('/runner/project/must-gather') }}': 
       {{ (must_gather_space_available | int / (1024*1024*1024)) | round(2) }} GB
   when: must_gather_space_available is defined
   run_once: true
+
+- name: Assert Cluster | Stop execution status - end_play
+  ansible.builtin.meta: end_play
 
 - name: Assert Cluster | Print on screen post-login validation complete
   ansible.builtin.debug:
