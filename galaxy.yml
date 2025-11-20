@@ -1,14 +1,14 @@
 ---
 namespace: infra
 name: support_assist
-version: 0.1.0-devel
+version: api-case-creation-v1
 description: Ansible Collection that will gather various reports/outputs that are commonly asked for in Red Hat Support Cases
 readme: README.md
 authors:
   - Lenny Shirley @lennysh
-repository: https://github.com/redhat-cop/infra.support_assist
-issues: https://github.com/redhat-cop/infra.support_assist/issues
-documentation: https://github.com/redhat-cop/infra.support_assist/docs
+repository: https://github.com/dfmateus/infra.support_assist.git
+issues: https://github.com/dfmateus/infra.support_assist.git/issues
+documentation: https://github.com/dfmateus/infra.support_assist.git/docs
 build_ignore:
   - galaxy.yml.j2
   - release.yml
