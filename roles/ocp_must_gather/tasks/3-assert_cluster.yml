@@ -17,8 +17,9 @@
 
 - name: Assert Cluster | Check if service account has cluster-admin privileges
   ansible.builtin.shell: |
-    oc get clusterrolebindings -o json | \
-    jq -r '.items[] | select(.roleRef.name=="cluster-admin") | .subjects[]? | select(.name=="{{ sa_name }}") | .name'
+    oc get clusterrolebindings -o jsonpath='{.items[*].subjects[*].name}' \
+      | tr ' ' '\n' \
+      | grep -w {{ sa_name }}
   register: cluster_admin_check
   changed_when: false
   failed_when: false
@@ -27,7 +28,7 @@
   ansible.builtin.assert:
     that:
       # Check if the stripped stdout equals the SA name (meaning the SA was found with the role)
-      - cluster_admin_check.stdout.strip() == sa_name
+      - cluster_admin_check.stdout | trim == sa_name
     fail_msg: >-
       FAILED! Oh, No! => The authenticated user/service account '{{ sa_name }}' does NOT have 'cluster-admin' privileges.
       This permission is required to execute 'oc adm must-gather'. 
@@ -35,7 +36,6 @@
       For more information, check the Resolution Link (KCS) - https://access.redhat.com/solutions/6375111
     success_msg: >-
       PASSED! Oh, Yes! => User/Service account '{{ sa_name }}' has 'cluster-admin' privileges, so we are good to go. Proceeding with must-gather execution.
-  when: sa_name is defined
 
 - name: Assert Cluster | Check the Cluster ID
   ansible.builtin.shell: |
