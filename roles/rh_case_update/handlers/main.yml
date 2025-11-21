@@ -1,25 +1,5 @@
 ---
 - name: display_case_update_summary_trigger
   ansible.builtin.debug:
-    msg:
-      - "*******************************************************************************"
-      - "SUMMARY STATUS: Red Hat Support Case {{ case_id }} Created and Updated Successfully."
-      - "*******************************************************************************"
-      - "[ I. CASE IDENTIFIERS ] "
-      - "=> Account Name:   => {{ account_name }} "
-      - "=> Account Ref     => {{ accountNumberRef }} "
-      - "=> Case ID         => {{ case_id }} "
-      - "=> Case URL        => {{ rh_base_url }}/support/cases/#/case/{{ case_id }} "
-      - "[ II. CASE DETAILS ] "
-      - "=> Summary         => {{ case_summary | trim }} "
-      - "[ III. PROBLEM DETAILS ] "
-      - "=> Product         => {{ case_product }} "
-      - "=> Version         => {{ case_product_version }} "
-      - "=> Severity        => {{ case_severity }} "
-      - "=> Issue Type      => {{ case_type }} "
-      - "[ IV. DESCRIPTION ] "
-      - "=> {{ case_description | default(case_summary) }} "
-      - "---------------------------------------------------------------------------------"
-      - "ACTION REQUIRED: Review the case via the URL above for full file upload details."
-      - "---------------------------------------------------------------------------------"
+    msg: "{{ final_update_banner.split('\n') }}"
 ...
