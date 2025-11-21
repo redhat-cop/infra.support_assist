@@ -12,36 +12,39 @@
 
 - name: "Generate | DEBUG: Preparing Final Cluster Execution Command"
   ansible.builtin.debug:
-    msg: |
-      {{ separator_char * (message_text | length + default_message_padding) | int }}
-      {{ message_text }}
-      {{ separator_char * (message_text | length + default_message_padding) | int }}
-
-      --- NOTICE ---
-      The following command will now be executed against the authenticated 
-      **OCP Cluster '{{ cluster_name }}'**. This process takes time.
-      Please be patient and do not cancel the execution.
-      
-      {% if ocp_disconnected_mode | default(false) | bool %}
-      >> DISCONNECTED MODE ACTIVE: Image will be pulled from {{ ocp_disconnected_registry }}.
-      {% endif %}
-      --------------------------------------------------
-      Final Command to be Executed:
-      --------------------------------------------------
-      $ oc adm must-gather
-        --dest-dir={{ ocp_must_gather_dest_dir }}
-        {% if ocp_disconnected_mode | bool and ocp_disconnected_registry | length > 0 %}
-        --image={{ ocp_disconnected_registry | trim }}
-        {% elif __constructed_image is defined and __constructed_image | length > 0 %}
-        --image={{ __constructed_image | trim }}
-        {% endif %}
-        {% if ocp_must_gather_since | default('') | length > 0 %}
-        --since={{ ocp_must_gather_since }}
-        {% endif %}
-        {{ ocp_must_gather_options | default('') }}
-      --------------------------------------------------
-
+    msg: "{{ final_preview | to_nice_json }}"
   vars:
+    final_preview:
+      banner_top: "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      message: "{{ message_text }}"
+      banner_bottom: "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+
+      notice: >
+        The following command will now be executed against the authenticated
+        OCP Cluster '{{ cluster_name }}'. This process takes time.
+        Please be patient and do not cancel the execution.
+
+      disconnected_mode: >-
+        {% if ocp_disconnected_mode | default(false) | bool %}
+        DISCONNECTED MODE ACTIVE: Image will be pulled from {{ ocp_disconnected_registry }}.
+        {% else %}
+        disabled
+        {% endif %}
+
+      final_command:
+        command: "oc adm must-gather"
+        dest_dir: "{{ ocp_must_gather_dest_dir }}"
+        image: >-
+          {% if ocp_disconnected_mode | bool and ocp_disconnected_registry | length > 0 %}
+          {{ ocp_disconnected_registry | trim }}
+          {% elif __constructed_image is defined and __constructed_image | length > 0 %}
+          {{ __constructed_image | trim }}
+          {% else %}
+          default
+          {% endif %}
+        since: "{{ ocp_must_gather_since | default('') }}"
+        options: "{{ ocp_must_gather_options | default('') }}"
+
     message_text: ">>>> PREVIEW: MUST-GATHER CLUSTER EXECUTION STAGE <<<<<"
 
 - name: Generate | Must-Gather (ASYNC Operation - DO NOT CANCEL)
