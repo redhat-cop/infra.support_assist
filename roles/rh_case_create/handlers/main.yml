@@ -3,29 +3,23 @@
 - name: display_case_update_summary_trigger
   ansible.builtin.debug:
     msg: |
-      
       ********************************************************************
       SUMMARY STATUS: Red Hat Support Case {{ case_creation_result.json.location[0].split('/')[-1] }} Created Successfully.
       ********************************************************************
-      
       [ I. CASE IDENTIFIERS ]
       > Account Name:   => {{ account_name }}
       > Account Ref     => {{ accountNumberRef }}
       > Case ID         => {{ case_creation_result.json.location[0].split('/')[-1] }}
       > Case URL        => {{ rh_base_url }}/support/cases/#/case/{{ case_creation_result.json.location[0].split('/')[-1] }}
-      
       [ II. CASE DETAILS ]
       > Summary         => {{ case_summary | trim }}
-      
       [ III. PROBLEM DETAILS ]
       > Product         => {{ case_product }}
       > Version         => {{ case_product_version }}
       > Severity        => {{ case_severity }}
       > Issue Type      => {{ case_type }}
-      
       [ IV. DESCRIPTION ]
       => {{ case_description | default(case_summary) }}
-      
       ---------------------------------------------------------------------------------
       ACTION REQUIRED: Review the case via the URL above for full file upload details.
       ---------------------------------------------------------------------------------
