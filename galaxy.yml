@@ -1,4 +1,5 @@
 ---
+# TODO - Do not forget to change this to the main project -> https://github.com/redhat-cop/infra.support_assist
 namespace: infra
 name: support_assist
 version: 0.1.0-devel
@@ -6,6 +7,7 @@ description: Ansible Collection that will gather various reports/outputs that ar
 readme: README.md
 authors:
   - Lenny Shirley @lennysh
+  - Diego Felipe Mateus
 repository: https://github.com/dfmateus/infra.support_assist.git
 issues: https://github.com/dfmateus/infra.support_assist.git/issues
 documentation: https://github.com/dfmateus/infra.support_assist.git/docs

@@ -1,22 +1,9 @@
-# Central dictionary containing all environment-specific settings
+# roles/rh_case_create/vars/main.yml
 ---
-rh_env_config:
-  prod:
-    rh_base_url: "https://access.redhat.com"
-    rh_token_refresh_api_base_url: "https://api.access.redhat.com"
-    rh_token_refresh_api_token_url: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
-    rh_use_proxy: false
-    rh_http_proxy: ""
-  qa:
-    rh_base_url: "https://access.qa.redhat.com"
-    rh_token_refresh_api_base_url: "https://api.access.qa.redhat.com"
-    rh_token_refresh_api_token_url: "https://sso.qa.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
-    rh_use_proxy: true
-    rh_http_proxy: "http://squid.corp.redhat.com:3128"
-  staging:
-    rh_base_url: "https://access.stage.redhat.com"
-    rh_token_refresh_api_base_url: "https://access.stage.redhat.com"
-    rh_token_refresh_api_token_url: "https://sso.stage.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
-    rh_use_proxy: true
-    rh_http_proxy: "http://squid.corp.redhat.com:3128"
+target_environment_local: "prod"
+rh_base_url_local: "https://access.redhat.com"
+rh_token_refresh_api_base_url_local: "https://api.access.redhat.com"
+rh_token_refresh_api_token_url_local: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
+rh_use_proxy_local: false
+rh_http_proxy_local: ""
 ...
