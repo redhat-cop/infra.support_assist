@@ -71,23 +71,64 @@ All playbooks that access the Red Hat API will look for the token in this order:
 
 ---
 
-## ⚠️ AAP Resource Warning for Must-Gather
+# 📚 AAP Lessons Learned for Must-Gather Pipeline
 
-If running the **`ocp_must_gather`** pipeline on **Ansible Automation Platform (AAP) under OCP**, the automation job Pod (Execution Environment) typically has severely limited ephemeral storage (disk space) and memory.
+This document summarizes critical configuration settings and resource warnings necessary for the **`ocp_must_gather`** pipeline to run successfully on the Red Hat Ansible Automation Platform (AAP).
 
-Since the raw, uncompressed Must-Gather output can easily exceed **10-20 GiB**, running a full collection without resource customization is highly likely to fail with an **"No space left on device"** error.
+## 1. ⚙️ Project Synchronization and Collection Download
+
+To ensure your Project Synchronization successfully downloads the necessary Ansible Collections (e.g., `infra.support_assist`), the correct settings must be enabled, and credentials must be configured at the Organizational level.
+
+### Required AAP Configuration Steps
+
+| Location (Left Navigation Menu) | Setting to **Enable** | Purpose |
+| :--- | :--- | :--- |
+| **Settings** > **Automation Execution** > **Job** | **Enable Role Download** | Allows the Execution Environment to pull dependent Ansible Roles defined outside of a Collection. |
+| **Settings** > **Automation Execution** > **Job** | **Enable Collection(s) Download** | Allows the Execution Environment to pull Collections (e.g., `infra.support_assist`) from configured sources. |
+
+### Organizational Access Check
+
+Under **Access Management** > **Organizations** > **[Your Organization Name]**:
+
+* Ensure that the **Galaxy Credentials** field has an **Ansible Galaxy Credential** (or a similar credential pointing to a collection source) properly set. If this is missing, the **Project Sync** will fail to download the required collections, causing the Job Template to fail with "Collection not found" errors.
+
+---
+
+## 2. ⚠️ Must-Gather Resource Warning: Ephemeral Storage (Disk Space)
+
+When running the **`ocp_must_gather`** pipeline on an AAP instance hosted on OpenShift, the default Execution Environment (EE) Pod resource limits are often insufficient. Uncompressed Must-Gather output can easily exceed **10–20 GiB**, leading to an **"`No space left on device`"** error.
 
 ### Solution: Create High-Storage Instance Group
 
-To successfully run Must-Gather collections, users must create a specialized Instance Group with a **Pod Spec Override** to allocate sufficient ephemeral storage.
+To allocate sufficient storage for the collection, you must create a specialized **Instance Group** with a **Pod Spec Override**.
 
-1.  **Recommended Instance Group Name:** `MUST-GATHER-HIGH-STORAGE`
-2.  **Required Modification:** The Pod Spec Override must increase the `ephemeral-storage` resource request and limit within the `main` container definition.
+| Setting | Recommendation | Rationale |
+| :--- | :--- | :--- |
+| **Instance Group Name** | **`MUST-GATHER-HIGH-STORAGE`** | Clear, descriptive name for easy assignment. |
+| **Resource to Increase** | **`ephemeral-storage`** | Must-Gather relies heavily on temporary disk space. |
+| **Pod Spec Override** | Modify the **`resources.limits`** and **`resources.requests`** for the **`main`** container. | A minimum of **`20Gi`** to **`30Gi`** is often necessary for a full OCP collection. |
+
+### Resource Adjustment References
 
 | Customization Option | Reference Link |
 | :--- | :--- |
 | **Customizing Pod Specs via Instance Group** (Specific jobs) | [Customizing the pod specification](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/performance_considerations_for_operator_environments/assembly-pod-spec-modifications_performance-considerations#proc-customizing-pod-specs_performance-considerations) |
 | **Global Control Plane Adjustments** (All jobs) | [Chapter 2. Control plane adjustments](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/performance_considerations_for_operator_environments/assembly-control-plane-adjustments_performance-considerations) |
+
+### Pod Spec Override Example Snippet
+
+This YAML snippet should be used in the **Pod Spec Override** field of the new Instance Group:
+
+~~~yaml
+spec:
+  containers:
+  - name: main
+    resources:
+      limits:
+        ephemeral-storage: 30Gi  # Set limit high enough for full collection
+      requests:
+        ephemeral-storage: 30Gi  # Request sufficient storage to ensure scheduling
+~~~
 
 ---
 
@@ -221,6 +262,7 @@ Releasing the current major version happens from the `devel` branch.
   - [x] Add Cluster Name Extraction - The role now automatically extracts the OpenShift cluster name from the provided API server URL, ensuring accurate identification in case comments and uploads, to avoid user needs to be inserted manually.
   - [ ] Add options to the `sos_report` role to gather data from an OCP nodes using the official method as guidance from Red Hat KCS: [Method 1 - Using SSH](https://access.redhat.com/solutions/3820762) or [Method 2 - Using oc debug](https://access.redhat.com/solutions/4387261) - keep in mind the SOS Report from an OCP node is different from a standard Linux host sosreport.
   - [ ] Add an option to the `ocp_must_gather` or create a new role to gather data for one or more namespace using `oc adm inspect`
+  - [ ] Add some lessons learn and tips how to use this automation on Ansible Automation Platform (Implemented above some useful tips/guidance: **[AAP Lessons Learned for Must-Gather Pipeline](#-aap-lessons-learned-for-must-gather-pipeline))**
 
 ## Contributing to this collection
 
