@@ -19,4 +19,13 @@ rh_token_url: "{{ rh_env_config[target_environment].rh_token_refresh_api_token_u
 rh_use_proxy: "{{ rh_env_config[target_environment].rh_use_proxy | default(false) }}"
 rh_http_proxy: "{{ rh_env_config[target_environment].rh_http_proxy }}"
 # --- End of defaults/main.yml ---
+
+ao_ds_welcome_banner: |
+    |**************************************************
+    |              Developed by Squad:                |
+    |         CIO Automation & Optimization           |
+    |             AO Distributed(AO_DS)               |
+    |**************************************************
+
+
 ...
