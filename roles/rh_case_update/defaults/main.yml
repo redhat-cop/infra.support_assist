@@ -18,7 +18,6 @@ rh_base_url: "{{ rh_env_config[target_environment].rh_base_url }}"
 rh_token_url: "{{ rh_env_config[target_environment].rh_token_refresh_api_token_url }}"
 rh_use_proxy: "{{ rh_env_config[target_environment].rh_use_proxy | default(false) }}"
 rh_http_proxy: "{{ rh_env_config[target_environment].rh_http_proxy }}"
-# --- End of defaults/main.yml ---
 
 final_update_banner: |
     *******************************************************************************
@@ -42,3 +41,4 @@ final_update_banner: |
     ACTION REQUIRED: Review the case via the URL above for full file upload details.
     ---------------------------------------------------------------------------------
 ...
+# --- End of defaults/main.yml ---
