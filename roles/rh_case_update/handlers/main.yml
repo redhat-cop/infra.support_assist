@@ -1,7 +1,7 @@
 ---
 - name: display_case_update_summary_trigger
   ansible.builtin.debug:
-    msg: "{{ summary_data | to_nice_json }}"
+    msg: "{{ summary_data | to_json }}"
   vars:
     summary_data:
       SUMMARY_STATUS: "Red Hat Support Case {{ case_id }} Created and Updated Successfully."
