@@ -19,6 +19,7 @@
       client_id: rhsm-api
       refresh_token: "{{ rh_token_refresh_api_offline_token | default(rh_token_refresh_api_offline_token_local) }}"
     return_content: true
+    validate_certs: true
     status_code: 200
     use_proxy: "{{ rh_use_proxy | default(false) }}"
   register: token_response
