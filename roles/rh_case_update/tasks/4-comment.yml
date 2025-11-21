@@ -45,6 +45,36 @@
     fail_msg: >-
       FAILED! Oh, No! => Failed to add comment to case {{ case_id }}! HTTP Status: {{ comment_api_result.status }} | Response Body: {{ comment_api_result.content | default('N/A') }}
 
+- name: Comment | Build Case Summary dynamic message block
+  ansible.builtin.set_fact:
+    case_summary_message: |
+      {{ separator_char * (message_text | length + default_message_padding) | int }}
+      {{ message_text }}
+      {{ separator_char * (message_text | length + default_message_padding) | int }}
+
+      [ I. CASE IDENTIFIERS ]
+      > Account Name:    => {{ account_name }}
+      > Account Ref      => {{ accountNumberRef }}
+      > Case ID          => {{ case_id }}
+      > Case URL         => {{ rh_base_url }}/support/cases/#/case/{{ case_id }}
+
+      [ II. CASE DETAILS ]
+      > Summary          => {{ case_summary | trim }}
+
+      [ III. PROBLEM DETAILS ]
+      > Product          => {{ case_product }}
+      > Version          => {{ case_product_version }}
+      > Severity         => {{ case_severity }}
+      > Issue Type       => {{ case_type }}
+
+      [ IV. DESCRIPTION ]
+      => {{ case_description | default(case_summary) }}
+      ---------------------------------------------------------------------------------
+      ACTION REQUIRED: Review the case via the URL above for full file upload details.
+      ---------------------------------------------------------------------------------
+  vars:
+    message_text: "SUMMARY STATUS: Red Hat Support Case {{ case_id }} Created and Updated Successfully."
+
 - name: Comment | Notify success after update/upload
   ansible.builtin.debug:
     msg: "HANDLER: Triggering final update summary display at the end for case {{ case_id }}..."
