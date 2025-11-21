@@ -63,7 +63,6 @@
     use_proxy: "{{ rh_use_proxy | default(false) }}"
   register: case_creation_result
   no_log: "{{ var_no_log | default('true') }}" # <--- To keep sensitive values out of Ansible output logs
-
   environment:
     https_proxy: "{{ rh_http_proxy }}"
     http_proxy: "{{ rh_http_proxy }}"
