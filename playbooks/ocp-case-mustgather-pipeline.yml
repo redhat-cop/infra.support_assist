@@ -21,7 +21,7 @@
     # --- CONTROL VARIABLES ---
     # If case_id is blank, a new case will be created. If set, the must-gather will be uploaded to the existing case.
     # ===============================================================================
-    case_id: "03912902"  # Blank to trigger creation flow
+    case_id: ""  # Blank to trigger creation flow
     ocp_must_gather_validate_ssl: false #  Set to false to skip SSL validation (useful for self-signed certs) 
     upload: true  # Set to true to upload the must-gather to the case after creation
     # ===============================================================================

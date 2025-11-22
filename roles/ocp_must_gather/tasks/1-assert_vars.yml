@@ -42,7 +42,7 @@
   ansible.builtin.command: command -v oc
   register: oc_check
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Assert Vars | Assert 'oc' command is available on execution host
   ansible.builtin.assert:

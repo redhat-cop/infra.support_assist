@@ -33,8 +33,8 @@
         'AAP': 'AAP', 'OSSM': 'OSSM', 'CNV': 'CNV', 'ODF': 'ODF', 
         'GITOPS': 'GITOPS', 'LOGGING': 'LOG', 'RHOAI': 'RHOAI', 'RHACM': 'RHACM', 
         'LVM': 'LVM', 'SVLS': 'SVLS', 'MTC': 'MTC', 'LSO': 'LSO', 
-        'PTP': 'PTP', 'SECRETSTORE': 'SECRETSTORE', 'NRO': 'NRO', 
-        'COMPLIANCE': 'COMPLIANCE', 'OADP': 'OADP'
+        'PTP': 'PTP', 'SEC': 'SEC', 'NRO': 'NRO', 
+        'COMP': 'COMP', 'OADP': 'OADP'
       } %}
       {% if component_key is defined and key | length > 0 %}
         {{ acronym[key] | default(key) }}_

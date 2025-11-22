@@ -41,7 +41,7 @@
       "{{ rh_api_base_url }}/support/v1/cases/{{ case_id }}/attachments/"
   register: upload_cli_result
   no_log: "{{ var_no_log | default('true') }}" # <--- To keep sensitive values out of Ansible output logs
-  ignore_errors: true
+  failed_when: false
   changed_when: upload_cli_result.rc == 0
 
 # --- Parsing and Validation Tasks ---

@@ -1,6 +1,6 @@
 argument_specs:
   main:
-    short_description: Runs 'oc adm must-gather' against an OpenShift cluster
+    short_description: Auto-generated specs for ocp_must_gather role - main entry point
     description:
       - Runs 'oc adm must-gather' against an OpenShift cluster and retrieves the archive.
     author:
