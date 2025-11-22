@@ -10,42 +10,34 @@
     message_text: "Initiating OpenShift Must-Gather Data Collection Process"
   run_once: true
 
-- name: "Generate | DEBUG: Preparing Final Cluster Execution Command"
+- name: "Generate | DEBUG: MUST-GATHER Execution Summary"
   ansible.builtin.debug:
-    msg: "{{ final_preview | to_nice_json }}"
+    msg: |
+      === MUST-GATHER PREVIEW ===
+      Cluster:               {{ cluster_name | trim }}
+      Destination Directory: {{ ocp_must_gather_dest_dir | trim }}
+      Image:                 {{ preview_must_gather_image | trim }}
+      Since:                 {{ preview_must_gather_since | trim }}
+      Disconnected Mode:     {{ preview_disconnected_mode | trim }}
+
+      Final Command:
+      oc adm must-gather \
+        --dest-dir={{ ocp_must_gather_dest_dir }} \
+        {% if ocp_must_gather_since | default('') | length > 0 -%}
+        --since={{ ocp_must_gather_since }} \
+        {% endif -%}
+        --image={{ preview_must_gather_image }}
   vars:
-    final_preview:
-      banner_top: "{{ separator_char * (message_text | length + default_message_padding) | int }}"
-      message: "{{ message_text }}"
-      banner_bottom: "{{ separator_char * (message_text | length + default_message_padding) | int }}"
-
-      notice: >
-        The following command will now be executed against the authenticated
-        OCP Cluster '{{ cluster_name }}'. This process takes time.
-        Please be patient and do not cancel the execution.
-
-      disconnected_mode: >-
-        {% if ocp_disconnected_mode | default(false) | bool %}
-        DISCONNECTED MODE ACTIVE: Image will be pulled from {{ ocp_disconnected_registry }}.
-        {% else %}
-        disabled
-        {% endif %}
-
-      final_command:
-        command: "oc adm must-gather"
-        dest_dir: "{{ ocp_must_gather_dest_dir }}"
-        image: >-
-          {% if ocp_disconnected_mode | bool and ocp_disconnected_registry | length > 0 %}
-          {{ ocp_disconnected_registry | trim }}
-          {% elif __constructed_image is defined and __constructed_image | length > 0 %}
-          {{ __constructed_image | trim }}
-          {% else %}
-          default
-          {% endif %}
-        since: "{{ ocp_must_gather_since | default('') }}"
-        options: "{{ ocp_must_gather_options | default('') }}"
-
-    message_text: ">>>> PREVIEW: MUST-GATHER CLUSTER EXECUTION STAGE <<<<<"
+    preview_must_gather_image: >-
+      {% if ocp_disconnected_mode | default(false) and ocp_disconnected_registry is defined and ocp_disconnected_registry|length > 0 %}
+      {{ ocp_disconnected_registry | trim }}
+      {% elif __constructed_image is defined and __constructed_image|length > 0 %}
+      {{ __constructed_image | trim }}
+      {% else %}
+      N/A
+      {% endif %}
+    preview_must_gather_since: "{{ ocp_must_gather_since | default('N/A') }}"
+    preview_disconnected_mode: "{{ 'enabled' if ocp_disconnected_mode | default(false) else 'disabled' }}"
 
 - name: Generate | Must-Gather (ASYNC Operation - DO NOT CANCEL)
   ansible.builtin.shell: >
