@@ -10,33 +10,40 @@
     message_text: "Initiating OpenShift Must-Gather Data Collection Process"
   run_once: true
 
-- name: "Generate | DEBUG: MUST-GATHER Execution Summary"
+- name: Generate | Must-Gather Preview (Minimal JSON)
   ansible.builtin.debug:
-    msg: |
-      === MUST-GATHER PREVIEW ===
-      Cluster:               {{ cluster_name | trim }}
-      Destination Directory: {{ ocp_must_gather_dest_dir | trim }}
-      Image:                 {{ preview_must_gather_image | trim }}
-      Since:                 {{ preview_must_gather_since | trim }}
-      Disconnected Mode:     {{ preview_disconnected_mode | trim }}
-
-      Final Command:
-      oc adm must-gather \
-        --dest-dir={{ ocp_must_gather_dest_dir }} \
-        {% if ocp_must_gather_since | default('') | length > 0 -%}
-        --since={{ ocp_must_gather_since }} \
-        {% endif -%}
-        --image={{ preview_must_gather_image }}
+    msg:
+      - "MUST-GATHER PREVIEW"
+      - "cluster: {{ cluster_name | trim }}"
+      - "dest_dir: {{ ocp_must_gather_dest_dir | trim }}"
+      - "image: {{ preview_must_gather_image | trim }}"
+      - "since: {{ preview_must_gather_since | trim }}"
+      - "disconnected: {{ preview_disconnected_mode | trim }}"
+      - "final_cmd: {{ preview_final_cmd | trim }}"
   vars:
+    preview_final_cmd: >-
+      oc adm must-gather
+      --dest-dir={{ ocp_must_gather_dest_dir | trim }}
+      {% if ocp_disconnected_mode | bool and ocp_disconnected_registry | length > 0 -%}
+      --image={{ ocp_disconnected_registry | trim }}
+      {% elif __constructed_image is defined and __constructed_image | length > 0 -%}
+      --image={{ __constructed_image | trim }}
+      {% endif -%}
+      {% if ocp_must_gather_since | default('') | trim | length > 0 -%}
+      --since={{ ocp_must_gather_since | trim }}
+      {% endif -%}
+      {% if ocp_must_gather_options | default('') | trim | length > 0 -%}
+      {{ ocp_must_gather_options | trim }}
+      {% endif %}
     preview_must_gather_image: >-
-      {% if ocp_disconnected_mode | default(false) and ocp_disconnected_registry is defined and ocp_disconnected_registry|length > 0 %}
+      {% if ocp_disconnected_mode | bool and ocp_disconnected_registry | length > 0 %}
       {{ ocp_disconnected_registry | trim }}
-      {% elif __constructed_image is defined and __constructed_image|length > 0 %}
+      {% elif __constructed_image is defined and __constructed_image | length > 0 %}
       {{ __constructed_image | trim }}
       {% else %}
       N/A
       {% endif %}
-    preview_must_gather_since: "{{ ocp_must_gather_since | default('N/A') }}"
+    preview_must_gather_since: "{{ ocp_must_gather_since | default('N/A') | trim }}"
     preview_disconnected_mode: "{{ 'enabled' if ocp_disconnected_mode | default(false) else 'disabled' }}"
 
 - name: Generate | Must-Gather (ASYNC Operation - DO NOT CANCEL)

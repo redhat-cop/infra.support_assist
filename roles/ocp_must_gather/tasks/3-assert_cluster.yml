@@ -168,13 +168,14 @@
     __constructed_image: "{{ ocp_must_gather_image_custom | default('') | trim }}"
   when: selected_component_config is defined
 
-- name: Assert Cluster | Print constructed Must-Gather image details
+- name: Assert Cluster | Constructed Must-Gather Image (Minimal JSON)
   ansible.builtin.debug:
     msg:
-      - "Component Key: {{ __component_key }}"
-      - "Component Purpose: {{ __component_purpose }}"
-      - "Component Version: {{ __component_version }}"
-      - "Constructed Must-Gather Image: {{ __constructed_image }}"
+      - "MUST-GATHER IMAGE DETAILS"
+      - "component_key: {{ __component_key | trim }}"
+      - "purpose: {{ __component_purpose | trim }}"
+      - "version: {{ __component_version | trim }}"
+      - "constructed_image: {{ __constructed_image | trim }}"
   when: selected_component_config is defined
 
 - name: Assert Cluster | Ensure temporary destination directory is empty first
@@ -216,9 +217,10 @@
 
 - name: Assert Cluster | Print available space for must-gather output
   ansible.builtin.debug:
-    msg: >
-      Available disk space on {{ inventory_hostname }} for must-gather output at '{{ ocp_must_gather_dest_dir }}': 
-      {{ (must_gather_space_available | int / (1024*1024*1024)) | round(2) }} GB
+    msg:
+      inventory_hostname: "{{ inventory_hostname }}"
+      must_gather_dest_dir: "{{ ocp_must_gather_dest_dir }}"
+      available_gb: "{{ (must_gather_space_available | int / (1024*1024*1024)) | round(2) }}"
   when: must_gather_space_available is defined
   run_once: true
 

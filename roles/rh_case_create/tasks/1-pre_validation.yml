@@ -67,23 +67,20 @@
   vars:
     ansible_loop_var: item
 
-- name: Pre-validation | Log all mandatory case creation fields (for debugging)
+- name: "Pre-validation | Mandatory Case Fields (Minimal JSON)"
   run_once: true
   ansible.builtin.debug:
     msg:
-      - "---- Mandatory Case Creation Fields ----"
-      - "> Account Name: {{ account_name | default('') | trim }}"
-      - "> Account Number Reference: {{ accountNumberRef | default('') | trim }}"
-      # --- User-Provided Fields ---
-      - "> Case Summary: {{ case_summary | default('') | trim }}"
-      - "> Case Description: {{ case_description | default('') | trim }}"
-      - "> Case Product: {{ case_product | default('') | trim }}"
-      - "> Case Product Version: {{ case_product_version | default('') | trim }}"
-      - "> Case Type: {{ case_type | default('') | trim }}"
-      - "> Case Severity: {{ case_severity | default('4 (Low)') | trim }}"
-      # --- Optional Fields ---
-      - "> Cluster ID (Optional): {{ cluster_id | default('N/A') | trim }}"
-      - "----------------------------------------"
+      - "CASE PRE-VALIDATION"
+      - "account_name: {{ account_name | default('') | trim }}"
+      - "account_number_ref: {{ accountNumberRef | default('') | trim }}"
+      - "summary: {{ case_summary | default('') | trim }}"
+      - "description: {{ case_description | default('') | trim }}"
+      - "product: {{ case_product | default('') | trim }}"
+      - "version: {{ case_product_version | default('') | trim }}"
+      - "type: {{ case_type | default('') | trim }}"
+      - "severity: {{ case_severity | default('4 (Low)') | trim }}"
+      - "cluster_id: {{ cluster_id | default('N/A') | trim }}"
 
 - name: Pre-validation | Print on screen role pre-validation complete.
   ansible.builtin.debug:

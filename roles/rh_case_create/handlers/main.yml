@@ -2,27 +2,19 @@
 ---
 - name: display_case_update_summary_trigger
   ansible.builtin.debug:
-    msg: "{{ summary_data | to_nice_json }}"
-  vars:
-    summary_data:
-      SUMMARY_STATUS: "Red Hat Support Case {{ case_id }} Created Successfully."
-      
-      CASE_IDENTIFIERS:
-        Account_Name: "{{ account_name }}"
-        Account_Ref: "{{ accountNumberRef }}"
-        Case_ID: "{{ case_id }}"
-        Case_URL: "{{ rh_base_url }}/support/cases/#/case/{{ case_id }}"
-        Summary_Text: "{{ case_summary | trim }}"
-        
-      PROBLEM_DETAILS:
-        Product: "{{ case_product }}"
-        Version: "{{ case_product_version }}"
-        Severity: "{{ case_severity }}"
-        Issue_Type: "{{ case_type }}"
-        
-      DESCRIPTION: "{{ case_description | default(case_summary) }}"
-      ACTION_REQUIRED: "Review the case via the URL above for full file upload details."
-  
+    msg:
+      - "CASE CREATE SUMMARY"
+      - "status: Red Hat Support Case {{ case_creation_result.json.location[0].split('/')[-1] }} Created Successfully"
+      - "account_name: {{ account_name }}"
+      - "account_ref: {{ accountNumberRef }}"
+      - "case_id: {{ case_creation_result.json.location[0].split('/')[-1] }}"
+      - "case_url: {{ rh_base_url }}/support/cases/#/case/{{ case_creation_result.json.location[0].split('/')[-1] }}"
+      - "summary_text: {{ case_summary | trim }}"
+      - "product: {{ case_product }}"
+      - "version: {{ case_product_version }}"
+      - "severity: {{ case_severity }}"
+      - "issue_type: {{ case_type }}"
+      - "description: {{ case_description | default(case_summary) | trim }}"
+      - "action_required: Review the case via the URL above for full file upload details."
   listen: "display_case_update_summary_trigger"
 ...
-# --- End of roles/rh_case_create/handlers/main.yml ---

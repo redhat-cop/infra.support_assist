@@ -6,7 +6,6 @@
       - " {{ message_text }} "
       - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
   vars:
-    # COMPLETED DEBUG MESSAGE
     message_text: "Starting Case Update and Attachment Loop for Case ID {{ case_id }}"
   run_once: true
 

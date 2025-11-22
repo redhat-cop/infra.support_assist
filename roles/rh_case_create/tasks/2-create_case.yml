@@ -39,13 +39,37 @@
       }
   run_once: true
 
-- name: Create Case | Log constructed case body (for debugging)
+- name: "Create Case | Construct case creation payload (Minimal JSON Preview)"
   ansible.builtin.debug:
-    msg: "Constructed Case Body: {{ case_body | to_nice_json }}"
+    msg:
+      - "CASE CREATION PAYLOAD"
+      - "product: {{ case_product }}"
+      - "summary: {{ case_summary | trim }}"
+      - "description: {{ case_description | default(case_summary) | trim }}"
+      - "version: {{ case_product_version.split('.')[:2] | join('.') }}"
+      - "severity: {{ case_severity }}"
+      - "caseType: {{ case_type }}"
+      - "accountNumberRef: {{ accountNumberRef }}"
+      - "openshiftClusterID: {{ openshift_cluster_id_output }}"
+      - "openshiftClusterVersion: {{ openshift_cluster_version_output }}"
+  vars:
+    is_openshift_product: "{{ (case_product is defined) and ('Openshift' in case_product) }}"
+    cluster_id_provided: "{{ (cluster_id is defined) and (cluster_id | length > 0) }}"
+    include_openshift_fields: "{{ is_openshift_product or cluster_id_provided }}"
+    openshift_cluster_id_output: >-
+      {{ cluster_id
+        if include_openshift_fields
+        else 'Not Included'
+      }}
+    openshift_cluster_version_output: >-
+      {{ case_product_version
+        if include_openshift_fields
+        else 'Not Included'
+      }}
   run_once: true
 
 # https://access.redhat.com/management/api/case_management#/case/createCase
-- name: "Create Case | POST '/v1/cases' to create a new Red Hat Support Case - [{{ target_environment | default (target_environment_local) | upper }} "
+- name: "Create Case | POST '/v1/cases' to create a new RH Support Case - [{{ target_environment | default (target_environment_local) | upper }} "
   ansible.builtin.uri:
     url: "{{ rh_api_base_url | default(rh_base_url_local) }}/support/v1/cases"
     method: POST

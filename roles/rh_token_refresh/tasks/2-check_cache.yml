@@ -34,7 +34,6 @@
       - " {{ message_text }} "
       - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
   vars:
-    # COMPLETED DEBUG MESSAGE
     message_text: >-
       {% if token_is_valid | default(false) %}
       Valid cached token found and will be used for API requests.
