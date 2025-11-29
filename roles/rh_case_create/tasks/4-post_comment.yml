@@ -57,5 +57,5 @@
   ansible.builtin.debug:
     msg: "HANDLER: Triggering final update summary display at the end for case {{ case_creation_result.json.location[0].split('/')[-1] }}..."
   changed_when: true
-  notify: "display_case_update_summary_trigger"
+  notify: "DisplayCaseUpdateSummaryTrigger"
 ...

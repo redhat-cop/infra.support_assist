@@ -6,10 +6,10 @@
       - " {{ message_text }} "
       - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
   vars:
-    message_text: "Refreshing Red Hat Access Token via Offline Token - Environment: {{ target_environment | default (target_environment_local) | upper }}"
+    message_text: "Refreshing Red Hat Access Token via Offline Token - Environment: {{ target_environment | default(target_environment_local) | upper }}"
   run_once: true
 
-- name: "Refresh Token | Acquire New Red Hat SSO Access Token - {{ target_environment | default (target_environment_local) | upper }}"
+- name: "Refresh Token | Acquire New Red Hat SSO Access Token - {{ target_environment | default(target_environment_local) | upper }}"
   ansible.builtin.uri:
     url: "{{ rh_token_url | default(rh_token_refresh_api_token_url_local) }}"
     method: POST

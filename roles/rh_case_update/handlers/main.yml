@@ -15,5 +15,5 @@
       - "issue_type: {{ case_type }}"
       - "description: {{ case_description | default(case_summary) | trim }}"
       - "action_required: Review the case via the URL above for full file upload details."
-  listen: "display_case_update_summary_trigger"
+  listen: "DisplayCaseUpdateSummaryTrigger"
 ...
