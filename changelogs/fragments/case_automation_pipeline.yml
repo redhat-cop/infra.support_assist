@@ -16,7 +16,7 @@ bugfixes:
   - Corrected variable precedence issues that led to "undefined variable" errors in handlers when mixing role defaults and dynamic facts.
   - Resolved ambiguous role resolution by enforcing the FQCN where necessary (or clarifying search path).
 
-documentation:
+trivial:
   - Update main `README.md` to reflect all new roles, playbooks, and features.
   - Added centralized documentation file `CASE_OPTIONS.md` for valid API inputs.
   - Updated `ocp_must_gather` README with safety check details and disconnected usage instructions.
