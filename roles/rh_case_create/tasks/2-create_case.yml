@@ -21,7 +21,7 @@
           "version": (case_product_version.split('.')[:2] | join('.')),
           "severity": case_severity,
           "caseType": case_type,
-          "accountNumberRef": accountNumberRef
+          "accountNumberRef": account_number_ref
         }
         | combine(
             (
@@ -51,7 +51,7 @@
       - "version: {{ case_product_version.split('.')[:2] | join('.') }}"
       - "severity: {{ case_severity }}"
       - "caseType: {{ case_type }}"
-      - "accountNumberRef: {{ accountNumberRef }}"
+      - "accountNumberRef: {{ account_number_ref }}"
       - "openshiftClusterID: {{ openshift_cluster_id_output }}"
       - "openshiftClusterVersion: {{ openshift_cluster_version_output }}"
   vars:
