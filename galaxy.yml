@@ -4,8 +4,9 @@ name: support_assist
 version: 0.1.0-devel
 description: Ansible Collection that will gather various reports/outputs that are commonly asked for in Red Hat Support Cases
 readme: README.md
-author:
+authors:
   - Lenny Shirley @lennysh
+  - David Mateus @dfelipem
 repository: https://github.com/redhat-cop/infra.support_assist.git
 issues: https://github.com/redhat-cop/infra.support_assist.git/issues
 documentation: https://github.com/redhat-cop/infra.support_assist.git/docs

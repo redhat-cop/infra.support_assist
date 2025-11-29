@@ -5,10 +5,6 @@
   gather_facts: false # No need to gather facts on localhost
   any_errors_fatal: true # Fail the entire playbook on any error
 
-  vars_files:
-    # Load the uncommitted private configuration only used for development/testing
-    - ../.config/local_vars.yml
-
   vars:
     # Inject a unique timestamp guaranteed to be UTC
     run_timestamp: "{{ lookup('pipe', 'date -u +%Y%m%d%H%M%S') }}"

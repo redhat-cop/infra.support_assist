@@ -22,7 +22,7 @@ This role is designed to run on `localhost` (or wherever the `oc` CLI is install
 The following variables control the behavior of this role:
 
 * **`case_id`**:
-    * **(Required)** The Red Hat Support Case number (e.g., `00000000`).
+    * **(Optional)** The Red Hat Support Case number (e.g., `01234567`), This is only needed if you want to automatically upload the gathered archive to an existing case.
     * Type: `string`
 
 * **`ocp_must_gather_token`**:
