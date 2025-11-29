@@ -1,24 +1,38 @@
+# --- Start of changelogs/fragments/case_automation_pipeline.yml
 ---
+major_changes:
+  - Introduce new role `rh_case_create` for programmatic Red Hat Support Case creation, completing a major roadmap item.
+  - >-
+      Implement the **OCP Support Autopilot Pipeline** (`ocp-case-mustgather-pipeline.yml`)
+      for end-to-end automated diagnostic submission, handling token refresh, case creation,
+      collection, and upload.
+
 minor_changes:
-  - Add new role `rh_case_create` for programmatic Red Hat Support Case creation.
-  - Implement full end-to-end support pipeline flow in `ocp-case-mustgather-pipeline.yml`.
-  - Refactor `ocp_must_gather` role for highly reliable version extraction using semantic sorting (`sort -V`).
-  - Introduce `rh_case_create_only.yml` playbook as a new utility option.
+  - 'ocp_must_gather': Implemented **Disconnected/Air-Gapped** environment support via `ocp_disconnected_mode` and `ocp_disconnected_registry`.
+  - 'ocp_must_gather': Implemented **Acronym-based Component Selection** (e.g., AAP, ODF) for Must-Gather image lookup, simplifying user input.
+  - >-
+      'ocp_must_gather': Refactored version retrieval to use **semantic sorting (`sort -V`)**
+      and **tiered search logic** for complex operators (e.g., OSSM), ensuring high reliability
+      and performance gains.
+  - >-
+      'rh_case_create': Added logic for **Generalized Case Creation** payload construction to conditionally
+      include OpenShift-specific fields, allowing support for any Red Hat product.
+  - Introduced new utility playbook `rh_case_create_only.yml` for API-only case creation workflow.
 
 features:
-  - 'ocp_must_gather': Added support for **Disconnected/Air-Gapped** environments (`ocp_disconnected_mode`).
-  - 'ocp_must_gather': Implemented **Acronym-based Component Selection** (e.g., AAP, ODF) to replace long purpose strings.
-  - 'ocp_must_gather': Implemented **Disk Space** and **Cluster-Admin Privilege** safety assertions for pre-flight validation.
-  - 'rh_case_create': Added logic for **Generalized Case Creation** payload (conditionally includes OpenShift fields).
-  - 'rh_case_create': Implemented **Structured JSON Logging (to_nice_json)** in handlers for clean AAP output.
-  - 'rh_case_create': Introduced custom Jinja templates for initial case comment and final summary.
+  - 'ocp_must_gather': Added **Cluster-Admin Privilege** and **Disk Space Pre-check** safety assertions for pre-flight validation.
+  - >-
+      'rh_case_create': Implemented **Structured JSON Logging (`to_nice_json`)** in handlers for clean,
+      human-readable output in the AAP console, resolving previous display breaks.
+  - 'rh_case_create': Introduced custom Jinja templates for initial case comment (`support_case_create.j2`) and final summary display.
 
 bugfixes:
-  - Fix: Corrected variable precedence issues related to environment lookups in `rh_case_create`.
-  - Fix: Resolved ambiguous role resolution by enforcing the FQCN where necessary (or clarifying search path).
+  - Corrected variable precedence issues that led to "undefined variable" errors in handlers when mixing role defaults and dynamic facts.
+  - Resolved ambiguous role resolution by enforcing reliable search paths for internal role calls.
 
 documentation:
-  - Update main `README.md` to reflect all new roles, playbooks, and features.
-  - Added centralized documentation file `CASE_OPTIONS.md` for valid API inputs.
-  - Updated `ocp_must_gather` README with safety check details and disconnected usage instructions.
+  - Updated main `README.md` to reflect all new roles, playbooks, and features.
+  - Added centralized documentation file `CASE_OPTIONS.md` for valid API inputs (Product, Type, Severity).
+  - Updated `ocp_must_gather` README with detailed safety check and disconnected usage instructions.
 ...
+# --- End of changelogs/fragments/case_automation_pipeline.yml ---
