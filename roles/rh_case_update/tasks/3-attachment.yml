@@ -15,7 +15,7 @@
   ansible.builtin.set_fact:
     proxy_cmd: " --proxy {{ rh_http_proxy }} "
   when: rh_use_proxy | default(false)
-  
+
 - name: Attachment Upload | Define proxy command (default)
   ansible.builtin.set_fact:
     proxy_cmd: ""
@@ -29,7 +29,7 @@
   when: not rh_use_proxy | default(false)
 
 # --- Curl Execution Task ---
-- name: "Attachment Upload | Upload attachment to case {{ case_id ~ ' | ' ~ case_update.attachment | basename }}"
+- name: "Attachment Upload | Upload attachment to case {{ case_id ~ ' | ' ~ case_update.attachment | basename }}" # noqa command-instead-of-module
   ansible.builtin.shell: |
     curl -s -X POST \
       -w "\nHTTP_STATUS:%{http_code}" \
@@ -64,7 +64,11 @@
     success_msg: >-
       PASSED! Oh, Yes! => Attachment uploaded successfully to case {{ case_id }}! HTTP Status: {{ upload_status }}, Proceeding to next step...
     fail_msg: >-
-      FAILED! Oh, No! => Attachment upload failed! Curl RC: {{ __curl_rc }} | HTTP Status: {{ upload_status }} | Stderr: {{ __curl_stderr }} | Response Body: {{ upload_body_raw }}
+      FAILED! Oh, No! => Attachment upload failed!
+      Curl RC: {{ __curl_rc }} |
+      HTTP Status: {{ upload_status }} |
+      Stderr: {{ __curl_stderr }} |
+      Response Body: {{ upload_body_raw }}
 
 - name: Attachment Upload | Set final JSON response from successful upload
   ansible.builtin.set_fact:

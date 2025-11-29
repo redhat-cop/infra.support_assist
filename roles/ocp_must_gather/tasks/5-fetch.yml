@@ -15,7 +15,7 @@
     _must_gather_source_path: "{{ ocp_must_gather_dest_dir }}"
 
 - name: Fetch | Get current UTC timestamp
-  ansible.builtin.shell: date -u +%Y-%m-%d-%H%M%S
+  ansible.builtin.command: date -u +%Y-%m-%d-%H%M%S
   register: utc_timestamp_result
   changed_when: false
 
@@ -30,10 +30,10 @@
     prefix_result: >-
       {% set key = component_key | default('') | upper %}
       {% set acronym = {
-        'AAP': 'AAP', 'OSSM': 'OSSM', 'CNV': 'CNV', 'ODF': 'ODF', 
-        'GITOPS': 'GITOPS', 'LOGGING': 'LOG', 'RHOAI': 'RHOAI', 'RHACM': 'RHACM', 
-        'LVM': 'LVM', 'SVLS': 'SVLS', 'MTC': 'MTC', 'LSO': 'LSO', 
-        'PTP': 'PTP', 'SEC': 'SEC', 'NRO': 'NRO', 
+        'AAP': 'AAP', 'OSSM': 'OSSM', 'CNV': 'CNV', 'ODF': 'ODF',
+        'GITOPS': 'GITOPS', 'LOGGING': 'LOG', 'RHOAI': 'RHOAI', 'RHACM': 'RHACM',
+        'LVM': 'LVM', 'SVLS': 'SVLS', 'MTC': 'MTC', 'LSO': 'LSO',
+        'PTP': 'PTP', 'SEC': 'SEC', 'NRO': 'NRO',
         'COMP': 'COMP', 'OADP': 'OADP'
       } %}
       {% if component_key is defined and key | length > 0 %}
@@ -48,7 +48,11 @@
 
 - name: Fetch | Construct final archive name
   ansible.builtin.set_fact:
-    __must_gather_archive_name: "{{ ('must-gather-' ~ _time_prefix ~ _scope_prefix ~ cluster_name_cleaned ~ '_' ~ utc_timestamp_result.stdout ~ '.tar.gz') | trim }}"
+    __must_gather_archive_name: >-
+      {{
+        ('must-gather-' ~ _time_prefix ~ _scope_prefix ~ cluster_name_cleaned ~
+        '_' ~ utc_timestamp_result.stdout ~ '.tar.gz') | trim
+      }}
 
 - name: Fetch | Set fact for the found directory path
   ansible.builtin.set_fact:
@@ -88,8 +92,8 @@
           'hostname': cluster_name,
           'attachment': _ocp_must_gather_dest_dir ~ '/' ~ __must_gather_archive_name,
           'attachmentDescription': (
-            "OCP Data Collection: " ~ (ocp_must_gather_image | upper) ~ 
-            " | Cluster Name: " ~ cluster_name ~ 
+            "OCP Data Collection: " ~ (ocp_must_gather_image | upper) ~
+            " | Cluster Name: " ~ cluster_name ~
             " | Ver: " ~ (cluster_version_check.stdout | default('N/A')) ~
             " | Since: " ~ (ocp_must_gather_since | default('Full History')) ~
             " | DETAILS: See case comment for full report data."

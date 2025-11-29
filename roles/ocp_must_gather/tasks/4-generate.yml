@@ -61,7 +61,6 @@
     {{ ocp_must_gather_options | default('') }}
   register: must_gather_result
   changed_when: must_gather_result.rc == 0
-  failed_when: false  # Prevent failure here, allowing the subsequent assert task to handle the error message.
   async: 1800
   poll: 10
 
@@ -71,27 +70,31 @@
       - must_gather_result.rc == 0
     fail_msg: |
       FAILED! Oh. No! => The must-gather collection of cluster resources and logs command failed!
-      
       This failure often indicates one of the following issues:
-      
       1. **Cluster State/Permissions:** Missing 'cluster-admin' privileges or cluster is unhealthy.
       2. **Image/Registry Issue:** The custom image is inaccessible or incorrect.
-        > Image Used: {% if ocp_disconnected_mode | default(false) | bool and ocp_disconnected_registry | length > 0 %}{{ ocp_disconnected_registry | trim }}{% elif __constructed_image is defined and __constructed_image | length > 0 %}{{ __constructed_image | trim }}{% else %}Default Data Collection{% endif %}
-      
+        > Image Used: {%- if ocp_disconnected_mode | default(false) | bool and ocp_disconnected_registry | length > 0 %}
+        {{- ocp_disconnected_registry | trim }}
+        {%- elif __constructed_image is defined and __constructed_image | length > 0 %}
+        {{- __constructed_image | trim }}
+        {%- else %}Default Data Collection
+        {%- endif %}
       {# --- Disconnected Mode Check --- #}
       {% if ocp_disconnected_mode | default(false) | bool %}
-      3. **Disconnected Check:** You selected disconnected mode. Verify the registry address is correct and the image stream (must-gather) is mirrored/imported into {{ ocp_disconnected_registry }}.
+      3. **Disconnected Check:** You selected disconnected mode. Verify the registry address is correct
+          and the image stream (must-gather) is mirrored/imported into {{ ocp_disconnected_registry }}.
           > Registry Used: {{ ocp_disconnected_registry }}
       {% endif %}
-      
       --------------------------------------------------
       Execution Details:
       --------------------------------------------------
       > Return Code: {{ must_gather_result.rc }}
       > Stdout: {{ must_gather_result.stdout | default('N/A') }}
       > Stderr: {{ must_gather_result.stderr | default('N/A') }}
-      
-    success_msg: "PASSED! Oh, Yes! => The must-gather collection of cluster resources and logs completed successfully, using the specified image. Proceeding to archive the results..."
+    success_msg: >-
+      PASSED! Oh, Yes! => The must-gather collection of cluster resources and logs
+      completed successfully, using the specified image. Proceeding to archive the
+      results...
   when: must_gather_result is defined
 
 - name: Generate | Print on screen must-gather data collection completion status.

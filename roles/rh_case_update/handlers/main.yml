@@ -1,5 +1,5 @@
 ---
-- name: display_case_update_summary_trigger
+- name: DisplayCaseUpdateSummaryTrigger
   ansible.builtin.debug:
     msg:
       - "CASE UPDATE SUMMARY"

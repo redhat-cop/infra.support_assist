@@ -15,14 +15,14 @@
     that:
       - item.name is defined
       - item.name | length > 0
-    fail_msg: "FAILED! Oh, No! => The required variable '{{ item.name }}' is missing or empty. This variable is essential for the ocp_must_gather role. Please check the Job Template Survey."
+    fail_msg: >
+      FAILED! Oh, No! => The required variable '{{ item.name }}' is missing or empty.
+      This variable is essential for the ocp_must_gather role. Please check the Job Template Survey.
     success_msg: "PASSED! Oh, Yes! => Required variable '{{ item.name }}' is defined. Proceeding..."
   loop:
     - { name: ocp_must_gather_token }
     - { name: ocp_must_gather_server_url }
     - { name: case_id }
-  vars:
-    ansible_loop_var: item
 
 - name: Assert Vars | Set cluster_name from API URL
   ansible.builtin.set_fact:
@@ -33,8 +33,10 @@
     that:
       - cluster_name is defined
       - cluster_name | length > 0
-      - cluster_name != 'api' 
-    fail_msg: "FAILED! Oh, No! => Could not reliably extract the cluster name from the API URL ('{{ ocp_must_gather_server_url }}'). The URL format may be unexpected."
+      - cluster_name != 'api'
+    fail_msg: >
+      FAILED! Oh, No! => Could not reliably extract the cluster name from the API URL
+      ('{{ ocp_must_gather_server_url }}'). The URL format may be unexpected.
     success_msg: "PASSED! Oh, Yes! => Cluster name '{{ cluster_name }}' extracted successfully from API URL."
   when: ocp_must_gather_server_url is defined and ocp_must_gather_server_url | length > 0
 
@@ -48,7 +50,10 @@
   ansible.builtin.assert:
     that:
       - oc_check.rc == 0
-    fail_msg: "FAILED! Oh, No! => The 'oc' command was not found on the execution host ({{ inventory_hostname }}). Please ensure the OpenShift CLI is installed and in the system's PATH."
+    fail_msg: >
+      FAILED! Oh, No! => The 'oc' command was not found on the execution host
+      ({{ inventory_hostname }}). Please ensure the OpenShift CLI is installed
+      and in the system's PATH.
     success_msg: "PASSED! Oh, Yes! => The 'oc' command is found and ready on the execution host. Proceeding..."
   when: oc_check is defined
 
@@ -66,7 +71,10 @@
     that:
       # Check if the input is 'DEFAULT' OR if the acronym exists in the components list.
       - ocp_must_gather_image | upper == 'DEFAULT' or selected_component_config is defined
-    fail_msg: "FAILED! Oh, No! => The selected Must Gather Acronym ('{{ ocp_must_gather_image }}') is not a valid component option. Please select an option from the available acronyms (or 'DEFAULT')."
+    fail_msg: >
+      FAILED! Oh, No! => The selected Must Gather Acronym ('{{ ocp_must_gather_image }}')
+      is not a valid component option. Please select an option from the available acronyms
+      (or 'DEFAULT').
     success_msg: "PASSED! Oh, Yes! => Component mapping successful. Proceeding to version check..."
   # Only validate if the image variable was provided/is not empty
   when: ocp_must_gather_image is defined and ocp_must_gather_image | length > 0
@@ -81,4 +89,4 @@
     message_text: "Pre-Flight Checks and Dynamic Image Validation Complete - (Local Validation)"
   run_once: true
 ...
-# --- End of Main Task File: assert_vars.yml (Pre-Login Local Validation) ---
+# --- End of Main Task File: 1-assert_vars.yml (Pre-Login Local Validation) ---

@@ -12,7 +12,6 @@ argument_specs:
         type: str
         required: true
         version_added: 0.1.0-devel
-        
       # --- AUTHENTICATION AND CONNECTION ---
       ocp_must_gather_server_url:
         description: 'The URL of the OpenShift API server (e.g., https://api.my-cluster.com:6443).'
@@ -29,7 +28,6 @@ argument_specs:
         type: bool
         default: true
         version_added: 0.1.0-devel
-        
       # --- DISCONNECTED/AIR-GAPPED SETTINGS ---
       ocp_disconnected_mode:
         description: Set to true if running in a disconnected or air-gapped environment.
@@ -41,7 +39,6 @@ argument_specs:
         type: str
         default: ''
         version_added: 0.2.0-devel
-        
       # --- MUST-GATHER EXECUTION PARAMETERS ---
       ocp_must_gather_dest_dir:
         description: 'Temporary directory path on the execution host for the output archive.'
@@ -63,7 +60,6 @@ argument_specs:
         type: str
         default: ''
         version_added: 0.1.0-devel
-
       # --- OUTPUT FACT ---
       case_updates_needed:
         description: 'Output variable fact (list of dictionaries) detailing the generated archive and required comment for upload by rh_case_update.'

@@ -30,7 +30,7 @@
     return_content: true
     validate_certs: true
     use_proxy: "{{ rh_use_proxy | default(false) }}"
-  
+
   register: comment_api_result
   no_log: "{{ var_no_log | default('true') }}" # <--- To keep sensitive values out of Ansible output logs
 
@@ -43,9 +43,15 @@
     that:
       - comment_api_result.status == 200
     success_msg: >-
-      PASSED! Oh, Yes! => Comment added successfully to case {{ case_creation_result.json.location[0].split('/')[-1] }}! HTTP Status: {{ comment_api_result.status }}. Proceeding to next step...
+      PASSED! Oh, Yes! => Comment added successfully to case
+      {{ case_creation_result.json.location[0].split('/')[-1] }}!
+      HTTP Status: {{ comment_api_result.status }}.
+      Proceeding to next step...
     fail_msg: >-
-      FAILED! Oh, No! => Failed to add comment to case {{ case_creation_result.json.location[0].split('/')[-1] }}! HTTP Status: {{ comment_api_result.status }} | Response Body: {{ comment_api_result.content | default('N/A') }}
+      FAILED! Oh, No! => Failed to add comment to case
+      {{ case_creation_result.json.location[0].split('/')[-1] }}!
+      HTTP Status: {{ comment_api_result.status }} |
+      Response Body: {{ comment_api_result.content | default('N/A') }}
 
 - name: Comment | Notify success after comment addition
   ansible.builtin.debug:

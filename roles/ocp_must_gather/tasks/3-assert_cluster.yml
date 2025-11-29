@@ -17,6 +17,7 @@
 
 - name: Assert Cluster | Check if service account has cluster-admin privileges
   ansible.builtin.shell: |
+    set -o pipefail
     oc get clusterrolebindings -o jsonpath='{.items[*].subjects[*].name}' \
       | tr ' ' '\n' \
       | grep -w {{ sa_name }}
@@ -31,8 +32,8 @@
       - cluster_admin_check.stdout | trim == sa_name
     fail_msg: >-
       FAILED! Oh, No! => The authenticated user/service account '{{ sa_name }}' does NOT have 'cluster-admin' privileges.
-      This permission is required to execute 'oc adm must-gather'. 
-      Please ensure the correct token or rolebinding is configured when you get a chance and try again. 
+      This permission is required to execute 'oc adm must-gather'.
+      Please ensure the correct token or rolebinding is configured when you get a chance and try again.
       For more information, check the Resolution Link (KCS) - https://access.redhat.com/solutions/6375111
     success_msg: >-
       PASSED! Oh, Yes! => User/Service account '{{ sa_name }}' has 'cluster-admin' privileges, so we are good to go. Proceeding with must-gather execution.
@@ -66,8 +67,8 @@
     case_product_version: "{{ cluster_version_check.stdout | default('N/A') }}"
   when: cluster_version_check is defined
 
-- name: Assert Cluster | Execute version command for selected component to retrieve operator version ( SHELL )
-  ansible.builtin.shell: "{{ selected_component_config.version_command }}"
+- name: Assert Cluster | Execute version command for selected component to retrieve operator version
+  ansible.builtin.command: "{{ selected_component_config.version_command }}"
   register: component_version_result
   changed_when: false
   failed_when: false
@@ -78,9 +79,9 @@
     that:
       - component_version_result.rc is defined
       - component_version_result.rc == 0
-    fail_msg: 
+    fail_msg:
       "FAILED! Oh, No! => The version command for component {{ component_key }}. Please check if the Operator is installed and the authentication is correct."
-    success_msg: 
+    success_msg:
       "PASSED! Oh, Yes! => Version command for component '{{ component_key }}' executed successfully. Proceeding to extract version..."
   when: selected_component_config is defined
 
@@ -89,16 +90,22 @@
     raw_version: "{{ component_version_result.stdout | trim }}"
   when:
     - component_version_result is defined
-    - component_version_result.rc is defined 
-    - component_version_result.rc == 0       
+    - component_version_result.rc is defined
+    - component_version_result.rc == 0
 
 - name: Assert Cluster | Assert component operator version was successfully retrieved
   ansible.builtin.assert:
     that:
       - raw_version is defined
       - raw_version | length > 0
-    fail_msg: "FAILED! Oh, No! => Component '{{ component_key }}' was selected but the operator version could not be retrieved (RC: {{ component_version_result.rc | default('N/A') }}). This means the Operator is likely NOT installed, or the authentication is incorrect. Check: oc get csv -n <namespace>."
-    success_msg: "PASSED! Oh, Yes! => Component '{{ component_key }}' version ({{ raw_version }}) retrieved successfully. Proceeding to construct the image tag..."
+    fail_msg: >-
+      FAILED! Oh, No! => Component '{{ component_key }}' was selected but the operator version
+      could not be retrieved (RC: {{ component_version_result.rc | default('N/A') }}).
+      This means the Operator is likely NOT installed, or the authentication is incorrect.
+      Check: oc get csv -n <namespace>.
+    success_msg: >-
+      PASSED! Oh, Yes! => Component '{{ component_key }}' version ({{ raw_version }})
+      retrieved successfully. Proceeding to construct the image tag...
   when: raw_version is defined
 
 - name: Assert Cluster | Construct and set the final versioned image string
@@ -108,16 +115,16 @@
       {% set raw_version = raw_version | default('') %}
       {% set config = selected_component_config %}
       {% set logic = config.tag_logic | trim %}
-      
+
       {# 1. Extract Major.Minor (e.g., '2.6' from '2.6.0+...') #}
       {% set version_parts = raw_version | split('.') %}
       {% set major_minor_tag = version_parts[0] ~ '.' ~ version_parts[1] | default('') %}
-      
+
       {# 2. Convert Major.Minor (e.g., '2.6') to number string ('26') for AAP path #}
       {% set major_minor_num_str = major_minor_tag | replace('.', '') %}
 
       {% set final_url = "" %}
-      
+
       {% if logic == 'raw' %}
         {% set final_url = raw_version %}
       {% elif logic == 'major_minor' %}
@@ -125,26 +132,26 @@
       {% elif logic == 'aap_dynamic_rhel' %}
         {% set major_num_int = major_minor_tag | split('.') | first | int %}
         {% set rhel_suffix = "/aap-must-gather-rhel8" %}
-        
+
         {% if major_minor_num_str | int >= 26 %}
           {% set rhel_suffix = "/aap-must-gather-rhel9" %}
         {% endif %}
-        
+
         {% set final_url = config.image_base_prefix ~ major_minor_num_str ~ rhel_suffix %}
-      
+
       {% elif logic == 'major_minor_rhel' %}
         {% set is_v3_or_higher = raw_version | split('.') | first | int >= 3 %}
         {% set rhel_tag = 'rhel9' if is_v3_or_higher else 'rhel8' %}
         {% set final_url = config.image_base ~ rhel_tag ~ ':' ~ major_minor_tag %}
-      
+
       {% elif logic == 'version_rhel' %}
         {% set is_v3_or_higher = raw_version | split('.') | first | int >= 3 %}
         {% set rhel_tag = 'rhel9' if is_v3_or_higher else 'rhel8' %}
         {% set final_url = config.image_base ~ rhel_tag ~ ':' ~ raw_version %}
-      
+
       {% elif logic == 'version' %}
         {% set final_url = config.image_base ~ raw_version %}
-        
+
       {% else %}
         {% set final_url = 'Error: Unknown tag_logic' %}
       {% endif %}
@@ -156,8 +163,14 @@
     that:
       - ocp_must_gather_image_custom is defined
       - ocp_must_gather_image_custom | length > 0
-    fail_msg: "FAILED! Oh, No! => The final Must Gather Image could not be constructed for component {{ component_key }}. Please check the version retrieval and tag logic."
-    success_msg: "PASSED! Oh, Yes! => Final Must Gather Image for component {{ component_key }} | constructed successfully: {{ ocp_must_gather_image_custom | trim }}. Proceeding to next steps..."
+    fail_msg: >-
+      FAILED! Oh, No! => The final Must Gather Image could not be constructed
+      for component {{ component_key }}. Please check the version retrieval and
+      tag logic.
+    success_msg: >-
+      PASSED! Oh, Yes! => Final Must Gather Image for component
+      {{ component_key }} | constructed successfully:
+      {{ ocp_must_gather_image_custom | trim }}. Proceeding to next steps...
   when: selected_component_config is defined
 
 - name: Assert Cluster | Set fact variables for Must-Gather image construction
@@ -190,7 +203,9 @@
     mode: '0755'
 
 - name: Assert Cluster | Get Filesystem Stats using 'df' command
-  ansible.builtin.shell: "df -kP {{ ocp_must_gather_dest_dir }} | awk 'NR==2 {print $4}'"
+  ansible.builtin.shell: |
+    set -o pipefail
+    df -kP {{ ocp_must_gather_dest_dir }} | awk 'NR==2 {print $4}'
   register: df_result
   changed_when: false
   run_once: true
@@ -205,11 +220,11 @@
   ansible.builtin.assert:
     that:
       # Check available space (bytes) > 5 billion bytes (5 GB)
-      - must_gather_space_available | int > 5000000000 
+      - must_gather_space_available | int > 5000000000
     fail_msg: >
-      [FATAL] Insufficient local disk space on the Execution Host (EE). 
-      Target directory '{{ ocp_must_gather_dest_dir }}' has only 
-      {{ (must_gather_space_available | int / (1024*1024*1024)) | round(2) }} GB available. 
+      [FATAL] Insufficient local disk space on the Execution Host (EE).
+      Target directory '{{ ocp_must_gather_dest_dir }}' has only
+      {{ (must_gather_space_available | int / (1024 * 1024 * 1024)) | round(2) }} GB available.
       Please ensure at least 5 GB is free.
     success_msg: "PASSED! Oh, Yes! => Disk space validation succeeded. At least 5 GB is available for must-gather output. Proceeding..."
   when: must_gather_space_available is defined
@@ -220,7 +235,7 @@
     msg:
       inventory_hostname: "{{ inventory_hostname }}"
       must_gather_dest_dir: "{{ ocp_must_gather_dest_dir }}"
-      available_gb: "{{ (must_gather_space_available | int / (1024*1024*1024)) | round(2) }}"
+      available_gb: "{{ (must_gather_space_available | int / (1024 * 1024 * 1024)) | round(2) }}"
   when: must_gather_space_available is defined
   run_once: true
 

@@ -20,4 +20,14 @@
     - case_update.comment is defined
     - case_update.comment | length > 0
   ansible.builtin.include_tasks: 4-comment.yml
+
+- name: Case Updates Loop | Print on screen role case updates loop complete.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Completed Case Updates Loop for Case ID {{ case_id }}"
+  run_once: true
 ...

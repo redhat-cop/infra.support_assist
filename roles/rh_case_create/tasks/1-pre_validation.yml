@@ -22,9 +22,9 @@
       Please provide a valid offline token via extra-vars or survey, and try again.
 
 # --- Begin Account Info Retrieval ---
-- name: "Pre-validation | GET '/v1/accounts/current' to retrieve Account infos from env - [{{ target_environment | default (target_environment_local) | upper }} "
+- name: "Pre-validation | GET '/v1/accounts/current' to retrieve Account infos env - [{{ target_environment | default(target_environment_local) | upper }} "
   ansible.builtin.uri:
-    url: "{{ rh_api_base_url | default (rh_base_url_local) }}/support/v1/accounts/current"
+    url: "{{ rh_api_base_url | default(rh_base_url_local) }}/support/v1/accounts/current"
     method: GET
     headers:
       Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
@@ -35,8 +35,8 @@
     validate_certs: true
     use_proxy: "{{ rh_use_proxy | default(false) }}"
   register: account_info_result
-  no_log: "{{ var_no_log | default('true') }}" 
-  
+  no_log: "{{ var_no_log | default('true') }}"
+
   environment:
     https_proxy: "{{ rh_http_proxy }}"
     http_proxy: "{{ rh_http_proxy }}"
@@ -44,7 +44,7 @@
 - name: "Pre-validation | Set facts for Account Name and Account Number Reference"
   ansible.builtin.set_fact:
     account_name: "{{ account_info_result.json.name | default('N/A') }}"
-    accountNumberRef: "{{ account_info_result.json.accountNumber | default('N/A') }}"
+    account_number_ref: "{{ account_info_result.json.accountNumber | default('N/A') }}"
   run_once: true
 # --- End Account Info Retrieval ---
 
@@ -64,8 +64,6 @@
     - { key: case_product_version }
     - { key: case_type }
     - { key: case_severity }
-  vars:
-    ansible_loop_var: item
 
 - name: "Pre-validation | Mandatory Case Fields (Minimal JSON)"
   run_once: true
@@ -73,7 +71,7 @@
     msg:
       - "CASE PRE-VALIDATION"
       - "account_name: {{ account_name | default('') | trim }}"
-      - "account_number_ref: {{ accountNumberRef | default('') | trim }}"
+      - "account_number_ref: {{ account_number_ref | default('') | trim }}"
       - "summary: {{ case_summary | default('') | trim }}"
       - "description: {{ case_description | default('') | trim }}"
       - "product: {{ case_product | default('') | trim }}"
