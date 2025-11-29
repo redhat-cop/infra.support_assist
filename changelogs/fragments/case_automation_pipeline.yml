@@ -4,17 +4,17 @@ major_changes:
   - Implement the OCP Support Autopilot Pipeline for end-to-end automated diagnostic submission, handling token refresh, case creation, collection, and upload.
 
 minor_changes:
-  - 'ocp_must_gather': Implemented **Disconnected/Air-Gapped** environment support via `ocp_disconnected_mode` and `ocp_disconnected_registry`.
-  - 'ocp_must_gather': Implemented **Acronym-based Component Selection** (e.g., AAP, ODF) for Must-Gather image lookup, simplifying user input.
-  - 'ocp_must_gather': Implemented **Disk Space** and **Cluster-Admin Privilege** safety assertions for pre-flight validation.
-  - 'rh_case_create': Added logic for **Generalized Case Creation** payload (conditionally includes OpenShift fields).
-  - 'rh_case_create': Implemented **Structured JSON Logging (`to_nice_json`)** in handlers for clean AAP output.
-  - 'rh_case_create': Introduced custom Jinja templates for initial case comment and final summary.
-  - 'rh_token_refresh': Refactored for highly reliable token retrieval using semantic sorting.
+  - "'ocp_must_gather': Implemented **Disconnected/Air-Gapped** environment support via `ocp_disconnected_mode` and `ocp_disconnected_registry`."
+  - "'ocp_must_gather': Implemented **Acronym-based Component Selection** (e.g., AAP, ODF) for Must-Gather image lookup, simplifying user input."
+  - "'ocp_must_gather': Implemented **Disk Space** and **Cluster-Admin Privilege** safety assertions for pre-flight validation."
+  - "'rh_case_create': Added logic for **Generalized Case Creation** payload (conditionally includes OpenShift fields)."
+  - "'rh_case_create': Implemented **Structured JSON Logging (`to_nice_json`)** in handlers for clean AAP output."
+  - "'rh_case_create': Introduced custom Jinja templates for initial case comment and final summary."
+  - "'rh_token_refresh': Refactored for highly reliable token retrieval using semantic sorting."
 
 bugfixes:
-  - Corrected variable precedence issues that led to "undefined variable" errors in handlers when mixing role defaults and dynamic facts.
-  - Resolved ambiguous role resolution by enforcing the FQCN where necessary (or clarifying search path).
+  - "Corrected variable precedence issues that led to 'undefined variable' errors in handlers when mixing role defaults and dynamic facts."
+  - "Resolved ambiguous role resolution by enforcing the FQCN where necessary (or clarifying search path)."
 
 trivial:
   - Update main `README.md` to reflect all new roles, playbooks, and features.
