@@ -1,0 +1,38 @@
+---
+- name: "{{ __task_name }}"
+  vars:
+    __task_name: "Query {{ component_name }} endpoint: {{ endpoint_path }}"
+  ansible.builtin.uri:
+    url: "{{ _full_url }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ aap_token }}"
+      Accept: "application/json"
+    return_content: true
+    validate_certs: "{{ aap_validate_certs }}"
+    status_code: 200 # Expect success
+    # Increase timeout if needed for slow endpoints
+    # timeout: 60
+  register: api_result
+  ignore_errors: true # Continue if one endpoint fails
+
+- name: "{{ __task_name }}"
+  vars:
+    __task_name: "Save output for {{ endpoint_path }} if successful"
+  when: api_result.status == 200 and api_result.content is defined
+  ansible.builtin.copy:
+    content: "{{ api_result.content }}"
+    dest: "{{ _output_file_path }}"
+    mode: '0644'
+  delegate_to: localhost # Save on control node
+
+- name: "{{ __task_name }}"
+  vars:
+    __task_name: "Log warning if {{ endpoint_path }} query failed"
+  when: api_result.status != 200
+  ansible.builtin.debug:
+    msg: >-
+      Warning: Failed to query {{ _full_url }}.
+      Status: {{ api_result.status | default('N/A') }}.
+      Error: {{ api_result.msg | default(api_result.body | default('No details')) }}
+...

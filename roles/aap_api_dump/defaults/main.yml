@@ -1,0 +1,24 @@
+---
+# Default variables for the aap_api_dump role
+
+# API Token (Required - must be provided via extra-vars or ENV)
+aap_token: "{{ api_token | default(lookup('env', 'aap_token')) | default('') }}"
+
+# Base URLs for components (Required if component is selected - must be provided via extra-vars or ENV)
+aap_gateway_url: "{{ gateway_url | default(lookup('env', 'AAP_GATEWAY_URL')) | default('') }}"
+aap_controller_url: "{{ controller_url | default(lookup('env', 'AAP_CONTROLLER_URL')) | default('') }}"
+aap_hub_url: "{{ hub_url | default(lookup('env', 'AAP_HUB_URL')) | default('') }}"
+aap_eda_url: "{{ eda_url | default(lookup('env', 'AAP_EDA_URL')) | default('') }}"
+
+# List of components to query by default
+aap_api_dump_components:
+  - controller
+  - hub
+  # - eda # Add 'eda' here or via extra-vars to query it
+
+# Destination directory on the control node for saved API outputs
+aap_api_dump_dest: "/tmp/aap_api_dumps"
+
+# Validate SSL/TLS certificates
+aap_validate_certs: true
+...

@@ -1,0 +1,21 @@
+---
+- name: "Ensure destination directory exists for {{ component_name }}"
+  ansible.builtin.file:
+    path: "{{ _component_dest_dir }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost # Files are saved on the control node
+
+- name: "{{ __task_name }}"
+  vars:
+    __task_name: "Loop through {{ component_name }} API endpoints"
+    _full_url: "{{ _base_url }}{{ endpoint_path }}"
+    # Create a safe filename from the endpoint path
+    _safe_filename: "{{ endpoint_path | urlencode }}.json"
+    _output_file_path: "{{ _component_dest_dir }}/{{ _safe_filename }}"
+  loop: "{{ _endpoints }}"
+  loop_control:
+    loop_var: endpoint_path
+    label: "{{ _base_url }}{{ endpoint_path }}"
+  ansible.builtin.include_tasks: gather_apis_endpoint_loop.yml
+...

@@ -1,0 +1,24 @@
+---
+- name: Ansible Automation Platform API Dump
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    aap_validate_certs: false
+  tasks:
+    - name: Auth Block
+      block:
+        - name: Call aap_api_token role | Get Token
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_token
+
+        - name: Call aap_api_dump role
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_dump
+
+      always:
+        - name: Call aap_api_token role | Clear Token (if needed)
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_token
+            tasks_from: clear_token.yml
+...

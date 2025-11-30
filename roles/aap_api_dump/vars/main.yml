@@ -1,0 +1,13 @@
+---
+# Defines the API endpoints to query for each component type
+
+aap_api_endpoints:
+  controller:
+    - "/api/v2/ping/"
+    - "/api/v2/instances/"
+    - "/api/v2/settings/all/"
+  hub:
+    - "/pulp/api/v3/status/"
+    - "/pulp/api/v3/tasks/"
+  eda: []
+...

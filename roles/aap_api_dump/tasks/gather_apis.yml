@@ -1,0 +1,17 @@
+---
+# Tasks to gather data from selected AAP component APIs
+
+- name: Loop through selected components
+  loop: "{{ aap_api_dump_components }}"
+  loop_control:
+    loop_var: component_name
+    label: "Querying {{ component_name }} endpoints"
+  vars:
+    # Determine the base URL for the current component
+    _base_url: "{{ lookup('vars', 'aap_' + component_name + '_url') }}"
+    # Define the list of endpoints for the current component
+    _endpoints: "{{ aap_api_endpoints[component_name] | default([]) }}"
+    # Define the destination directory for this host and component
+    _component_dest_dir: "{{ aap_api_dump_dest }}/{{ inventory_hostname }}/{{ component_name }}"
+  ansible.builtin.include_tasks: gather_apis_component_loop.yml
+...

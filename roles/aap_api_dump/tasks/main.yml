@@ -1,0 +1,9 @@
+---
+# Main task file for aap_api_dump role
+
+- name: Perform Input Validation
+  ansible.builtin.include_tasks: pre-val.yml
+
+- name: Gather API Data
+  ansible.builtin.include_tasks: gather_apis.yml
+...
