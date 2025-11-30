@@ -280,6 +280,12 @@ We welcome community contributions to this collection. If you find problems, ple
 
 More information about contributing can be found in our [Contribution Guidelines.](https://github.com/redhat-cop/infra.support_assist/blob/devel/.github/CONTRIBUTING.md)
 
+## Contributors
+
+A big thank you to all the contributors who have helped improve this project! You can see a full list of everyone who has contributed on the [contributors page](https://github.com/redhat-cop/infra.support_assist/graphs/contributors).
+
+<img src="https://github.com/lennysh.png" width="60px;"/><img src="https://github.com/dfmateus.png" width="60px;"/>
+
 ## Code of Conduct
 
 This collection follows the Ansible project's [Code of Conduct](https://docs.ansible.com/ansible/latest/community/code_of_conduct.html). Please read and familiarize yourself with this document.
