@@ -1,11 +1,31 @@
 ---
-- name: Pre-Validation
-  ansible.builtin.include_tasks: pre-val.yml
+- name: Main | Print on screen role execution status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Red Hat Support Case Update Process Role Execution"
+  run_once: true
 
-- name: Case Updates Loop
+- name: Main | Include Pre-Validation
+  ansible.builtin.include_tasks: 1-pre_validation.yml
+
+- name: Main | Case Updates Loop
   loop: "{{ case_updates_needed }}"
   loop_control:
     label: "Updating case with update"
     loop_var: case_update
-  ansible.builtin.include_tasks: case_updates_loop.yml
+  ansible.builtin.include_tasks: 2-case_updates_loop.yml
+
+- name: Main | Print on screen role completion status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Completed Red Hat Support Case Update Process Role Execution"
+  run_once: true
 ...

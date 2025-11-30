@@ -1,0 +1,61 @@
+---
+- name: Comment | Notify start of comment update for case {{ case_creation_result.json.location[0].split('/')[-1] }}
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Comment Update for Case ID {{ case_creation_result.json.location[0].split('/')[-1] }}"
+  run_once: true
+
+- name: Comment | Render support case comment from Jinja template
+  ansible.builtin.set_fact:
+    case_comment: "{{ lookup('template', 'support_case_create.j2') }}"
+
+- name: "Comment | POST comment to case {{ case_creation_result.json.location[0].split('/')[-1] }}"
+  ansible.builtin.uri:
+    url: "{{ rh_api_base_url | default(rh_api_base_url_local) }}/support/v1/cases/{{ case_creation_result.json.location[0].split('/')[-1] }}/comments"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Accept: "application/json"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      commentBody: "{{ case_update.comment | default(case_comment) }}"
+      contentType: "{{ case_update.commentType | default('markdown') }}"
+    status_code:
+      - 200
+    return_content: true
+    validate_certs: true
+    use_proxy: "{{ rh_use_proxy | default(false) }}"
+
+  register: comment_api_result
+  no_log: "{{ var_no_log | default('true') }}" # <--- To keep sensitive values out of Ansible output logs
+
+  environment:
+    https_proxy: "{{ rh_http_proxy }}"
+    http_proxy: "{{ rh_http_proxy }}"
+
+- name: Comment | Assert comment creation succeeded (HTTP 200)
+  ansible.builtin.assert:
+    that:
+      - comment_api_result.status == 200
+    success_msg: >-
+      PASSED! Oh, Yes! => Comment added successfully to case
+      {{ case_creation_result.json.location[0].split('/')[-1] }}!
+      HTTP Status: {{ comment_api_result.status }}.
+      Proceeding to next step...
+    fail_msg: >-
+      FAILED! Oh, No! => Failed to add comment to case
+      {{ case_creation_result.json.location[0].split('/')[-1] }}!
+      HTTP Status: {{ comment_api_result.status }} |
+      Response Body: {{ comment_api_result.content | default('N/A') }}
+
+- name: Comment | Notify success after comment addition
+  ansible.builtin.debug:
+    msg: "HANDLER: Triggering final update summary display at the end for case {{ case_creation_result.json.location[0].split('/')[-1] }}..."
+  changed_when: true
+  notify: "DisplayCaseUpdateSummaryTrigger"
+...

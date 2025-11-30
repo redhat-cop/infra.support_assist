@@ -1,0 +1,51 @@
+# --- OCP Login Task File (Authentication)---
+---
+- name: Login | Print on screen login initiation status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Initiating OpenShift Cluster Authentication Process"
+  run_once: true
+
+- name: Login | Logging log into an OCP cluster using the 'oc login' command
+  ansible.builtin.command: >
+    oc login
+    --token={{ ocp_must_gather_token }}
+    --server={{ ocp_must_gather_server_url }}
+    {% if not ocp_must_gather_validate_ssl | bool %} --insecure-skip-tls-verify {% endif %}
+  register: oc_login_result
+  changed_when: oc_login_result.rc == 0
+  failed_when: false
+
+- name: Login | Verify 'oc' authentication
+  ansible.builtin.command: oc whoami
+  register: oc_whoami
+  changed_when: false
+  failed_when: false
+
+- name: Login | Assert successful authentication to OpenShift cluster
+  ansible.builtin.assert:
+    that:
+      - oc_login_result.rc == 0
+      - oc_whoami.rc == 0
+    fail_msg: |
+      FAILED! Oh. No! => Failed to verify OpenShift authentication using 'oc login' or 'oc whoami'.
+      This is often caused by an expired token or incorrect API URL/validation setting.
+      Login Error (if any): {{ oc_login_result.stderr | default(oc_login_result.stdout | default('No login output')) }}
+      Whoami Error (if any): {{ oc_whoami.stderr | default(oc_whoami.stdout | default('No whoami output')) }}
+    success_msg: "PASSED! Oh, Yes! => Authentication successful. Logged in as {{ oc_whoami.stdout | default('User') }}."
+  when: oc_login_result is defined and oc_whoami is defined
+
+- name: Login | Print on screen authentication complete
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "OpenShift Cluster Authentication Completed Successfully"
+  run_once: true
+...

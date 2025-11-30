@@ -1,0 +1,55 @@
+---
+argument_specs:
+  main:
+    short_description: Auto-generated specs for rh_case_create role - main entry point
+    description:
+      - Validates and creates a new Red Hat Support Case via API.
+    author:
+      - Diego Felipe Mateus
+    options:
+      case_summary:
+        description: 'Summary of the Red Hat Support Case to be created.'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      case_product:
+        description: 'Product associated with the Red Hat Support Case.'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      case_description:
+        description: 'Detailed description of the Red Hat Support Case.'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      case_product_version:
+        description: 'Version of the product associated with the Red Hat Support Case.'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      case_type:
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      case_severity:
+        description: 'Severity level of the Red Hat Support Case.'
+        type: str
+        required: true
+        version_added: 0.1.0-devel
+      # --- VARIABLES PASSED AS FACTS/HIGH-LEVEL VARS (Keep optional or define defaults) ---
+      rh_token_refresh_api_access_token:
+        description: 'Red Hat Refresh API Access Token used for authentication.'
+        type: str
+        required: false # It's a fact, so it shouldn't be required here
+        version_added: 0.1.0-devel
+      accountNumberRef:
+        description: 'Account Number Reference associated with the Red Hat Support Case.'
+        type: str
+        required: false # It's a fact
+        version_added: 0.1.0-devel
+      cluster_id:
+        description: 'Cluster ID associated with the Red Hat Support Case.'
+        type: str
+        required: false # It's an optional input
+        version_added: 0.1.0-devel
+...

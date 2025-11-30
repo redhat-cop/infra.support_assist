@@ -1,0 +1,57 @@
+---
+- name: "Red Hat Support Case Creation - API Only Pipeline"
+  hosts: localhost # Run on localhost
+  connection: local # Run all tasks locally
+  gather_facts: false # No need to gather facts on localhost
+  any_errors_fatal: true # Fail the entire playbook on any error
+
+  # vars:
+    # Inject a unique timestamp guaranteed to be UTC
+    # run_timestamp: "{{ lookup('pipe', 'date -u +%Y%m%d%H%M%S') }}"
+    # ===============================================================================
+    # PRODUCT and TIMESTAMP CONSTANT
+    # These variables MUST be defined via Survey/Extra-Vars (or have a default if allowed).
+    # ===============================================================================
+    # REQUIRED USER INPUTS (Must be provided via Survey/Extra-Vars):
+    # This must be the normalized Major.Minor version (e.g., '4.16', '8.9').
+    # case_product_version: "9.6" # Placeholder value for local testing
+    # case_product: "Red Hat Enterprise Linux" # Placeholder value for local testing
+    # CRITICAL: This offline token is required for API access.
+    # offline_token: "" # User's Red Hat Offline Token (from https://access.redhat.com/management/api
+    # CASE CREATION MANDATORY FIELDS (Must be provided via survey/extra-vars)
+    # case_summary: "Automated Test Case Creation - API Only Pipeline [TEST-{{ run_timestamp }}-UTC]" # Summary of the case
+    # case_description: "Automated case created via Ansible for testing purposes. Unique Run ID: {{ run_timestamp }} - UTC" # Description of the case
+    # case_type: "Configuration Issue" # Check all valid options in rh_case_create/docs/CASE_TYPE_OPTIONS.md
+    # case_severity: "3 (Normal)" # Check all valid options in rh_case_create/docs/CASE_SEVERITY_OPTIONS.md
+
+  tasks:
+    - name: "Block - Case Creation Pipeline (API Only)"
+      block:
+
+        # --- STEP 1: AUTHENTICATE TO RED HAT API ---
+        - name: "Block - Refresh Red Hat API Token"
+          block:
+            - name: "RUN: Red Hat SSO Access Token Manager Execution Summary"
+              ansible.builtin.include_role:
+                name: rh_token_refresh
+          rescue:
+            - name: "Rescue | Token Refresh failed"
+              ansible.builtin.fail:
+                msg: "[ERROR] Oh, No! => Refresh Red Hat API token failed. Stopping pipeline immediately."
+
+        # --- STEP 2: CREATE CASE ---
+        - name: "Block - Create Red Hat Support Case"
+          block:
+            - name: Call rh_case_create role (Creates case and sets new_case_id)
+              ansible.builtin.include_role:
+                name: rh_case_create
+              vars:
+                # Pass empty strings for variables the role incorrectly requires at top-level
+                attachment: ""
+                comment: ""
+                upload_body_raw: ""
+          rescue:
+            - name: "Rescue | Case Creation failed"
+              ansible.builtin.fail:
+                msg: "FAILED: Case creation failed; stopping pipeline immediately. Check API response for invalid subscription or required fields."
+...

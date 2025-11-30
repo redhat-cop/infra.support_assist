@@ -1,0 +1,106 @@
+# --- Create Red Hat Support Case Role Main Task File ---
+---
+- name: "Create Case | Print on screen role execution status."
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Red Hat Support Case Creation Task Execution Process"
+  run_once: true
+
+- name: "Create Case | Construct case creation payload"
+  ansible.builtin.set_fact:
+    case_body: >-
+      {{
+        {
+          "product": case_product,
+          "summary": case_summary | trim,
+          "description": (case_description | default(case_summary)),
+          "version": (case_product_version.split('.')[:2] | join('.')),
+          "severity": case_severity,
+          "caseType": case_type,
+          "accountNumberRef": account_number_ref
+        }
+        | combine(
+            (
+              (
+                (case_product is defined and 'Openshift' in case_product) or
+                (cluster_id is defined and (cluster_id | length > 0))
+              )
+              | ternary(
+                  {
+                    "openshiftClusterID": (cluster_id | default('Not Applicable')),
+                    "openshiftClusterVersion": (case_product_version | default('Not Applicable'))
+                  },
+                  {}
+                )
+            )
+          )
+      }}
+  run_once: true
+
+- name: "Create Case | Construct case creation payload (Minimal JSON Preview)"
+  ansible.builtin.debug:
+    msg:
+      - "CASE CREATION PAYLOAD"
+      - "product: {{ case_product }}"
+      - "summary: {{ case_summary | trim }}"
+      - "description: {{ case_description | default(case_summary) | trim }}"
+      - "version: {{ case_product_version.split('.')[:2] | join('.') }}"
+      - "severity: {{ case_severity }}"
+      - "caseType: {{ case_type }}"
+      - "accountNumberRef: {{ account_number_ref }}"
+      - "openshiftClusterID: {{ openshift_cluster_id_output }}"
+      - "openshiftClusterVersion: {{ openshift_cluster_version_output }}"
+  vars:
+    is_openshift_product: "{{ (case_product is defined) and ('Openshift' in case_product) }}"
+    cluster_id_provided: "{{ (cluster_id is defined) and (cluster_id | length > 0) }}"
+    include_openshift_fields: "{{ is_openshift_product or cluster_id_provided }}"
+    openshift_cluster_id_output: >-
+      {{ cluster_id
+        if include_openshift_fields
+        else 'Not Included'
+      }}
+    openshift_cluster_version_output: >-
+      {{ case_product_version
+        if include_openshift_fields
+        else 'Not Included'
+      }}
+  run_once: true
+
+# https://access.redhat.com/management/api/case_management#/case/createCase
+- name: "Create Case | POST '/v1/cases' to create a new RH Support Case - [{{ target_environment | default(target_environment_local) | upper }} "
+  ansible.builtin.uri:
+    url: "{{ rh_api_base_url | default(rh_base_url_local) }}/support/v1/cases"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Accept: "application/json"
+      Content-Type: "application/json"
+    body_format: json
+    body: "{{ case_body }}"
+    status_code:
+      - 200
+      - 201
+    return_content: true
+    validate_certs: true
+    use_proxy: "{{ rh_use_proxy | default(false) }}"
+  register: case_creation_result
+  no_log: "{{ var_no_log | default('true') }}" # <--- To keep sensitive values out of Ansible output logs
+  environment:
+    https_proxy: "{{ rh_http_proxy }}"
+    http_proxy: "{{ rh_http_proxy }}"
+
+- name: "Create Case | Print on screen create case complete."
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Red Hat Support Case Creation Completed Successfully"
+  run_once: true
+
+...

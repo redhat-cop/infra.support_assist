@@ -6,6 +6,7 @@ description: Ansible Collection that will gather various reports/outputs that ar
 readme: README.md
 authors:
   - Lenny Shirley @lennysh
+  - Diego Mateus @dfelipem
 repository: https://github.com/redhat-cop/infra.support_assist
 issues: https://github.com/redhat-cop/infra.support_assist/issues
 documentation: https://github.com/redhat-cop/infra.support_assist/docs

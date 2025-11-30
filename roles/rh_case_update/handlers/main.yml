@@ -1,0 +1,19 @@
+---
+- name: DisplayCaseUpdateSummaryTrigger
+  ansible.builtin.debug:
+    msg:
+      - "CASE UPDATE SUMMARY"
+      - "Status: Red Hat Support Case {{ case_id }} Created and Updated Successfully"
+      - "Account Name: {{ account_name }}"
+      - "Account Number Reference: {{ account_number_ref }}"
+      - "Case ID: {{ case_id }}"
+      - "Case URL: {{ rh_base_url }}/support/cases/#/case/{{ case_id }}"
+      - "Summary Text: {{ case_summary | trim }}"
+      - "Product: {{ case_product }}"
+      - "Version: {{ case_product_version }}"
+      - "Severity: {{ case_severity }}"
+      - "Issue Type: {{ case_type }}"
+      - "Description: {{ case_description | default(case_summary) | trim }}"
+      - "Action Required: Review the case via the URL above for full file upload details."
+  listen: "DisplayCaseUpdateSummaryTrigger"
+...

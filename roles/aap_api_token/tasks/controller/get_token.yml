@@ -19,7 +19,8 @@
   tags:
     - always
 
-- ansible.builtin.debug:
+- name: Debug authtoken_res
+  ansible.builtin.debug:
     var: authtoken_res
 
 - name: Set facts

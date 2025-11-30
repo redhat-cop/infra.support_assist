@@ -1,7 +1,7 @@
+# roles/rh_case_create/defaults/main.yml
 ---
-rh_token_refresh_api_offline_token: "{{ offline_token | default(lookup('env', 'REDHAT_OFFLINE_TOKEN')) }}"
-rh_token_refresh_token_cache_file: "/tmp/redhat_refresh_token.json"
-rh_token_refresh_token_max_age_seconds: 900 # 15 minutes * 60 seconds
+# Default timeout settings for Red Hat Case Create/Update operations
+rh_case_update_timeout: "{{ upload_timeout | default(1800) }}"  # Timeout for file uploads in seconds (default: 1800 seconds = 30 minutes)
 
 # Character used for separating log blocks
 separator_char: "*"

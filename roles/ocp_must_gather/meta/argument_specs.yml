@@ -1,50 +1,69 @@
----
 argument_specs:
   main:
     short_description: Auto-generated specs for ocp_must_gather role - main entry point
     description:
       - Runs 'oc adm must-gather' against an OpenShift cluster and retrieves the archive.
     author:
+      - Diego Felipe Mateus
       - Lenny Shirley
     options:
       case_id:
-        description: 'Variable used in included task file: pre-val.yml'
+        description: 'The Red Hat Support Case number (e.g., 01234567). Used in archive naming and context.'
         type: str
         required: true
         version_added: 0.1.0-devel
-      cluster_name:
-        description: 'Variable used in included task file: pre-val.yml'
-        type: str
-        required: true
-        version_added: 0.1.0-devel
-      ocp_must_gather_dest_dir:
-        description: 'Directory path (default: ''/tmp/must-gather-output'')'
-        type: path
-        default: /tmp/must-gather-output
-        version_added: 0.1.0-devel
-      ocp_must_gather_image:
-        description: Configuration value for ocp must gather image
-        type: str
-        default: ''
-        version_added: 0.1.0-devel
-      ocp_must_gather_options:
-        description: Configuration option (empty by default)
-        type: str
-        default: ''
-        version_added: 0.1.0-devel
+      # --- AUTHENTICATION AND CONNECTION ---
       ocp_must_gather_server_url:
-        description: 'Variable used in included task file: login.yml'
+        description: 'The URL of the OpenShift API server (e.g., https://api.my-cluster.com:6443).'
         type: str
         required: true
         version_added: 0.1.0-devel
       ocp_must_gather_token:
-        description: 'Variable used in included task file: login.yml'
+        description: 'The OpenShift API token for logging in (Service Account or OAuth token).'
         type: str
         required: true
         version_added: 0.1.0-devel
       ocp_must_gather_validate_ssl:
-        description: SSL/TLS configuration (enabled by default)
+        description: Whether to skip SSL/TLS verification during oc login.
         type: bool
         default: true
+        version_added: 0.1.0-devel
+      # --- DISCONNECTED/AIR-GAPPED SETTINGS ---
+      ocp_disconnected_mode:
+        description: Set to true if running in a disconnected or air-gapped environment.
+        type: bool
+        default: false
+        version_added: 0.2.0-devel
+      ocp_disconnected_registry:
+        description: 'The address of the mirror registry containing the must-gather images (e.g., myregistry.local/ocp/mirror). Required if ocp_disconnected_mode is true.'
+        type: str
+        default: ''
+        version_added: 0.2.0-devel
+      # --- MUST-GATHER EXECUTION PARAMETERS ---
+      ocp_must_gather_dest_dir:
+        description: 'Temporary directory path on the execution host for the output archive.'
+        type: path
+        default: /tmp/must-gather-output
+        version_added: 0.1.0-devel
+      ocp_must_gather_image:
+        description: 'Acronym for the component collection profile to run (e.g., AAP, ODF, DEFAULT).'
+        type: str
+        default: 'DEFAULT'
+        version_added: 0.1.0-devel
+      ocp_must_gather_since:
+        description: 'Limits log collection to a specific time window (e.g., 6h, 7d). Blank for full history.'
+        type: str
+        default: ''
+        version_added: 0.1.0-devel
+      ocp_must_gather_options:
+        description: 'Additional options to pass to the underlying oc adm must-gather command (e.g., --skip-node-logs).'
+        type: str
+        default: ''
+        version_added: 0.1.0-devel
+      # --- OUTPUT FACT ---
+      case_updates_needed:
+        description: 'Output variable fact (list of dictionaries) detailing the generated archive and required comment for upload by rh_case_update.'
+        type: list
+        required: false # This is an output fact, not an input requirement
         version_added: 0.1.0-devel
 ...

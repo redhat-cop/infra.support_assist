@@ -1,0 +1,56 @@
+---
+- name: Refresh Token | Print on screen role execution status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Refreshing Red Hat Access Token via Offline Token - Environment: {{ target_environment | default(target_environment_local) | upper }}"
+  run_once: true
+
+- name: "Refresh Token | Acquire New Red Hat SSO Access Token - {{ target_environment | default(target_environment_local) | upper }}"
+  ansible.builtin.uri:
+    url: "{{ rh_token_url | default(rh_token_refresh_api_token_url_local) }}"
+    method: POST
+    body_format: form-urlencoded
+    body:
+      grant_type: refresh_token
+      client_id: rhsm-api
+      refresh_token: "{{ rh_token_refresh_api_offline_token | default(rh_token_refresh_api_offline_token_local) }}"
+    return_content: true
+    validate_certs: false
+    status_code: 200
+    use_proxy: "{{ rh_use_proxy | default(false) }}"
+  register: token_response
+  no_log: "{{ var_no_log | default('true') }}" # <--- To keep sensitive values out of Ansible output logs
+  environment:
+    https_proxy: "{{ rh_http_proxy }}"
+    http_proxy: "{{ rh_http_proxy }}"
+
+- name: Refresh Token | Set access token fact
+  ansible.builtin.set_fact:
+    rh_token_refresh_api_access_token: "{{ token_response.json.access_token }}"
+  no_log: "{{ var_no_log | default('true') }}" # <--- To keep sensitive values out of Ansible output logs
+
+- name: Refresh Token | Cache the new token and timestamp locally
+  ansible.builtin.copy:
+    content: |
+      {
+        "token": "{{ rh_token_refresh_api_access_token }}",
+        "timestamp": {{ lookup('pipe', 'date +%s') }}
+      }
+    dest: "{{ rh_token_refresh_token_cache_file }}"
+    mode: '0600' # Set secure permissions for the token file.
+  no_log: "{{ var_no_log | default('true') }}" # <--- To keep sensitive values out of Ansible output logs
+
+- name: Refresh Token | Print on screen role completion status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Red Hat Access Token Refresh Completed Successfully"
+  run_once: true
+...

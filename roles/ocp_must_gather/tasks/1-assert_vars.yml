@@ -1,0 +1,92 @@
+# --- Main Task File: assert_vars.yml (Pre-Login Local Validation) ---
+---
+- name: Assert Vars | Print on screen pre-flight execution status - (Local Validation).
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Executing Pre-Flight Checks and Dynamic Image Validation - (Local Validation)"
+  run_once: true
+
+- name: Assert Vars | Assert that required variables are defined
+  ansible.builtin.assert:
+    that:
+      - item.name is defined
+      - item.name | length > 0
+    fail_msg: >
+      FAILED! Oh, No! => The required variable '{{ item.name }}' is missing or empty.
+      This variable is essential for the ocp_must_gather role. Please check the Job Template Survey.
+    success_msg: "PASSED! Oh, Yes! => Required variable '{{ item.name }}' is defined. Proceeding..."
+  loop:
+    - { name: ocp_must_gather_token }
+    - { name: ocp_must_gather_server_url }
+    - { name: case_id }
+
+- name: Assert Vars | Set cluster_name from API URL
+  ansible.builtin.set_fact:
+    cluster_name: "{{ ocp_must_gather_server_url | regex_replace('^(http[s]?://api\\.)', '') | regex_replace('(\\..*)$', '') }}"
+
+- name: Assert Vars | Assert that cluster_name was successfully extracted
+  ansible.builtin.assert:
+    that:
+      - cluster_name is defined
+      - cluster_name | length > 0
+      - cluster_name != 'api'
+    fail_msg: >
+      FAILED! Oh, No! => Could not reliably extract the cluster name from the API URL
+      ('{{ ocp_must_gather_server_url }}'). The URL format may be unexpected.
+    success_msg: "PASSED! Oh, Yes! => Cluster name '{{ cluster_name }}' extracted successfully from API URL."
+  when: ocp_must_gather_server_url is defined and ocp_must_gather_server_url | length > 0
+
+- name: Assert Vars | Check if 'oc' command exists on execution host
+  ansible.builtin.command: command -v oc
+  register: oc_check
+  changed_when: false
+  failed_when: false
+
+- name: Assert Vars | Assert 'oc' command is available on execution host
+  ansible.builtin.assert:
+    that:
+      - oc_check.rc == 0
+    fail_msg: >
+      FAILED! Oh, No! => The 'oc' command was not found on the execution host
+      ({{ inventory_hostname }}). Please ensure the OpenShift CLI is installed
+      and in the system's PATH.
+    success_msg: "PASSED! Oh, Yes! => The 'oc' command is found and ready on the execution host. Proceeding..."
+  when: oc_check is defined
+
+- name: Assert Vars | Set dynamic component configuration and key (from user acronym)
+  # The component_key is the user input (acronym). Lookup is performed on the lowercase version.
+  ansible.builtin.set_fact:
+    component_key: "{{ ocp_must_gather_image }}"
+    # Lookup the configuration data using the lowercase acronym as the key.
+    selected_component_config: "{{ must_gather_components[ocp_must_gather_image | lower] }}"
+  # Only run this logic if the user selected a custom component (not the default baseline)
+  when: ocp_must_gather_image | upper != 'DEFAULT'
+
+- name: Assert Vars | Assert user selected a valid component acronym
+  ansible.builtin.assert:
+    that:
+      # Check if the input is 'DEFAULT' OR if the acronym exists in the components list.
+      - ocp_must_gather_image | upper == 'DEFAULT' or selected_component_config is defined
+    fail_msg: >
+      FAILED! Oh, No! => The selected Must Gather Acronym ('{{ ocp_must_gather_image }}')
+      is not a valid component option. Please select an option from the available acronyms
+      (or 'DEFAULT').
+    success_msg: "PASSED! Oh, Yes! => Component mapping successful. Proceeding to version check..."
+  # Only validate if the image variable was provided/is not empty
+  when: ocp_must_gather_image is defined and ocp_must_gather_image | length > 0
+
+- name: Assert Vars | Print on screen pre-login validation complete
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Pre-Flight Checks and Dynamic Image Validation Complete - (Local Validation)"
+  run_once: true
+...
+# --- End of Main Task File: 1-assert_vars.yml (Pre-Login Local Validation) ---

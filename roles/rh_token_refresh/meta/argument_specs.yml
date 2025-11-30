@@ -35,6 +35,6 @@ argument_specs:
       timestamp:
         description: 'Variable used in included task file: check_cache.yml'
         type: str
-        required: true
+##         required: true
         version_added: 0.1.0-devel
 ...

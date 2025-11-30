@@ -1,0 +1,114 @@
+---
+- name: OCP RH Case & Must-Gather Autopilot Pipeline - Full Automation Flow (via AAP)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  any_errors_fatal: true   # Ensures immediate stop for any failure
+
+  vars:
+    # ===============================================================================
+    # Hardcoded variables set here for pipeline execution.
+    # This variables MUST remain here even after migrating to the Job Template.
+    # ===============================================================================
+    case_product: "OpenShift Container Platform"
+    # Inject a unique timestamp guaranteed to be UTC
+    run_timestamp: "{{ lookup('pipe', 'date -u +%Y%m%d%H%M%S') }}"
+    # ===============================================================================
+    # --- CONTROL VARIABLES ---
+    # If case_id is blank, a new case will be created. If set, the must-gather will be uploaded to the existing case.
+    # ===============================================================================
+    case_id: ""  # Set to existing case ID to upload to an existing case instead of creating a new one.
+    # ===============================================================================
+    # --- MUST GATHER ROLE CONTROL VARIABLES ---
+    # ===============================================================================
+    ocp_must_gather_validate_ssl: false #  Set to false to skip SSL validation (useful for self-signed certs)
+    upload: true  # Set to true to upload the must-gather to the case after creation
+    # ===============================================================================
+    # --- USER INPUT VARIABLES (to be provided via Job Template Survey) ---
+    # ===============================================================================
+    # --- MANDATORY VARIABLES ---
+    # NOTE: Commented here for reference only - These MUST be provided via the Job Template Survey at runtime.
+    # ocp_must_gather_token: "" # User's OCP Token (Service Account or User Token with cluster-admin privileges)
+    # ocp_must_gather_server_url: "" # User's OCP API URL (e.g., https://api.cluster-name.domain:6443
+    # # CRITICAL: This offline token is required by rh_token_refresh (and must be valid) - This is to retrieve a new, short-lived Access Token.
+    # offline_token: "" # User's Red Hat Offline Token (from https://access.redhat.com/management/api
+    # case_summary: "Automated Test Case Creation - OCP Must Gather Upload [TEST-{{ run_timestamp }}-UTC]"
+    # case_description: "Automated case created via Ansible Automation Platform for testing purposes. Unique Run ID: {{ run_timestamp }} - UTC"
+    # # NEW: DISCONNECTED ENVIRONMENT FLAGS
+    # ocp_disconnected_mode: false # Set to true to use disconnected Air-Gapped Registry for Must-Gather Image
+    # ocp_disconnected_registry: "" # e.g., "my-disconnected-registry.local:5000"
+    # case_type: "Configuration Issue"  # Type of case being created check all valid options in rh_case_create/docs/CASE_TYPE_OPTIONS.md
+    # case_severity: "3 (Normal)" # Severity level of the case check all valid options in rh_case_create/docs/CASE_SEVERITY_OPTIONS.md
+    # # MUST GATHER PARAMETERS
+    # ocp_must_gather_since: '1h'  # Time duration for must-gather data collection (e.g., '30m' for 30 minutes, '2h' for 2 hours, '1d' for 1 day)
+    # ocp_must_gather_image: "AAP"  # Select the must-gather image/acronym to use for data collection (e.g., DEFAULT, AAP, OSSM, CNV, ODF, etc.)
+    # full list in role/ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md
+
+  tasks:
+    - name: "Block - Full Automation Execution Pipeline"
+      block:
+        # --- 1. MUST-GATHER EXECUTION (LOGIN, COLLECT, ARCHIVE) ---
+        # This call runs the entire role sequentially: Login, Facts, Generate, Fetch.
+        - name: "Block - Generate OCP Must Gather"
+          block:
+            - name: "RUN: OCP Must Gather (Login, Collect, and Archive)"
+              ansible.builtin.include_role:
+                name: ocp_must_gather
+          rescue:
+            - name: "Rescue | Must Gather failed"
+              ansible.builtin.fail:
+                msg: >
+                  [ERROR] Must Gather execution failed during collection or archiving.
+                  Stopping pipeline immediately; check the logs above for details.
+
+        # --- STEP 2: AUTHENTICATE TO RED HAT API ---
+        - name: "Block - Refresh Red Hat API Token"
+          block:
+            - name: "Call rh_token_refresh role (CRITICAL: Gets Red Hat API token)"
+              ansible.builtin.include_role:
+                name: rh_token_refresh
+          rescue:
+            - name: "Rescue | Token Refresh failed"
+              ansible.builtin.fail:
+                msg: "[ERROR] Oh, No! => Refresh Red Hat API token failed. Stopping pipeline immediately, check the logs above for details."
+
+        # --- STEP 3: CREATE CASE ---
+        - name: "Block - Create Red Hat Support Case"
+          when: case_id | length == 0
+          block:
+            - name: Call rh_case_create role (Creates case and sets new_case_id)
+              ansible.builtin.include_role:
+                name: rh_case_create
+              vars:
+                # Pass empty strings for variables the role incorrectly requires at top-level
+                attachment: ""
+                comment: ""
+                upload_body_raw: ""
+
+            - name: Set global case_id to newly created ID
+              ansible.builtin.set_fact:
+                case_id: "{{ new_case_id }}"
+          rescue:
+            - name: "Rescue | Case Creation failed"
+              ansible.builtin.fail:
+                msg: |
+                  FAILED! Oh, No! => Case creation failed. Stopping pipeline immediately.
+                  Check the API response for invalid subscription or product/version mismatch.
+
+        # --- STEP 4: UPLOAD TO CASE (Always relies on the final case_id) ---
+        - name: Block - Upload Must Gather to Red Hat Case
+          when:
+            - upload | default(true) | bool
+          block:
+            - name: Call rh_case_update role (Uploads file and comment)"
+              ansible.builtin.include_role:
+                name: rh_case_update
+              vars:
+                attachment: ""
+                comment: ""
+                upload_body_raw: ""
+          rescue:
+            - name: "Rescue | Upload failed"
+              ansible.builtin.fail:
+                msg: "[ERROR] Oh, No! => Upload to Red Hat case failed. Stopping pipeline immediately, check the logs above for details."
+...

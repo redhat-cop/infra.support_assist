@@ -1,0 +1,19 @@
+---
+- name: Pre-validation | Ensure needed information was provided
+  run_once: true
+  ansible.builtin.assert:
+    that:
+      - rh_token_refresh_api_offline_token is defined and rh_token_refresh_api_offline_token | length > 0
+    fail_msg: "FAILED! Oh, No! => The Red Hat API Offline Token was NOT provided. This token is required to authenticate with the Red Hat Case Management API."
+    success_msg: "PASSED! Oh, Yes! => Red Hat API Offline Token provided. Proceeding with token validation..."
+
+- name: Pre-validation | Print on screen role pre-validation status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Pre-Validation for Red Hat Support Case Creation Started"
+  run_once: true
+...
