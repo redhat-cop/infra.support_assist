@@ -1,166 +1,196 @@
-# infra.support_assist.ocp_must_gather
+# ocp_must_gather
 
-This role runs **`oc adm must-gather`** against a target OpenShift cluster, compresses the resulting directory into a `.tar.gz` archive, and prepares it for upload to a Red Hat Support Case.
+An Ansible role to gather OpenShift cluster diagnostics using `oc adm must-gather`.
 
-This role is designed to run on `localhost` (or wherever the `oc` CLI is installed and configured).
+## Description
+
+This role runs **`oc adm must-gather`** against a target OpenShift cluster, compresses the resulting directory into a `.tar.gz` archive, and prepares it for upload to a Red Hat Support Case. It is designed to run on `localhost` (or wherever the `oc` CLI is installed and configured).
+
+### Key Features
+
+- **Automatic version detection** – Works with various OpenShift versions
+- **Custom feature collections** – Select specialized component collectors (AAP, ODF, CNV, OSSM, etc.)
+- **Time window filtering** – Limit log collection to a specific time range (`--since`)
+- **Disconnected environment support** – Works in air-gapped environments with mirror registries
+- **Safety checks** – Validates cluster-admin privileges and disk space before execution
+- **Cluster name extraction** – Automatically extracts cluster name from API URL for accurate identification
 
 ## Requirements
 
-* **On Control Node (Execution Host):**
-    * The **OpenShift CLI (`oc`)** must be installed and in the system's `PATH`.
-    * Must be logged in to the target OpenShift cluster. The role attempts to log in using the provided token.
+- **On Control Node (Execution Host):**
+  - The **OpenShift CLI (`oc`)** must be installed and in the system's `PATH`
+  - Network access to the target OpenShift API server
+  - Sufficient disk space for the must-gather output (20-30 GiB recommended)
 
-* **Ansible Collections:**
-    * `community.general`: Required for the `community.general.archive` module to compress the must-gather output.
-
----
+- **Ansible Collections:**
+  - `community.general`: Required for the `community.general.archive` module
 
 ## Role Variables
 
-### Input Variables
+### Connection Variables
 
-The following variables control the behavior of this role:
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| `ocp_must_gather_server_url` | URL of the OpenShift API server (e.g., `https://api.my-cluster.com:6443`). | `string` | Yes | — |
+| `ocp_must_gather_token` | OpenShift API token for authentication (e.g., `sha256~...`). | `string` | Yes | — |
+| `ocp_must_gather_validate_ssl` | Whether to validate SSL/TLS certificates during `oc login`. | `bool` | No | `true` |
 
-* **`case_id`**:
-    * **(Optional)** The Red Hat Support Case number (e.g., `01234567`), This is only needed if you want to automatically upload the gathered archive to an existing case.
-    * Type: `string`
+### Must-Gather Execution Variables
 
-* **`ocp_must_gather_token`**:
-    * **(Required)** The OpenShift API token for logging in (e.g., `sha256~...`).
-    * Type: `string`
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| `ocp_must_gather_dest_dir` | Temporary directory for must-gather output and archive. | `path` | No | `/tmp/must-gather-output` |
+| `ocp_must_gather_image` | Acronym for the component collection profile to run. | `string` | No | `DEFAULT` |
+| `ocp_must_gather_since` | Limits log collection to a time window (e.g., `6h`, `7d`). | `string` | No | `""` (full history) |
+| `ocp_must_gather_options` | Additional options for the `oc adm must-gather` command. | `string` | No | `""` |
 
-* **`ocp_must_gather_server_url`**:
-    * **(Required)** The URL of the OpenShift API server (e.g., `https://api.my-ocp-cluster.com:6443`).
-    * Type: `string`
+### Disconnected Environment Variables
 
-* **`ocp_must_gather_dest_dir`**:
-    * A temporary directory on the execution host where `oc adm must-gather` will write its output. This directory is also where the final `.tar.gz` archive will be created.
-    * Default: `"/tmp/must-gather-output"`
-    * Type: `path`
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| `ocp_disconnected_mode` | Enable disconnected/air-gapped environment mode. | `bool` | No | `false` |
+| `ocp_disconnected_registry` | Mirror registry address (e.g., `myregistry.local/ocp/mirror`). Required if `ocp_disconnected_mode` is `true`. | `string` | Conditional | `""` |
 
-* **`ocp_must_gather_image`**:
-    * **Custom Feature Collection:** The acronym for the specific component collection to run (e.g., `"AAP"` for Ansible Automation Platform, or `"DEFAULT"` for the standard collection).
-    * Default: `"DEFAULT"`
-    * Type: `string`
+### Case Variables
 
-> **NOTE on Component Selection:** This variable expects a short **acronym** (e.g., **`AAP`**, **`ODF`**, **`CNV`**). Use **`DEFAULT`** for the standard collection. The role automatically looks up the corresponding technical image URL. **Consult the component map in:** [MUST\_GATHER\_IMAGE\_OPTIONS.md](./docs/MUST_GATHER_IMAGE_OPTIONS.md) **for all valid acronyms and their purposes.**
-
-* **`ocp_must_gather_since`**:
-    * **Time Window (`--since`):** Limits log collection to a specific time range (e.g., **`"12h"`**, **`"7d"`**). Options include: **`"1h"`**, **`"3h"`**, **`"6h"`**, **`"12h"`**, **`"24h"`**, **`"3d"`**, **`"7d"`**, **`"14d"`**, **`"30d"`**, or blank for "Full History".
-    * Default: `""` (Collects full history)
-    * Type: `string`
-
-* **`ocp_disconnected_mode`**:
-    * **Disconnected Environment Flag:** Set to `true` if the cluster is air-gapped. Activates logic to use the custom mirror registry address.
-    * Default: `false`
-    * Type: `bool`
-
-* **`ocp_disconnected_registry`**:
-    * **Mirror Registry Address:** The full address of the mirror registry containing the must-gather image (e.g., `my.mirror.registry.com/ocp/mirror`). **Required if `ocp_disconnected_mode` is true.**
-    * Default: `""`
-    * Type: `string`
-
-* **`ocp_must_gather_options`**:
-    * A string of any additional options to pass to the `oc adm must-gather` command (e.g., `-- /usr/bin/gather_network_logs`). This is for advanced CLI usage beyond standard collection profiles.
-    * Default: `""`
-    * Type: `string`
-
-* **`ocp_must_gather_validate_ssl`**:
-    * Whether to use the `--insecure-skip-tls-verify` flag during `oc login`.
-    * Default: `true`
-    * Type: `bool`
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| `case_id` | Red Hat Support Case number (e.g., `01234567`). Only needed for automatic upload. | `string` | No | — |
 
 ### Output Variables
 
-This role generates the following fact, which is used by the `rh_case_update` role:
+| Variable | Description | Type |
+|----------|-------------|------|
+| `case_updates_needed` | List containing the generated archive path and description for upload by `rh_case_update`. | `list` |
 
-* `case_updates_needed`:
-    * A list containing an object that describes the fetched archive to be uploaded.
-    * Example:
-        ~~~yaml
-        case_updates_needed:
-          - attachment: /tmp/must-gather-output/must-gather-my-ocp-cluster-2025-10-27-150000.tar.gz
-            attachmentDescription: "OpenShift must-gather collected from 'my-ocp-cluster' cluster accessed via execution host control-node.example.com using the 'infra.support_assist' collection."
-            hostname: "my-ocp-cluster"
-        ~~~
+## Component Collection Options
 
----
+The `ocp_must_gather_image` variable accepts acronyms for specialized collections:
+
+| Acronym | Component | Description |
+|---------|-----------|-------------|
+| `DEFAULT` | Core OpenShift | Standard must-gather collection |
+| `AAP` | Ansible Automation Platform | AAP-specific diagnostics |
+| `ODF` | OpenShift Data Foundation | Storage-related diagnostics |
+| `CNV` | Container Native Virtualization | Virtualization diagnostics |
+| `OSSM` | OpenShift Service Mesh | Service mesh diagnostics |
+
+> **Full list of options:** [docs/MUST_GATHER_IMAGE_OPTIONS.md](docs/MUST_GATHER_IMAGE_OPTIONS.md)
+
+## Time Window Options
+
+The `ocp_must_gather_since` variable accepts:
+
+- `1h`, `3h`, `6h`, `12h`, `24h` – Hours
+- `3d`, `7d`, `14d`, `30d` – Days
+- `""` (empty) – Full history
 
 ## Dependencies
 
-* `community.general`: Required for the `archive` module.
+- `community.general`: Required for the `archive` module
 
-## Role Features and Safety Checks
+## Safety Checks
 
-> **NEW FEATURES:**
-> * **Privilege Pre-Check (Safety):** The role now includes an **assertion task** to verify that the authenticated user/Service Account possesses the required **`cluster-admin`** privileges **`before`** executing the long-running **`must-gather`** command, failing early with a custom formatted message if permissions are inadequate.
-> * **Disk Space Check (Safety):** An **assertion validation** has been implemented to verify the **available disk space** on the Execution Host (EE) filesystem where the Must-Gather output directory resides. This prevents mid-execution failures due to the large size of the raw collection.
-> * **Case Comment Template:** The content of the automatic comment posted after the Must-Gather upload can be customized via the Jinja2 template: **[roles/ocp_must_gather/templates/support_case_comment.j2](roles/ocp_must_gather/templates/support_case_comment.j2)**.
-> * **Time Window (`--since`):** Use the `ocp_must_gather_since` variable (e.g., `"12h"`, `"3d"`, `"7d"`) to limit log collection to a specific time range, optimizing file size and relevance. Options include: `"1h"`, `"3h"`, `"6h"`, `"12h"`, `"24h"`, `"3d"`, `"7d"`, `"14d"`, `"30d"`, or blank for "Full History".
-> * **Custom Feature Collection:** The `ocp_must_gather_image` variable allows selecting specialized component collections. Examples include **DEFAULT** (Default Must Gather Collection), **AAP** (Ansible Automation Platform), **OSSM** (OpenShift Service Mesh), **CNV** (Container Native Virtualization), and **ODF** (OpenShift Data Foundation). **All available options are listed in:** [roles/ocp_must_gather/vars/main.yml](roles/ocp_must_gather/vars/main.yml).
-> * **Disconnected Environment:** Use the `ocp_disconnected_mode: true` flag and provide the `ocp_disconnected_registry` address (e.g., `my.mirror.registry.com/ocp/mirror`) to point the collection to your mirror registry. (See KCS article on disconnected must-gather: [https://access.redhat.com/solutions/4647561](https://access.redhat.com/solutions/4647561)).
+The role includes built-in safety checks:
 
+1. **Privilege Pre-Check** – Verifies the authenticated user/Service Account has `cluster-admin` privileges before executing the long-running must-gather command
+2. **Disk Space Check** – Validates available disk space on the execution host filesystem to prevent mid-execution failures
+
+## Example Playbooks
+
+### Example 1: Basic Must-Gather
+
+```yaml
 ---
-
-## Example Playbook
-
-### Required Case Variables (for pipeline use)
-
-| Variable | Description | Default Value | Notes |
-| :--- | :--- | :--- | :--- |
-| **`case_product`** | The specific Red Hat product for the case. | `OpenShift Container Platform` | This value is typically **hardcoded** in the pipeline playbook. |
-| **`case_description`** | Detailed explanation of the issue, including steps to reproduce, observed behavior, and expected results. | (Required String) | Provides detailed context for the case. |
-
-### Simple example (running just the role)
-
-~~~yaml
-- name: Gather OpenShift Must Gather
+- name: Gather OpenShift Must-Gather
   hosts: localhost
   connection: local
   gather_facts: false
 
   vars:
-    case_id: "01234567"
-    case_product: "OpenShift Container Platform"
-    case_description: "The attached Must-Gather shows issues with AAP components failing to start"
     ocp_must_gather_server_url: "https://api.my-ocp-cluster.com:6443"
     ocp_must_gather_token: "sha256~..."  # Use Ansible Vault!
-    # --- ADVANCED OPTIONS ---
-    ocp_must_gather_since: "6h"
-    ocp_must_gather_image: "AAP"
-    ocp_disconnected_mode: true
-    ocp_disconnected_registry: "registry.local/must-gather-mirror:latest"
-    ocp_must_gather_validate_ssl: false # Example of overriding default SSL check
-    ocp_must_gather_options: ""
 
   tasks:
-    - name: Call ocp_must_gather role
+    - name: Run must-gather
       ansible.builtin.include_role:
         name: infra.support_assist.ocp_must_gather
-~~~
+```
 
-### Recommended example (using the main collection playbook)
+### Example 2: AAP Collection with Time Window
 
-The recommended way to use this role is via the main `ocp_must_gather` playbook, which handles token refresh and upload logic.
+```yaml
+---
+- name: Gather AAP-specific diagnostics
+  hosts: localhost
+  connection: local
+  gather_facts: false
 
-~~~shell
+  vars:
+    ocp_must_gather_server_url: "https://api.my-ocp-cluster.com:6443"
+    ocp_must_gather_token: "{{ vault_ocp_token }}"
+    ocp_must_gather_image: "AAP"
+    ocp_must_gather_since: "6h"
+
+  tasks:
+    - name: Run AAP must-gather
+      ansible.builtin.include_role:
+        name: infra.support_assist.ocp_must_gather
+```
+
+### Example 3: Disconnected Environment
+
+```yaml
+---
+- name: Gather from disconnected cluster
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    ocp_must_gather_server_url: "https://api.my-ocp-cluster.com:6443"
+    ocp_must_gather_token: "{{ vault_ocp_token }}"
+    ocp_disconnected_mode: true
+    ocp_disconnected_registry: "registry.local/must-gather-mirror"
+    ocp_must_gather_validate_ssl: false
+
+  tasks:
+    - name: Run must-gather in disconnected mode
+      ansible.builtin.include_role:
+        name: infra.support_assist.ocp_must_gather
+```
+
+### Using the Collection Playbook (Recommended)
+
+The recommended way to use this role is via the main playbook, which handles token refresh and upload logic:
+
+```shell
 # Set your Red Hat token as an environment variable
 export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
 
-# Run the main playbook
+# Run the full pipeline
 ansible-playbook infra.support_assist.ocp_must_gather \
   -e case_id=00000000 \
   -e ocp_must_gather_server_url="https://api.my-ocp-cluster.com:6443" \
   -e ocp_must_gather_token="sha256~..." \
   -e ocp_must_gather_image="AAP" \
   -e ocp_must_gather_since="6h" \
-  -e ocp_disconnected_mode=false \
-  -e ocp_disconnected_registry="" \
-  -e ocp_must_gather_options="" \
   -e upload=true
-~~~
+```
 
-You can use a playbook as an example as [playbooks/ocp-case-mustgather-pipeline.yml](../../playbooks/ocp-case-mustgather-pipeline.yml).
+See the example playbook: [`playbooks/ocp-case-mustgather-pipeline.yml`](../../playbooks/ocp-case-mustgather-pipeline.yml)
+
+## Customizing the Case Comment Template
+
+The content of the automatic comment posted after must-gather upload can be customized via the Jinja2 template:
+
+**[`templates/support_case_comment.j2`](templates/support_case_comment.j2)**
+
+## Disconnected Environment Reference
+
+For more information on running must-gather in disconnected environments, see:
+
+- [Red Hat KCS: How to run must-gather in a disconnected environment](https://access.redhat.com/solutions/4647561)
 
 ## License
 
@@ -168,8 +198,6 @@ GPL-3.0-or-later
 
 ## Author Information
 
-- Lenny Shirley
-
-## Code Contributors
-
-- Diego Felipe Mateus
+- **Authors:** Lenny Shirley, Diego Felipe Mateus
+- **Company:** Red Hat
+- **Collection:** [infra.support_assist](https://github.com/redhat-cop/infra.support_assist)

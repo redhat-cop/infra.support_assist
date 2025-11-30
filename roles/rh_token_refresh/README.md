@@ -1,84 +1,156 @@
-# infra.support_assist.rh_token_refresh
+# rh_token_refresh
 
-The `infra.support_assist.rh_token_refresh` Ansible role is designed to **retrieve an access token for the Red Hat API using an offline token**. This token is then cached locally to manage its lifecycle and avoid unnecessary API calls.
+An Ansible role to retrieve and manage Red Hat API access tokens.
 
-This role runs on `localhost`.
+## Description
+
+The `rh_token_refresh` role retrieves an access token for the Red Hat API using an offline token. The obtained token is cached locally to manage its lifecycle and minimize unnecessary API calls. This role is a prerequisite for other roles in this collection that interact with the Red Hat Support API.
+
+### Key Features
+
+- **Token caching** – Stores tokens locally to reduce API calls and improve performance
+- **Automatic refresh** – Checks token age and refreshes when expired
+- **Environment variable support** – Reads offline token from environment variables by default
+- **Configurable cache** – Customize cache location and token validity period
 
 ## Requirements
 
-None.
+None. This role runs on `localhost` using only built-in Ansible modules.
 
 ## Role Variables
 
 ### Input Variables
 
-The behavior of the `rh_token_refresh` role is controlled by the following variables:
-
-* `rh_token_refresh_api_offline_token`:
-    * **(Required)** Your **Red Hat offline token**. This token is used by the role to acquire the necessary access token for the Red Hat API.
-    * Default: `{{ offline_token | default(lookup('env', 'REDHAT_OFFLINE_TOKEN')) }}` (Inherits `offline_token` var or the `REDHAT_OFFLINE_TOKEN` environment variable)
-    * Type: `string`
-
-* `rh_token_refresh_token_cache_file`:
-    * The **full path to a file** where the obtained access token and its timestamp will be cached locally.
-    * Default: `"/tmp/redhat_refresh_token.json"`
-    * Type: `path`
-
-* `rh_token_refresh_token_max_age_seconds`:
-    * The **maximum age (in seconds)** of a cached access token before it is considered invalid and a new one must be retrieved.
-    * Default: `900` (15 minutes)
-    * Type: `int`
-
-* `rh_token_refresh_api_token_url`:
-    * The **full URL for the Red Hat SSO token endpoint**.
-    * Default: `"https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"`
-    * Type: `string`
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| `rh_token_refresh_api_offline_token` | Your Red Hat offline token used to acquire the API access token. | `string` | Yes | `{{ offline_token \| default(lookup('env', 'REDHAT_OFFLINE_TOKEN')) }}` |
+| `rh_token_refresh_token_cache_file` | Full path to the file where the access token and timestamp will be cached. | `path` | No | `/tmp/redhat_refresh_token.json` |
+| `rh_token_refresh_token_max_age_seconds` | Maximum age (in seconds) of a cached token before it's considered expired. | `int` | No | `900` (15 minutes) |
+| `rh_token_refresh_api_token_url` | Full URL for the Red Hat SSO token endpoint. | `string` | No | `https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token` |
 
 ### Output Variables
 
-This role sets the following fact, which can be used by subsequent tasks or roles (like `rh_case_update`):
-
-* `rh_token_refresh_api_access_token`:
-    * This variable will contain the **valid Red Hat API access token** after the role has successfully run. This token is either retrieved from the local cache or newly obtained from the Red Hat SSO service.
+| Variable | Description | Type |
+|----------|-------------|------|
+| `rh_token_refresh_api_access_token` | The valid Red Hat API access token. Retrieved from cache or newly obtained from Red Hat SSO. | `string` |
 
 ## Dependencies
 
 None.
 
-## Example Playbook
+## Obtaining an Offline Token
 
-Here's an example of how to use the `infra.support_assist.rh_token_refresh` role directly.
+> **💡 How to Generate a Red Hat Offline Token**
+>
+> 1. Navigate to the Red Hat API Token management page: [https://access.redhat.com/management/api](https://access.redhat.com/management/api)
+> 2. Click the **"Generate Token"** button.
+> 3. Log in with your Red Hat customer portal credentials if prompted.
+> 4. A new offline token will be generated. **Copy this token immediately**, as Red Hat notes, "Tokens are only displayed once and are not stored. They will expire after 30 days of inactivity".
+
+## Example Playbooks
+
+### Example 1: Basic Usage
 
 ```yaml
+---
 - name: Get Red Hat API Access Token
   hosts: localhost
   connection: local
   gather_facts: false
 
   vars:
-    # You can provide the token directly (Ansible Vault recommended)
-    # offline_token: "YOUR_REDHAT_OFFLINE_TOKEN_HERE"
-    # Or, the role will pick it up from the environment variable
-    # REDHAT_OFFLINE_TOKEN="YOUR_REDHAT_OFFLINE_TOKEN_HERE"
+    # Provide the token directly (Ansible Vault recommended!)
+    offline_token: "YOUR_REDHAT_OFFLINE_TOKEN_HERE"
+
+  tasks:
+    - name: Retrieve Red Hat API access token
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_token_refresh
+
+    - name: Display token status
+      ansible.builtin.debug:
+        msg: "Access token retrieved successfully"
+```
+
+### Example 2: Using Environment Variable
+
+```shell
+# Set the offline token as an environment variable
+export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
+```
+
+```yaml
+---
+- name: Get Red Hat API Access Token (from environment)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Retrieve Red Hat API access token
+      ansible.builtin.include_role:
+        name: infra.support_assist.rh_token_refresh
+      # Token automatically read from REDHAT_OFFLINE_TOKEN env var
+
+    - name: Use the token in a subsequent task
+      ansible.builtin.uri:
+        url: "https://api.access.redhat.com/support/v1/user/info"
+        method: GET
+        headers:
+          Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      register: user_info
+```
+
+### Example 3: Custom Cache Configuration
+
+```yaml
+---
+- name: Get Red Hat API Access Token with custom cache
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    offline_token: "{{ vault_offline_token }}"
 
   tasks:
     - name: Retrieve Red Hat API access token
       ansible.builtin.include_role:
         name: infra.support_assist.rh_token_refresh
       vars:
-        # Optional: Customize cache file location or token validity
         rh_token_refresh_token_cache_file: "/home/ansible/.redhat_api_token.json"
-        rh_token_refresh_token_max_age_seconds: 3600 # Cache for 1 hour
+        rh_token_refresh_token_max_age_seconds: 3600  # Cache for 1 hour
+```
 
-    - name: Use the retrieved access token in a subsequent task
-      ansible.builtin.debug:
-        msg: "The access token is: {{ rh_token_refresh_api_access_token }}"
+## How It Works
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                       rh_token_refresh                          │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Pre-validation                                              │
+│     └── Verify offline_token is provided                        │
+│                                                                 │
+│  2. Check cache                                                 │
+│     ├── If cache exists and token is fresh → Use cached token  │
+│     └── If cache missing or expired → Proceed to refresh       │
+│                                                                 │
+│  3. Token refresh (if needed)                                   │
+│     ├── POST to Red Hat SSO with offline_token                 │
+│     ├── Receive new access_token                                │
+│     └── Store in cache file with timestamp                      │
+│                                                                 │
+│  4. Set fact                                                    │
+│     └── rh_token_refresh_api_access_token                       │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## License
 
-This role is licensed under **GPL-3.0-or-later**.
+GPL-3.0-or-later
 
 ## Author Information
 
-- Lenny Shirley
+- **Author:** Lenny Shirley
+- **Company:** Red Hat
+- **Collection:** [infra.support_assist](https://github.com/redhat-cop/infra.support_assist)

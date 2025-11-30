@@ -1,49 +1,58 @@
-# infra.support_assist.rh_case_update
+# rh_case_update
 
-This role updates a Red Hat Support Case by uploading attachments or adding comments. It is designed to run on `localhost` and iterates over a list of updates defined in the `case_updates_needed` variable.
+An Ansible role to update Red Hat Support Cases by uploading attachments or adding comments.
 
-This role uses `curl` via `ansible.builtin.shell` for file uploads to ensure support for large files and streaming.
+## Description
+
+This role updates an existing Red Hat Support Case by uploading file attachments or adding comments. It is designed to run on `localhost` and iterates over a list of updates defined in the `case_updates_needed` variable.
+
+### Key Features
+
+- **File uploads** – Uploads files of any size using `curl` for robust streaming support
+- **Comment support** – Adds comments in either `markdown` or `plaintext` format
+- **Batch operations** – Process multiple attachments and comments in a single run
+- **Flexible input** – Works with manually specified files or output from other roles
 
 ## Requirements
 
-* **On Control Node:**
-    * `curl`: The `curl` command-line utility must be installed and in the system's `PATH`.
+- **On Control Node:**
+  - `curl`: The `curl` command-line utility must be installed and in the system's `PATH`
+  - Network access to the Red Hat API endpoint
 
 ## Role Variables
 
 ### Input Variables
 
-* `case_id`:
-    * **(Required)** The Red Hat Support Case number (e.g., `01234567`).
-    * Type: `string`
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| `case_id` | The Red Hat Support Case number (e.g., `01234567`). | `string` | Yes | — |
+| `rh_token_refresh_api_access_token` | A valid Red Hat API access token. Typically provided by the `rh_token_refresh` role. | `string` | Yes | Supplied as fact |
+| `case_updates_needed` | A list of objects defining attachments to upload or comments to add. | `list` | Yes | — |
+| `rh_case_update_timeout` | Timeout in seconds for each `curl` file upload command. | `int` | No | `1800` (30 min) |
 
-* `rh_token_refresh_api_access_token`:
-    * **(Required)** A valid Red Hat API access token. This is typically provided by running the `infra.support_assist.rh_token_refresh` role first.
-    * Type: `string`
+### `case_updates_needed` Object Structure
 
-* `rh_case_update_timeout`:
-    * The timeout in seconds for each `curl` file upload command.
-    * Default: `{{ upload_timeout | default(1800) }}` (Inherits `upload_timeout` var, defaults to 1800 seconds / 30 minutes)
-    * Type: `int`
+Each item in the `case_updates_needed` list can contain:
 
-* `case_updates_needed`:
-    * **(Required)** A list of objects, where each object defines either an attachment to upload or a comment to add.
-    * Type: `list`
-    * **Object Structure:**
-        * `attachment`: (Optional) The full path to the local file to be uploaded.
-        * `attachmentDescription`: (Optional) A description for the file being attached.
-        * `comment`: (Optional) The text of the comment to add to the case.
-        * `commentType`: (Optional) The format of the comment. Can be `markdown` (default) or `plaintext`.
+| Field | Description | Type | Required |
+|-------|-------------|------|----------|
+| `attachment` | Full path to the local file to upload. | `string` | No* |
+| `attachmentDescription` | Description for the file being attached. | `string` | No |
+| `comment` | Text of the comment to add to the case. | `string` | No* |
+| `commentType` | Format of the comment: `markdown` (default) or `plaintext`. | `string` | No |
+
+> **\*** Each object must contain either `attachment` or `comment` (or both).
 
 ## Dependencies
 
-* This role **must** be run after `infra.support_assist.rh_token_refresh` to populate the required `rh_token_refresh_api_access_token` fact.
+- This role **must** be run after `infra.support_assist.rh_token_refresh` to populate the required `rh_token_refresh_api_access_token` fact.
 
-## Example Playbook
+## Example Playbooks
 
-### Example 1: Add a comment
+### Example 1: Add a Comment
 
 ```yaml
+---
 - name: Add comment to Red Hat Case
   hosts: localhost
   connection: local
@@ -51,24 +60,25 @@ This role uses `curl` via `ansible.builtin.shell` for file uploads to ensure sup
 
   vars:
     case_id: "01234567"
-    offline_token: "YOUR_OFFLINE_TOKEN_HERE" # Used by rh_token_refresh
+    offline_token: "YOUR_OFFLINE_TOKEN_HERE"  # Use Ansible Vault!
     case_updates_needed:
       - comment: "This is a test comment added via Ansible."
         commentType: "plaintext"
 
   tasks:
-    - name: Call rh_token_refresh role
+    - name: Refresh API token
       ansible.builtin.include_role:
         name: infra.support_assist.rh_token_refresh
 
-    - name: Call rh_case_update role
+    - name: Update the case
       ansible.builtin.include_role:
         name: infra.support_assist.rh_case_update
 ```
 
-### Example 2: Upload a local file
+### Example 2: Upload a Local File
 
 ```yaml
+---
 - name: Upload file to Red Hat Case
   hosts: localhost
   connection: local
@@ -76,24 +86,25 @@ This role uses `curl` via `ansible.builtin.shell` for file uploads to ensure sup
 
   vars:
     case_id: "01234567"
-    offline_token: "YOUR_OFFLINE_TOKEN_HERE"
+    offline_token: "{{ vault_offline_token }}"
     case_updates_needed:
       - attachment: "/var/log/my-custom-app.log"
         attachmentDescription: "Custom log file from my-server-01"
 
   tasks:
-    - name: Call rh_token_refresh role
+    - name: Refresh API token
       ansible.builtin.include_role:
         name: infra.support_assist.rh_token_refresh
 
-    - name: Call rh_case_update role
+    - name: Upload file to case
       ansible.builtin.include_role:
         name: infra.support_assist.rh_case_update
 ```
 
-### Example 3: Upload multiple files and add a comment
+### Example 3: Upload Multiple Files and Add a Comment
 
 ```yaml
+---
 - name: Perform multiple case updates
   hosts: localhost
   connection: local
@@ -101,7 +112,7 @@ This role uses `curl` via `ansible.builtin.shell` for file uploads to ensure sup
 
   vars:
     case_id: "01234567"
-    offline_token: "YOUR_OFFLINE_TOKEN_HERE"
+    offline_token: "{{ vault_offline_token }}"
     case_updates_needed:
       - attachment: "/tmp/sos_reports/case_01234567/server1/sosreport-server1.tar.xz"
         attachmentDescription: "SOS Report from server1"
@@ -109,20 +120,56 @@ This role uses `curl` via `ansible.builtin.shell` for file uploads to ensure sup
         attachmentDescription: "SOS Report from server2"
       - comment: |
           ### Automation Complete
-          Attached are the `sosreport` files from `server1` and `server2`.
-          
+
+          Attached are the `sosreport` files from the following hosts:
+
           * `server1.example.com`
           * `server2.example.com`
         commentType: "markdown"
 
   tasks:
-    - name: Call rh_token_refresh role
+    - name: Refresh API token
       ansible.builtin.include_role:
         name: infra.support_assist.rh_token_refresh
 
-    - name: Call rh_case_update role
+    - name: Update case with files and comment
       ansible.builtin.include_role:
         name: infra.support_assist.rh_case_update
+```
+
+### Using the Collection Playbook
+
+```shell
+# Set your offline token as an environment variable
+export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
+
+# Upload a file
+ansible-playbook infra.support_assist.rh_case_update \
+  -e case_id=01234567 \
+  -e "case_updates_needed=[{'attachment': '/path/to/file.log', 'attachmentDescription': 'Manual log upload'}]"
+
+# Add a comment
+ansible-playbook infra.support_assist.rh_case_update \
+  -e case_id=01234567 \
+  -e "case_updates_needed=[{'comment': 'Adding a comment via playbook.', 'commentType': 'plaintext'}]"
+```
+
+## How It Works
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                        rh_case_update                           │
+├─────────────────────────────────────────────────────────────────┤
+│  1. Pre-validation                                              │
+│     └── Verify case_id and access token are set                 │
+│                                                                 │
+│  2. Loop through case_updates_needed                            │
+│     ├── If attachment → Upload file via curl                    │
+│     └── If comment → POST comment via API                       │
+│                                                                 │
+│  3. Report results                                              │
+│     └── Display success/failure for each update                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ## License
@@ -131,4 +178,6 @@ GPL-3.0-or-later
 
 ## Author Information
 
-- Lenny Shirley
+- **Author:** Lenny Shirley
+- **Company:** Red Hat
+- **Collection:** [infra.support_assist](https://github.com/redhat-cop/infra.support_assist)

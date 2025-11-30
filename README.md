@@ -5,11 +5,13 @@
 This Ansible Collection will gather various reports/outputs that are commonly asked for in Red Hat Support Cases, and can optionally **create the case**, and then upload the diagnostics directly to the Support Case Portal.
 
 This collection currently includes the following playbooks and roles:
-* `sos_report`: Gathers a `sosreport` from one or more target hosts.
+
+* **`aap_api_token`**: Obtains and manages OAuth2 API tokens for Ansible Automation Platform (AAP).
 * **`ocp_must_gather`**: Gathers an `oc adm must-gather` archive from an OpenShift cluster.
-* **`rh_case_create`**: **(NEW)** Creates a new Red Hat Support Case via API.
-* `rh_case_update`: Uploads files and/or adds comments to a Red Hat Support Case.
-* `rh_token_refresh`: Handles Red Hat API token authentication.
+* **`rh_case_create`**: Creates a new Red Hat Support Case via API.
+* **`rh_case_update`**: Uploads files and/or adds comments to a Red Hat Support Case.
+* **`rh_token_refresh`**: Handles Red Hat API token authentication and caching.
+* **`sos_report`**: Gathers a `sosreport` from one or more target hosts.
 
 ---
 
@@ -209,6 +211,7 @@ Please consult the dedicated documentation file for the full list of valid optio
 
 ## Roles
 
+* **[aap_api_token](roles/aap_api_token/README.md)**: Obtains and manages OAuth2 API tokens for Ansible Automation Platform (AAP). Automatically detects Controller version and uses the appropriate collection (`ansible.controller` or `ansible.platform`).
 * **[ocp_must_gather](roles/ocp_must_gather/README.md)**: Logs into an OpenShift cluster, runs `oc adm must-gather`, and archives the result.
     > **NEW FEATURES:**
     > * **Privilege Pre-Check (Safety):** The role now includes an **assertion task** to verify that the authenticated user/Service Account possesses the required **`cluster-admin`** privileges **`before`** executing the long-running **`must-gather`** command, failing early with a custom formatted message if permissions are inadequate.
@@ -223,6 +226,7 @@ Please consult the dedicated documentation file for the full list of valid optio
     > **Input Variable Options:** The full list of valid options for `case_product`, `case_type`, and `case_severity` are maintained in the dedicated documentation file: [roles/rh_case_create/docs/CASE_OPTIONS.md](roles/rh_case_create/docs/CASE_OPTIONS.md).
 * **[rh_case_update](roles/rh_case_update/README.md)**: Uploads files or adds comments to a Red Hat Support Case.
 * **[rh_token_refresh](roles/rh_token_refresh/README.md)**: Handles Red Hat API token authentication and caching.
+* **[sos_report](roles/sos_report/README.md)**: Generates `sosreport` on target hosts, fetches to control node, and prepares for upload.
 
 ---
 
@@ -263,6 +267,12 @@ Releasing the current major version happens from the `devel` branch.
   - [ ] Add options to the `sos_report` role to gather data from an OCP nodes using the official method as guidance from Red Hat KCS: [Method 1 - Using SSH](https://access.redhat.com/solutions/3820762) or [Method 2 - Using oc debug](https://access.redhat.com/solutions/4387261) - keep in mind the SOS Report from an OCP node is different from a standard Linux host sosreport.
   - [ ] Add an option to the `ocp_must_gather` or create a new role to gather data for one or more namespace using `oc adm inspect`
   - [ ] Add some lessons learn and tips how to use this automation on Ansible Automation Platform (Implemented above some useful tips/guidance: **[AAP Lessons Learned for Must-Gather Pipeline](#-aap-lessons-learned-for-must-gather-pipeline))**
+
+## Getting Help
+
+We are on the Ansible Forums, if you want to discuss something, ask for help, or participate in the community, please use the `#infra-support-assist` tag on the forum.
+
+[Ansible Forums](https://forum.ansible.com/tag/infra-support-assist)
 
 ## Contributing to this collection
 
