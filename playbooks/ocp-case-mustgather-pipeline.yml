@@ -17,12 +17,12 @@
     # --- CONTROL VARIABLES ---
     # If case_id is blank, a new case will be created. If set, the must-gather will be uploaded to the existing case.
     # ===============================================================================
-    case_id: ""  # Set to existing case ID to upload to an existing case instead of creating a new one.
+    # case_id: ""  # Set to existing case ID to upload to an existing case instead of creating a new one.
     # ===============================================================================
     # --- MUST GATHER ROLE CONTROL VARIABLES ---
     # ===============================================================================
-    ocp_must_gather_validate_ssl: false #  Set to false to skip SSL validation (useful for self-signed certs)
-    upload: true  # Set to true to upload the must-gather to the case after creation
+    # ocp_must_gather_validate_ssl: false #  Set to false to skip SSL validation (useful for self-signed certs)
+    # upload: true  # Set to true to upload the must-gather to the case after creation
     # ===============================================================================
     # --- USER INPUT VARIABLES (to be provided via Job Template Survey) ---
     # ===============================================================================
@@ -45,24 +45,25 @@
     # full list in role/ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md
 
   tasks:
-    - name: "Block - Full Automation Execution Pipeline"
+    - name: "Block | Generate OCP Must Gather"
       block:
-        # --- 1. MUST-GATHER EXECUTION (LOGIN, COLLECT, ARCHIVE) ---
-        # This call runs the entire role sequentially: Login, Facts, Generate, Fetch.
-        - name: "Block - Generate OCP Must Gather"
-          block:
-            - name: "RUN: OCP Must Gather (Login, Collect, and Archive)"
-              ansible.builtin.include_role:
-                name: ocp_must_gather
-          rescue:
-            - name: "Rescue | Must Gather failed"
-              ansible.builtin.fail:
-                msg: >
-                  [ERROR] Must Gather execution failed during collection or archiving.
-                  Stopping pipeline immediately; check the logs above for details.
+        - name: "RUN: OCP Must Gather (Login, Collect, and Archive)"
+          ansible.builtin.include_role:
+            name: ocp_must_gather
+      rescue:
+        - name: "Rescue | Must Gather failed"
+          ansible.builtin.fail:
+            msg: >
+              [ERROR] Must Gather execution failed during collection or archiving.
+              Stopping pipeline immediately; check the logs above for details.
 
-        # --- STEP 2: AUTHENTICATE TO RED HAT API ---
-        - name: "Block - Refresh Red Hat API Token"
+    - name: Upload Block
+      delegate_to: localhost
+      run_once: true
+      when:
+        - upload | bool | default(true)
+      block:
+        - name: "Block | Refresh Red Hat API Token"
           block:
             - name: "Call rh_token_refresh role (CRITICAL: Gets Red Hat API token)"
               ansible.builtin.include_role:
@@ -70,10 +71,11 @@
           rescue:
             - name: "Rescue | Token Refresh failed"
               ansible.builtin.fail:
-                msg: "[ERROR] Oh, No! => Refresh Red Hat API token failed. Stopping pipeline immediately, check the logs above for details."
+                msg: >
+                  [ERROR] Oh, No! => Refresh Red Hat API token failed.
+                  Stopping pipeline immediately, check the logs above for details.
 
-        # --- STEP 3: CREATE CASE ---
-        - name: "Block - Create Red Hat Support Case"
+        - name: "Block | Create Red Hat Support Case"
           when: case_id | length == 0
           block:
             - name: Call rh_case_create role (Creates case and sets new_case_id)
@@ -86,14 +88,12 @@
           rescue:
             - name: "Rescue | Case Creation failed"
               ansible.builtin.fail:
-                msg: |
-                  FAILED! Oh, No! => Case creation failed. Stopping pipeline immediately.
+                msg: >
+                  [ERROR] Oh, No! => Case creation failed.
+                  Stopping pipeline immediately, check the logs above for details.
                   Check the API response for invalid subscription or product/version mismatch.
 
-        # --- STEP 4: UPLOAD TO CASE (Always relies on the final case_id) ---
-        - name: Block - Upload Must Gather to Red Hat Case
-          when:
-            - upload | default(true) | bool
+        - name: Block | Upload Must Gather to Red Hat Case
           block:
             - name: Call rh_case_update role (Uploads file and comment)"
               ansible.builtin.include_role:
@@ -101,5 +101,7 @@
           rescue:
             - name: "Rescue | Upload failed"
               ansible.builtin.fail:
-                msg: "[ERROR] Oh, No! => Upload to Red Hat case failed. Stopping pipeline immediately, check the logs above for details."
+                msg: >
+                  [ERROR] Oh, No! => Upload to Red Hat case failed.
+                  Stopping pipeline immediately, check the logs above for details.
 ...

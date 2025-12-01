@@ -3,9 +3,38 @@
   hosts: all
   gather_facts: false
   tasks:
-    - name: Call sos_report role
-      ansible.builtin.include_role:
-        name: infra.support_assist.sos_report
+    - name: "Block | Role Validation(s)"
+      when:
+        - upload | bool | default(true)
+      block:
+        - name: Call rh_token_refresh role
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_token_refresh
+            tasks_from: 1-pre_validation.yml
+
+        - name: Call rh_case_create role (Creates case and sets new_case_id)
+          when: case_id | default('') | length == 0
+          ansible.builtin.include_role:
+            name: rh_case_create
+            tasks_from: 1-pre_validation.yml
+
+        - name: Call rh_case_update role
+          when: case_id | default('') | length > 0
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_case_update
+            tasks_from: 1-pre_validation.yml
+
+    - name: "Block | Gather SOS Report(s)"
+      block:
+        - name: "RUN: Gather SOS Report(s)"
+          ansible.builtin.include_role:
+            name: infra.support_assist.sos_report
+      rescue:
+        - name: "Rescue | SOS Report(s) failed"
+          ansible.builtin.fail:
+            msg: >
+              [ERROR] SOS Report(s) execution failed during collection or archiving.
+              Stopping pipeline immediately; check the logs above for details.
 
     - name: Upload Block
       delegate_to: localhost
@@ -24,11 +53,45 @@
               {% endfor %}
               {{ combined_list }}
 
-        - name: Call rh_token_refresh role
-          ansible.builtin.include_role:
-            name: infra.support_assist.rh_token_refresh
+        - name: "Block | Refresh Red Hat API Token"
+          block:
+            - name: Call rh_token_refresh role
+              ansible.builtin.include_role:
+                name: infra.support_assist.rh_token_refresh
+          rescue:
+            - name: "Rescue | Token Refresh failed"
+              ansible.builtin.fail:
+                msg: >
+                  [ERROR] Oh, No! => Refresh Red Hat API token failed.
+                  Stopping pipeline immediately, check the logs above for details.
 
-        - name: Call rh_case_update role
-          ansible.builtin.include_role:
-            name: infra.support_assist.rh_case_update
+        - name: "Block | Create Red Hat Support Case"
+          when: case_id | default('') | length == 0
+          block:
+            - name: Call rh_case_create role (Creates case and sets new_case_id)
+              ansible.builtin.include_role:
+                name: rh_case_create
+
+            - name: Set global case_id to newly created ID
+              ansible.builtin.set_fact:
+                case_id: "{{ new_case_id }}"
+          rescue:
+            - name: "Rescue | Case Creation failed"
+              ansible.builtin.fail:
+                msg: >
+                  [ERROR] Oh, No! => Case creation failed.
+                  Stopping pipeline immediately, check the logs above for details.
+                  Check the API response for invalid subscription or product/version mismatch.
+
+        - name: "Block | Upload SOS Report(s) to Red Hat Case"
+          block:
+            - name: Call rh_case_update role
+              ansible.builtin.include_role:
+                name: infra.support_assist.rh_case_update
+          rescue:
+            - name: "Rescue | Upload failed"
+              ansible.builtin.fail:
+                msg: >
+                  [ERROR] Oh, No! => Upload to Red Hat case failed.
+                  Stopping pipeline immediately, check the logs above for details.
 ...
