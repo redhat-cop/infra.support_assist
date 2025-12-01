@@ -23,7 +23,7 @@
     status_code: 200
     use_proxy: "{{ rh_use_proxy | default(false) }}"
   register: token_response
-  no_log: "{{ var_no_log | default('true') | bool }}" # <--- To keep sensitive values out of Ansible output logs
+  no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
   environment:
     https_proxy: "{{ rh_http_proxy }}"
     http_proxy: "{{ rh_http_proxy }}"
@@ -31,7 +31,7 @@
 - name: Refresh Token | Set access token fact
   ansible.builtin.set_fact:
     rh_token_refresh_api_access_token: "{{ token_response.json.access_token }}"
-  no_log: "{{ var_no_log | default('true') | bool }}" # <--- To keep sensitive values out of Ansible output logs
+  no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
 
 - name: Refresh Token | Cache the new token and timestamp locally
   ansible.builtin.copy:
@@ -42,7 +42,7 @@
       }
     dest: "{{ rh_token_refresh_token_cache_file }}"
     mode: '0600' # Set secure permissions for the token file.
-  no_log: "{{ var_no_log | default('true') | bool }}" # <--- To keep sensitive values out of Ansible output logs
+  no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
 
 - name: Refresh Token | Print on screen role completion status.
   ansible.builtin.debug:

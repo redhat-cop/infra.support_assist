@@ -40,7 +40,7 @@
       -F "description={{ case_update.attachmentDescription | default('') }}" \
       "{{ rh_api_base_url }}/support/v1/cases/{{ case_id }}/attachments/"
   register: upload_cli_result
-  no_log: "{{ var_no_log | default('true') | bool }}" # <--- To keep sensitive values out of Ansible output logs
+  no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
   failed_when: false
   changed_when: upload_cli_result.rc == 0
 

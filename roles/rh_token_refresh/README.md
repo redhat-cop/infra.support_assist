@@ -132,11 +132,11 @@ export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
 │     └── Verify offline_token is provided                        │
 │                                                                 │
 │  2. Check cache                                                 │
-│     ├── If cache exists and token is fresh → Use cached token  │
-│     └── If cache missing or expired → Proceed to refresh       │
+│     ├── If cache exists and token is fresh → Use cached token   │
+│     └── If cache missing or expired → Proceed to refresh        │
 │                                                                 │
 │  3. Token refresh (if needed)                                   │
-│     ├── POST to Red Hat SSO with offline_token                 │
+│     ├── POST to Red Hat SSO with offline_token                  │
 │     ├── Receive new access_token                                │
 │     └── Store in cache file with timestamp                      │
 │                                                                 │

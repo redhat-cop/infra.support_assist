@@ -35,7 +35,7 @@
     validate_certs: true
     use_proxy: "{{ rh_use_proxy | default(false) }}"
   register: account_info_result
-  no_log: "{{ var_no_log | default('true') | bool }}" # <--- To keep sensitive values out of Ansible output logs
+  no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
 
   environment:
     https_proxy: "{{ rh_http_proxy }}"

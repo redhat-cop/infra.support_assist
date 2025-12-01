@@ -8,7 +8,7 @@
   ansible.builtin.set_fact:
     cached_token_data: "{{ lookup('file', rh_token_refresh_token_cache_file) | from_json | default({}) }}"
   when: token_file_stat.stat.exists
-  no_log: "{{ var_no_log | default('true') | bool }}" # <--- To keep sensitive values out of Ansible output logs
+  no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
 
 - name: Check token cache | Determine if the cached token is still valid
   when:
@@ -25,7 +25,7 @@
     - cached_token_data.token is defined
   ansible.builtin.set_fact:
     rh_token_refresh_api_access_token: "{{ cached_token_data.token }}"
-  no_log: "{{ var_no_log | default('true') | bool }}" # <--- To keep sensitive values out of Ansible output logs
+  no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
 
 - name: Check token cache | Print on screen role execution status.
   ansible.builtin.debug:
