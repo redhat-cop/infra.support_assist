@@ -14,6 +14,6 @@
       - " {{ message_text }} "
       - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
   vars:
-    message_text: "Pre-Validation for Red Hat Support Case Creation Started"
+    message_text: "Pre-Validation for Red Hat API Offline Token Refresh Started"
   run_once: true
 ...
