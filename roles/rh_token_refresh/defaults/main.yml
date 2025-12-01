@@ -9,16 +9,6 @@ separator_char: "*"
 # Define a standard length for the calculation (must be an integer)
 default_message_padding: 4
 
-# --- Control Variable Default ---
-# This default is necessary in case 'target_environment' is not set via -e or inventory
-target_environment_local: "prod"
-
-# --- Lookups (These variables are computed at runtime based on the final, merged rh_env_config) ---
-# NOTE: The 'rh_env_config' dictionary must be available in the play's scope.
-rh_api_base_url: "{{ rh_env_config[target_environment].rh_token_refresh_api_base_url | default(rh_token_refresh_api_base_url_local) }}"
-rh_base_url: "{{ rh_env_config[target_environment].rh_base_url | default(rh_base_url_local) }}"
-rh_token_url: "{{ rh_env_config[target_environment].rh_token_refresh_api_token_url | default(rh_token_refresh_api_token_url_local) }}"
-rh_use_proxy: "{{ rh_env_config[target_environment].rh_use_proxy | default(rh_use_proxy_local) | default(false) }}"
-rh_http_proxy: "{{ rh_env_config[target_environment].rh_http_proxy | default(rh_http_proxy_local) | default('') }}"
-# --- End of defaults/main.yml ---
+rh_token_refresh_use_proxy: "{{ use_proxy | default(false) }}"
+rh_token_refresh_http_proxy: "{{ http_proxy | default('') }}"
 ...
