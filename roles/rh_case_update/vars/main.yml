@@ -2,5 +2,4 @@
 ---
 rh_case_update_base_url: "https://access.redhat.com"
 rh_case_update_api_base_url: "https://api.access.redhat.com"
-rh_case_update_api_token_url: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
 ...

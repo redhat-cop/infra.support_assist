@@ -1,7 +1,5 @@
 # roles/rh_case_create/vars/main.yml
 ---
-rh_base_url_local: "https://access.redhat.com"
-rh_token_refresh_api_base_url_local: "https://api.access.redhat.com"
-rh_token_refresh_api_token_url_local: "https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token"
-rh_use_proxy_local: false
+rh_case_create_base_url: "https://access.redhat.com"
+rh_case_create_api_base_url: "https://api.access.redhat.com"
 ...

@@ -15,7 +15,7 @@
 
 - name: "Comment | POST comment to case {{ case_creation_result.json.location[0].split('/')[-1] }}"
   ansible.builtin.uri:
-    url: "{{ rh_token_refresh_api_base_url | default(rh_token_refresh_api_base_url_local) }}/support/v1/cases/{{ case_creation_result.json.location[0].split('/')[-1] }}/comments"
+    url: "{{ rh_token_refresh_api_base_url | default(rh_case_create_api_base_url) }}/support/v1/cases/{{ case_creation_result.json.location[0].split('/')[-1] }}/comments"
     method: POST
     headers:
       Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
@@ -29,7 +29,7 @@
       - 200
     return_content: true
     validate_certs: true
-    use_proxy: "{{ rh_use_proxy | default(false) }}"
+    use_proxy: "{{ rh_case_create_use_proxy }}"
 
   register: comment_api_result
   no_log: "{{ rh_case_create_no_log }}" # <--- To keep sensitive values out of Ansible output logs
