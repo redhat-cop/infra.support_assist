@@ -7,11 +7,6 @@ argument_specs:
     author:
       - Lenny Shirley
     options:
-      case_id:
-        description: 'Variable used in included task file: fetch.yml'
-        type: str
-        required: true
-        version_added: 0.1.0-devel
       sos_report_aap_containerized:
         description: 'Port number for network connection (default: ''{{ containerized | default(false) | bool }}'')'
         type: str

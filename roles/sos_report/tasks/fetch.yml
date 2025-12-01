@@ -9,7 +9,7 @@
 - name: Fetch | Case folder block
   when: found_sos_report.matched > 0
   vars:
-    __dest_path: "{{ sos_report_dest }}/case_{{ case_id }}/{{ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
+    __dest_path: "{{ sos_report_dest }}/{{ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
   block:
     - name: Fetch | Ensure destination folder exists
       ansible.builtin.file:

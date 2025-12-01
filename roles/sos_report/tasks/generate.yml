@@ -15,7 +15,6 @@
     sos report --batch
       {% if sos_report_aap_containerized | bool %} -k aap_containerized.username={{ ansible_user_id }}{% endif %}
       --label={{ inventory_hostname | lower }}
-      {% if case_id != '' %} --case-id {{ case_id }}{% endif %}
 
 - name: Generate | Set SOS Report location variable
   ansible.builtin.set_fact:

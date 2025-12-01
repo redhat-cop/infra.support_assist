@@ -1,7 +1,4 @@
 ---
-- name: Pre-Validation
-  ansible.builtin.include_tasks: pre-val.yml
-
 - name: Install
   ansible.builtin.include_tasks: install.yml
 
