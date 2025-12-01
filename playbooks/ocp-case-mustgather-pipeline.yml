@@ -79,11 +79,6 @@
             - name: Call rh_case_create role (Creates case and sets new_case_id)
               ansible.builtin.include_role:
                 name: rh_case_create
-              vars:
-                # Pass empty strings for variables the role incorrectly requires at top-level
-                attachment: ""
-                comment: ""
-                upload_body_raw: ""
 
             - name: Set global case_id to newly created ID
               ansible.builtin.set_fact:
@@ -103,10 +98,6 @@
             - name: Call rh_case_update role (Uploads file and comment)"
               ansible.builtin.include_role:
                 name: rh_case_update
-              vars:
-                attachment: ""
-                comment: ""
-                upload_body_raw: ""
           rescue:
             - name: "Rescue | Upload failed"
               ansible.builtin.fail:

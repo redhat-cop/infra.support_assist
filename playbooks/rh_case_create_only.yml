@@ -45,11 +45,6 @@
             - name: Call rh_case_create role (Creates case and sets new_case_id)
               ansible.builtin.include_role:
                 name: rh_case_create
-              vars:
-                # Pass empty strings for variables the role incorrectly requires at top-level
-                attachment: ""
-                comment: ""
-                upload_body_raw: ""
           rescue:
             - name: "Rescue | Case Creation failed"
               ansible.builtin.fail:

@@ -7,5 +7,6 @@ galaxy_info:
   license: GPL-3.0-or-later
   min_ansible_version: 2.15.0
   galaxy_tags: []
-dependencies: []
+dependencies:
+  - role: rh_token_refresh
 ...

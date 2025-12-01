@@ -11,4 +11,6 @@ default_message_padding: 4
 
 rh_token_refresh_use_proxy: "{{ use_proxy | default(false) }}"
 rh_token_refresh_http_proxy: "{{ http_proxy | default('') }}"
+
+rh_token_refresh_no_log: "{{ var_no_log | default(true) | bool }}"
 ...

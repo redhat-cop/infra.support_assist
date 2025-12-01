@@ -9,4 +9,6 @@ default_message_padding: 4
 
 rh_case_update_use_proxy: "{{ use_proxy | default(false) }}"
 rh_case_update_http_proxy: "{{ http_proxy | default('') }}"
+
+rh_case_update_no_log: "{{ var_no_log | default(true) | bool }}"
 ...

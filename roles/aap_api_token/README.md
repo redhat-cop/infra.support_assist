@@ -48,7 +48,7 @@ This role automates the process of authenticating with Ansible Automation Platfo
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `aap_api_token_no_log` | Suppress sensitive output in logs | `false` |
+| `aap_api_token_no_log` | Suppress sensitive output in logs (actually used in tasks) | `true` |
 | `aap_controller_full_version` | AAP Controller version (auto-detected if not set) | Auto-detected |
 
 ## Entry Points

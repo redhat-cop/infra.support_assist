@@ -1,6 +1,6 @@
 # --- Main Task File for  ---
 ---
-- name: Main | Print on screen role execution status.
+- name: Main | Print on screen role execution status
   ansible.builtin.debug:
     msg:
       - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
@@ -22,7 +22,7 @@
 - name: Main | Include Post-Creation Comment Tasks
   ansible.builtin.include_tasks: 4-post_comment.yml
 
-- name: Main | Print on screen role completion status.
+- name: Main | Print on screen role completion status
   ansible.builtin.debug:
     msg:
       - "{{ separator_char * (message_text | length + default_message_padding) | int }}"

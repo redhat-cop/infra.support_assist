@@ -42,6 +42,14 @@ This role creates a **new Red Hat Support Case** via the Red Hat API, sets the m
 | `account_name` | The name of the organization associated with the API token. | `string` |
 | `accountNumberRef` | The numeric account ID required for API submission. | `string` |
 
+### Advanced Configuration Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| `rh_case_create_http_proxy` | HTTP/HTTPS proxy URL for API requests (e.g., `http://proxy.example.com:8080`). | `string` | No | `""` |
+| `rh_case_create_use_proxy` | Whether to use proxy for this role (falls back to `use_proxy`). | `bool` | No | `false` |
+| `rh_case_create_no_log` | Suppress sensitive output in logs. | `bool` | No | `true` |
+
 ## Dependencies
 
 - This role **must** be run after `infra.support_assist.rh_token_refresh` to populate the required `rh_token_refresh_api_access_token` fact.

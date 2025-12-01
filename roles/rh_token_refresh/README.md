@@ -27,6 +27,10 @@ None. This role runs on `localhost` using only built-in Ansible modules.
 | `rh_token_refresh_token_cache_file` | Full path to the file where the access token and timestamp will be cached. | `path` | No | `/tmp/redhat_refresh_token.json` |
 | `rh_token_refresh_token_max_age_seconds` | Maximum age (in seconds) of a cached token before it's considered expired. | `int` | No | `900` (15 minutes) |
 | `rh_token_refresh_api_token_url` | Full URL for the Red Hat SSO token endpoint. | `string` | No | `https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token` |
+| `rh_token_refresh_api_base_url` | Base URL for the Red Hat API (e.g., `https://api.access.redhat.com`). | `string` | No | `https://api.access.redhat.com` |
+| `rh_token_refresh_use_proxy` | Whether to use a proxy for API requests. | `bool` | No | `false` |
+| `rh_token_refresh_http_proxy` | HTTP/HTTPS proxy URL for API requests (e.g., `http://proxy.example.com:8080`). | `string` | No | `""` |
+| `rh_token_refresh_no_log` | Suppress sensitive output in logs. | `bool` | No | `true` |
 
 ### Output Variables
 

@@ -14,7 +14,7 @@
         validate_certs: "{{ aap_validate_certs }}"
         status_code: 200
       register: ping_result_new
-      no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
+      no_log: "{{ aap_api_token_no_log }}" # <--- To keep sensitive values out of Ansible output logs
 
     - name: Controller Version Detection | Set Controller version facts from newer path
       ansible.builtin.set_fact:
@@ -35,7 +35,7 @@
         validate_certs: "{{ aap_validate_certs }}"
         status_code: 200
       register: ping_result_old
-      no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
+      no_log: "{{ aap_api_token_no_log }}" # <--- To keep sensitive values out of Ansible output logs
       ignore_errors: true # Ignore failure here so we can check status below
 
     - name: Controller Version Detection | Set Controller version facts from older path

@@ -28,8 +28,8 @@ This role generates an `sosreport` on one or more target hosts, fetches the resu
 |----------|-------------|------|----------|---------|
 | `case_id` | Red Hat Support Case number (e.g., `01234567`). Used for naming and organization. | `string` | Yes | — |
 | `sos_report_dest` | Base directory on the control node where fetched reports are stored. | `path` | No | `/tmp/sos_reports` |
-| `sos_report_cleanup` | Remove the generated sosreport from target hosts after fetching. | `bool` | No | `false` |
-| `sos_report_aap_containerized` | Enable AAP containerized-specific options for the SOS report. | `bool` | No | `false` |
+| `sos_report_cleanup` | Remove the generated sosreport from target hosts after fetching. | `bool` | No | `true` (via `clean` variable) |
+| `sos_report_aap_containerized` | Enable AAP containerized-specific options for the SOS report. | `bool` | No | `false` (via `containerized` variable) |
 
 ### Output Variables
 

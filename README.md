@@ -165,7 +165,7 @@ This collection provides four main playbooks for common operations:
           -e case_severity="3 (Normal)" \
           -e offline_token=YOUR_OFFLINE_TOKEN_HERE
         ~~~
-    > **Note:** To use this playbook to **create** a case, you must provide **all four mandatory variables**: `case_summary`, `case_description`, `case_type`, and `case_severity`. Crucially, you must also **omit** the `case_id` variable. If `case_id` is provided, the playbook skips creation and proceeds directly to upload.
+    > **Note:** To use this playbook to **create** a case, you must provide **all six mandatory variables**: `case_summary`, `case_description`, `case_product`, `case_product_version`, `case_type`, and `case_severity`. Crucially, you must also **omit** the `case_id` variable. If `case_id` is provided, the playbook skips creation and proceeds directly to upload.
 
 ### Valid Case Input Options
 

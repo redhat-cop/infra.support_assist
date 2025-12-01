@@ -6,6 +6,5 @@ aap_password: "{{ lookup('env', 'AAP_PASSWORD') | default('', true) }}"
 aap_token: "{{ lookup('env', 'AAP_TOKEN') | default('', true) }}"
 aap_validate_certs: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(true, true) | bool }}"
 aap_hostname: "{{ aap_gateway_url | default(aap_controller_url, true) | urlsplit('hostname') }}"
-
-aap_api_token_no_log: false
+aap_api_token_no_log: "{{ var_no_log | default(true) | bool }}"
 ...

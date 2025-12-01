@@ -28,7 +28,7 @@
     use_proxy: "{{ rh_case_update_use_proxy | default(false) }}"
 
   register: comment_api_result
-  no_log: "{{ var_no_log | default(true) | bool }}" # <--- To keep sensitive values out of Ansible output logs
+  no_log: "{{ rh_case_update_no_log }}" # <--- To keep sensitive values out of Ansible output logs
 
   environment:
     https_proxy: "{{ rh_case_update_http_proxy }}"

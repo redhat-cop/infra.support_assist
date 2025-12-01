@@ -30,6 +30,14 @@ This role updates an existing Red Hat Support Case by uploading file attachments
 | `case_updates_needed` | A list of objects defining attachments to upload or comments to add. | `list` | Yes | — |
 | `rh_case_update_timeout` | Timeout in seconds for each `curl` file upload command. | `int` | No | `1800` (30 min) |
 
+### Advanced Configuration Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| `rh_case_update_use_proxy` | Whether to use a proxy for API requests. | `bool` | No | `false` |
+| `rh_case_update_http_proxy` | HTTP/HTTPS proxy URL for API requests (e.g., `http://proxy.example.com:8080`). | `string` | No | `""` |
+| `rh_case_update_no_log` | Suppress sensitive output in logs. | `bool` | No | `true` |
+
 ### `case_updates_needed` Object Structure
 
 Each item in the `case_updates_needed` list can contain:
