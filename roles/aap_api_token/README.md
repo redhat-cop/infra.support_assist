@@ -246,5 +246,6 @@ This role is typically used in conjunction with other roles in the `infra.suppor
 
 - `aap_api_dump` – Gather diagnostic output from AAP component APIs (Controller, Hub, EDA)
 - `rh_case` – Create and update Red Hat support cases (unified role)
+- `rh_token_refresh` – Handle Red Hat API token authentication and caching
 - `ocp_must_gather` – Gather OpenShift diagnostics
 - `sos_report` – Generate SOS reports

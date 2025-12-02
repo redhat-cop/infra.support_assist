@@ -201,3 +201,10 @@ GPL-3.0-or-later
 - **Authors:** Lenny Shirley, Diego Felipe Mateus
 - **Company:** Red Hat
 - **Collection:** [infra.support_assist](https://github.com/redhat-cop/infra.support_assist)
+
+## Related Roles
+
+This role is typically used in conjunction with other roles in the `infra.support_assist` collection:
+
+- `rh_case` – Create and update Red Hat support cases (unified role)
+- `rh_token_refresh` – Handle Red Hat API token authentication and caching
