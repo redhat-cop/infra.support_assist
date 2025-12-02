@@ -1,0 +1,5 @@
+# roles/rh_case/vars/main.yml
+---
+rh_case_base_url: "https://access.redhat.com"
+rh_case_api_base_url: "https://api.access.redhat.com"
+...

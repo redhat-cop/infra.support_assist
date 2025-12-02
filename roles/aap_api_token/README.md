@@ -244,7 +244,6 @@ GPL-3.0-or-later
 
 This role is typically used in conjunction with other roles in the `infra.support_assist` collection:
 
-- `rh_case_create` – Create Red Hat support cases
-- `rh_case_update` – Update existing support cases
+- `rh_case` – Create and update Red Hat support cases (unified role)
 - `ocp_must_gather` – Gather OpenShift diagnostics
 - `sos_report` – Generate SOS reports

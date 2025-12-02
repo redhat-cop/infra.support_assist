@@ -1,0 +1,20 @@
+# --- Start of roles/rh_case/handlers/main.yml ---
+---
+- name: DisplayCaseUpdateSummaryTrigger
+  ansible.builtin.debug:
+    msg:
+      - "{{ 'CASE CREATE SUMMARY' if new_case_id is defined else 'CASE UPDATE SUMMARY' }}"
+      - "Status: Red Hat Support Case {{ new_case_id | default(case_id) }} {{ 'Created' if new_case_id is defined else 'Updated' }} Successfully"
+      - "Account Name: {{ account_name }}"
+      - "Account Number Reference: {{ account_number_ref }}"
+      - "Case ID: {{ new_case_id | default(case_id) }}"
+      - "Case URL: {{ rh_base_url | default(rh_case_base_url) }}/support/cases/#/case/{{ new_case_id | default(case_id) }}"
+      - "Summary Text: {{ case_summary | default('N/A') | trim }}"
+      - "Product: {{ case_product | default('N/A') }}"
+      - "Version: {{ case_product_version | default('N/A') }}"
+      - "Severity: {{ case_severity | default('N/A') }}"
+      - "Issue Type: {{ case_type | default('N/A') }}"
+      - "Description: {{ case_description | default(case_summary | default('N/A')) | trim }}"
+      - "Action Required: Review the case via the URL above for full file upload details."
+  listen: "DisplayCaseUpdateSummaryTrigger"
+...

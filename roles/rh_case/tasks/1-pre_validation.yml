@@ -1,0 +1,143 @@
+---
+- name: Pre-validation | Determine operation mode (if not already set)
+  ansible.builtin.include_tasks: 0-determine_mode.yml
+  when: operation_mode is not defined
+
+- name: Pre-validation | Print on screen role execution status.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Pre-Validation for Red Hat Support Case Operations"
+  run_once: true
+
+- name: Pre-validation | Ensure Red Hat Refresh API Token was provided
+  run_once: true
+  ansible.builtin.assert:
+    that:
+      - rh_token_refresh_api_access_token is defined and rh_token_refresh_api_access_token | length > 0
+    success_msg: >-
+      PASSED! Oh, Yes! => Red Hat Refresh API Token provided, proceeding...
+    fail_msg: >-
+      FAILED! Oh, No! => rh_token_refresh_api_access_token was NOT provided!
+      This token is CRITICAL to authenticate to Red Hat API and manage support cases.
+      Please provide a valid offline token via extra-vars or survey, and try again.
+
+# --- Begin Account Info Retrieval ---
+- name: "Pre-validation | GET '/v1/accounts/current' to retrieve Account infos"
+  ansible.builtin.uri:
+    url: "{{ rh_token_refresh_api_base_url | default(rh_case_api_base_url) }}/support/v1/accounts/current"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Accept: "application/json"
+    status_code:
+      - 200
+    return_content: true
+    validate_certs: true
+    use_proxy: "{{ rh_case_use_proxy }}"
+  register: account_info_result
+  no_log: "{{ rh_case_no_log }}" # <--- To keep sensitive values out of Ansible output logs
+
+  environment:
+    https_proxy: "{{ rh_case_http_proxy }}"
+    http_proxy: "{{ rh_case_http_proxy }}"
+
+- name: "Pre-validation | Set facts for Account Name and Account Number Reference"
+  ansible.builtin.set_fact:
+    account_name: "{{ account_info_result.json.name | default('N/A') }}"
+    account_number_ref: "{{ account_info_result.json.accountNumber | default('N/A') }}"
+  run_once: true
+# --- End Account Info Retrieval ---
+
+- name: Pre-validation | Assert all mandatory case creation fields are provided (CREATE/HYBRID mode)
+  when:
+    - operation_mode in ['create', 'hybrid']
+  run_once: true
+  ansible.builtin.assert:
+    that:
+      - vars[item.key] is defined
+      - vars[item.key] | string | length > 0
+    fail_msg: "FAILED! Oh, No! => Missing mandatory argument: '{{ item.key }}'. This field is required to create a Red Hat support case."
+    success_msg: "PASSED! Oh, Yes! => Mandatory field '{{ item.key }}' is defined."
+  loop:
+    # Only loop through the core user inputs.
+    - { key: case_summary }
+    - { key: case_product }
+    - { key: case_description }
+    - { key: case_product_version }
+    - { key: case_type }
+    - { key: case_severity }
+
+- name: Pre-validation | Assert case_id is provided (UPDATE mode)
+  when:
+    - operation_mode == 'update'
+  run_once: true
+  ansible.builtin.assert:
+    that:
+      - case_id is defined
+      - case_id is not none
+      - case_id | length > 0
+    fail_msg: >-
+      [FATAL] The Red Hat Case ID is missing or empty.
+      Please provide a valid case_id for update operations.
+    success_msg: "Successfully validated target Case ID: {{ case_id }}"
+
+- name: Pre-validation | Assert case_updates_needed is provided (UPDATE/HYBRID mode)
+  when:
+    - operation_mode in ['update', 'hybrid']
+    - case_updates_needed is defined
+  run_once: true
+  ansible.builtin.assert:
+    that:
+      - case_updates_needed is not none
+      - case_updates_needed | length > 0
+    fail_msg: >-
+      [FATAL] The case_updates_needed list is missing or empty.
+      Please provide a list of updates (attachments and/or comments) to apply.
+    success_msg: "Successfully validated case_updates_needed list with {{ case_updates_needed | length }} item(s)"
+
+- name: Pre-validation | GET '/v1/cases' to retrieve case infos (UPDATE mode)
+  when:
+    - operation_mode == 'update'
+  ansible.builtin.uri:
+    url: "{{ rh_token_refresh_api_base_url | default(rh_case_api_base_url) }}/support/v1/cases/{{ case_id }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Accept: "application/json"
+    status_code:
+      - 200
+    return_content: true
+    validate_certs: true
+    use_proxy: "{{ rh_case_use_proxy }}"
+  register: case_info_result
+  no_log: "{{ rh_case_no_log }}" # <--- To keep sensitive values out of Ansible output logs
+  environment:
+    https_proxy: "{{ rh_case_http_proxy }}"
+    http_proxy: "{{ rh_case_http_proxy }}"
+
+- name: Pre-validation | Set facts for case info (UPDATE mode)
+  when:
+    - operation_mode == 'update'
+  ansible.builtin.set_fact:
+    case_summary: "{{ case_info_result.json.summary | default('N/A') }}"
+    case_product: "{{ case_info_result.json.product | default('N/A') }}"
+    case_product_version: "{{ case_info_result.json.version | default('N/A') }}"
+    case_type: "{{ case_info_result.json.caseType | default('N/A') }}"
+    case_severity: "{{ case_info_result.json.severity | default('N/A') }}"
+    case_description: "{{ case_info_result.json.description | default('N/A') }}"
+  run_once: true
+
+- name: Pre-validation | Print on screen role pre-validation complete.
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: "Pre-Validation for Red Hat Support Case Operations Completed Successfully"
+  run_once: true
+...

@@ -35,7 +35,7 @@ This role generates an `sosreport` on one or more target hosts, fetches the resu
 
 | Variable | Description | Type |
 |----------|-------------|------|
-| `case_updates_needed` | List of objects describing the fetched files for upload by `rh_case_update`. | `list` |
+| `case_updates_needed` | List of objects describing the fetched files for upload by `rh_case`. | `list` |
 
 ### Output Directory Structure
 
@@ -158,7 +158,7 @@ ansible-playbook -i inventory infra.support_assist.sos_report \
 
     - name: Upload reports to case
       ansible.builtin.include_role:
-        name: infra.support_assist.rh_case_update
+        name: infra.support_assist.rh_case
 ```
 
 ## How It Works

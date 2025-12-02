@@ -1,0 +1,101 @@
+---
+argument_specs:
+  main:
+    short_description: Auto-generated specs for rh_case role - unified case management
+    description: >
+      Creates new Red Hat Support Cases and/or updates existing cases with attachments and comments via API.
+      Automatically detects operation mode: create (new case), update (existing case), or hybrid (create then update).
+    author:
+      - Lenny Shirley
+      - Diego Felipe Mateus
+    options:
+      # --- CASE CREATION VARIABLES (Required for create/hybrid mode) ---
+      case_summary:
+        description: 'Summary of the Red Hat Support Case to be created.'
+        type: str
+        required: false
+        version_added: 0.2.0-devel
+      case_product:
+        description: 'Product associated with the Red Hat Support Case.'
+        type: str
+        required: false
+        version_added: 0.2.0-devel
+      case_description:
+        description: 'Detailed description of the Red Hat Support Case.'
+        type: str
+        required: false
+        version_added: 0.2.0-devel
+      case_product_version:
+        description: 'Version of the product associated with the Red Hat Support Case.'
+        type: str
+        required: false
+        version_added: 0.2.0-devel
+      case_type:
+        description: 'Type of the Red Hat Support Case (e.g., "Configuration Issue", "Defect / Bug").'
+        type: str
+        required: false
+        version_added: 0.2.0-devel
+      case_severity:
+        description: 'Severity level of the Red Hat Support Case (e.g., "3 (Normal)", "2 (High)").'
+        type: str
+        required: false
+        version_added: 0.2.0-devel
+      cluster_id:
+        description: 'Cluster ID associated with the Red Hat Support Case (optional, for OpenShift).'
+        type: str
+        required: false
+        version_added: 0.2.0-devel
+      # --- CASE UPDATE VARIABLES (Required for update/hybrid mode) ---
+      case_id:
+        description: 'Red Hat Support Case ID for update operations (e.g., "01234567").'
+        type: str
+        required: false
+        version_added: 0.2.0-devel
+      case_updates_needed:
+        description: 'List of updates to apply (attachments and/or comments).'
+        type: list
+        required: false
+        version_added: 0.2.0-devel
+      # --- AUTHENTICATION VARIABLES (Required, typically from rh_token_refresh role) ---
+      rh_token_refresh_api_access_token:
+        description: 'Red Hat Refresh API Access Token used for authentication.'
+        type: str
+        required: false # It's a fact, so it shouldn't be required here
+        version_added: 0.2.0-devel
+      accountNumberRef:
+        description: 'Account Number Reference associated with the Red Hat Support Case (auto-retrieved).'
+        type: str
+        required: false # It's a fact
+        version_added: 0.2.0-devel
+      # --- CONFIGURATION VARIABLES (Optional) ---
+      rh_case_timeout:
+        description: 'Timeout value in seconds for file uploads (default: 1800).'
+        type: int
+        default: 1800
+        version_added: 0.2.0-devel
+      rh_case_use_proxy:
+        description: 'Whether to use proxy for API requests.'
+        type: bool
+        default: false
+        version_added: 0.2.0-devel
+      rh_case_http_proxy:
+        description: 'HTTP/HTTPS proxy URL for API requests.'
+        type: str
+        default: ''
+        version_added: 0.2.0-devel
+      rh_case_no_log:
+        description: 'Suppress sensitive output in logs.'
+        type: bool
+        default: true
+        version_added: 0.2.0-devel
+      post_create_comment:
+        description: 'Whether to post initial comment after case creation (default: true).'
+        type: bool
+        default: true
+        version_added: 0.2.0-devel
+      initial_comment_type:
+        description: 'Content type for initial post-creation comment (markdown or plaintext, default: markdown).'
+        type: str
+        default: 'markdown'
+        version_added: 0.2.0-devel
+...

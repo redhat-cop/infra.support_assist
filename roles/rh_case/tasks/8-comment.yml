@@ -11,7 +11,7 @@
 
 - name: "Comment | Add comment to case {{ case_id }}"
   ansible.builtin.uri:
-    url: "{{ rh_token_refresh_api_base_url }}/support/v1/cases/{{ case_id }}/comments"
+    url: "{{ rh_token_refresh_api_base_url | default(rh_case_api_base_url) }}/support/v1/cases/{{ case_id }}/comments"
     method: POST
     headers:
       Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
@@ -25,15 +25,12 @@
       - 200
     return_content: true
     validate_certs: true
-    use_proxy: "{{ rh_case_update_use_proxy | default(false) }}"
-
+    use_proxy: "{{ rh_case_use_proxy | default(false) }}"
   register: comment_api_result
-  no_log: "{{ rh_case_update_no_log }}" # <--- To keep sensitive values out of Ansible output logs
-
+  no_log: "{{ rh_case_no_log }}" # <--- To keep sensitive values out of Ansible output logs
   environment:
-    https_proxy: "{{ rh_case_update_http_proxy }}"
-    http_proxy: "{{ rh_case_update_http_proxy }}"
-  when: rh_case_update_use_proxy | default(false)
+    https_proxy: "{{ rh_case_http_proxy }}"
+    http_proxy: "{{ rh_case_http_proxy }}"
 
 - name: Comment | Assert comment creation succeeded (HTTP 200)
   ansible.builtin.assert:
@@ -61,4 +58,5 @@
   vars:
     message_text: "Completed Comment Update for Case ID {{ case_id }}"
   run_once: true
+
 ...

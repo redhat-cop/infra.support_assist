@@ -1,7 +1,7 @@
 ---
 galaxy_info:
-  author: Diego Felipe Mateus - dfmateus@redhat.com
-  description: Creates a new support case via the Red Hat Support API.
+  author: "Lenny Shirley, Diego Felipe Mateus"
+  description: "Unified role for creating and updating Red Hat Support Cases via API"
   company: Red Hat
   issue_tracker_url: https://github.com/redhat-cop/infra.support_assist/issues
   license: GPL-3.0-or-later

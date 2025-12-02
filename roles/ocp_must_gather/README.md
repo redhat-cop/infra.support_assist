@@ -61,7 +61,7 @@ This role runs **`oc adm must-gather`** against a target OpenShift cluster, comp
 
 | Variable | Description | Type |
 |----------|-------------|------|
-| `case_updates_needed` | List containing the generated archive path and description for upload by `rh_case_update`. | `list` |
+| `case_updates_needed` | List containing the generated archive path and description for upload by `rh_case`. | `list` |
 
 ## Component Collection Options
 

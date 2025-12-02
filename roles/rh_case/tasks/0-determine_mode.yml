@@ -1,0 +1,15 @@
+---
+- name: Determine operation mode
+  ansible.builtin.set_fact:
+    operation_mode: >-
+      {{
+        'create' if (case_id is not defined or case_id | length == 0) and
+                    (case_summary is defined and case_product is defined)
+        else 'update' if (case_id is defined and case_id | length > 0)
+        else 'hybrid' if (case_id is not defined or case_id | length == 0) and
+                         (case_summary is defined and case_product is defined) and
+                         (case_updates_needed is defined)
+        else 'unknown'
+      }}
+  run_once: true
+...
