@@ -4,24 +4,19 @@
   gather_facts: false
   tasks:
     - name: "Block | Role Validation(s)"
+      delegate_to: localhost
+      run_once: true
       when:
-        - upload | bool | default(true)
+        - upload | default(true) | bool
       block:
         - name: Call rh_token_refresh role
           ansible.builtin.include_role:
             name: infra.support_assist.rh_token_refresh
             tasks_from: 1-pre_validation.yml
 
-        - name: Call rh_case_create role (Creates case and sets new_case_id)
-          when: case_id | default('') | length == 0
+        - name: Call rh_case role for validation
           ansible.builtin.include_role:
-            name: rh_case_create
-            tasks_from: 1-pre_validation.yml
-
-        - name: Call rh_case_update role
-          when: case_id | default('') | length > 0
-          ansible.builtin.include_role:
-            name: infra.support_assist.rh_case_update
+            name: infra.support_assist.rh_case
             tasks_from: 1-pre_validation.yml
 
     - name: "Block | Gather SOS Report(s)"
@@ -40,7 +35,7 @@
       delegate_to: localhost
       run_once: true
       when:
-        - upload | bool | default(true)
+        - upload | default(true) | bool
       block:
         - name: Aggregate 'case_updates_needed' data from all hosts
           ansible.builtin.set_fact:
@@ -65,33 +60,16 @@
                   [ERROR] Oh, No! => Refresh Red Hat API token failed.
                   Stopping pipeline immediately, check the logs above for details.
 
-        - name: "Block | Create Red Hat Support Case"
-          when: case_id | default('') | length == 0
+        - name: "Block | Create/Update Red Hat Support Case"
           block:
-            - name: Call rh_case_create role (Creates case and sets new_case_id)
+            - name: Call rh_case role (Automatically detects create/update/hybrid mode)
               ansible.builtin.include_role:
-                name: rh_case_create
-
-            - name: Set global case_id to newly created ID
-              ansible.builtin.set_fact:
-                case_id: "{{ new_case_id }}"
+                name: infra.support_assist.rh_case
           rescue:
-            - name: "Rescue | Case Creation failed"
+            - name: "Rescue | Case Creation/Update failed"
               ansible.builtin.fail:
                 msg: >
-                  [ERROR] Oh, No! => Case creation failed.
+                  [ERROR] Oh, No! => Case creation/update failed.
                   Stopping pipeline immediately, check the logs above for details.
                   Check the API response for invalid subscription or product/version mismatch.
-
-        - name: "Block | Upload SOS Report(s) to Red Hat Case"
-          block:
-            - name: Call rh_case_update role
-              ansible.builtin.include_role:
-                name: infra.support_assist.rh_case_update
-          rescue:
-            - name: "Rescue | Upload failed"
-              ansible.builtin.fail:
-                msg: >
-                  [ERROR] Oh, No! => Upload to Red Hat case failed.
-                  Stopping pipeline immediately, check the logs above for details.
 ...

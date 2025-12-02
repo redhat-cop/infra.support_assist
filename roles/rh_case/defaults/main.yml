@@ -1,0 +1,21 @@
+# roles/rh_case/defaults/main.yml
+---
+# Default timeout settings for Red Hat Case operations
+rh_case_timeout: "{{ upload_timeout | default(1800) }}"  # Timeout for file uploads in seconds (default: 1800 seconds = 30 minutes)
+
+# Character used for separating log blocks
+separator_char: "*"
+
+# Define a standard length for the calculation (must be an integer)
+default_message_padding: 4
+
+# Proxy configuration
+rh_case_use_proxy: "{{ use_proxy | default(false) }}"
+rh_case_http_proxy: "{{ http_proxy | default('') }}"
+
+# Logging configuration
+rh_case_no_log: "{{ var_no_log | default(true) | bool }}"
+
+# Post-creation comment configuration
+post_create_comment: true  # Whether to post initial comment after case creation
+...

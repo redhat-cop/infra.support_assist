@@ -62,7 +62,7 @@ argument_specs:
         version_added: 0.1.0-devel
       # --- OUTPUT FACT ---
       case_updates_needed:
-        description: 'Output variable fact (list of dictionaries) detailing the generated archive and required comment for upload by rh_case_update.'
+        description: 'Output variable fact (list of dictionaries) detailing the generated archive and required comment for upload by rh_case.'
         type: list
         required: false # This is an output fact, not an input requirement
         version_added: 0.1.0-devel

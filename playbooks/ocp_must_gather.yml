@@ -16,7 +16,7 @@
           ansible.builtin.include_role:
             name: infra.support_assist.rh_token_refresh
 
-        - name: Call rh_case_update role
+        - name: Call rh_case role
           ansible.builtin.include_role:
-            name: infra.support_assist.rh_case_update
+            name: infra.support_assist.rh_case
 ...

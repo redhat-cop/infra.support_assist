@@ -1,15 +1,16 @@
 ---
 major_changes:
-  - Introduce new role `rh_case_create` for programmatic Red Hat Support Case creation, completing a major roadmap item.
+  - Introduce unified role `rh_case` for programmatic Red Hat Support Case creation and updates, combining functionality from `rh_case_create` and `rh_case_update` roles.
   - Implement the OCP Support Autopilot Pipeline for end-to-end automated diagnostic submission, handling token refresh, case creation, collection, and upload.
 
 minor_changes:
   - "'ocp_must_gather': Implemented **Disconnected/Air-Gapped** environment support via `ocp_disconnected_mode` and `ocp_disconnected_registry`."
   - "'ocp_must_gather': Implemented **Acronym-based Component Selection** (e.g., AAP, ODF) for Must-Gather image lookup, simplifying user input."
   - "'ocp_must_gather': Implemented **Disk Space** and **Cluster-Admin Privilege** safety assertions for pre-flight validation."
-  - "'rh_case_create': Added logic for **Generalized Case Creation** payload (conditionally includes OpenShift fields)."
-  - "'rh_case_create': Implemented **Structured JSON Logging (`to_nice_json`)** in handlers for clean AAP output."
-  - "'rh_case_create': Introduced custom Jinja templates for initial case comment and final summary."
+  - "'rh_case': Added logic for **Generalized Case Creation** payload (conditionally includes OpenShift fields)."
+  - "'rh_case': Implemented **Structured JSON Logging (`to_nice_json`)** in handlers for clean AAP output."
+  - "'rh_case': Introduced custom Jinja templates for initial case comment and final summary."
+  - "'rh_case': Unified case management with automatic mode detection (create, update, or hybrid)."
   - "'rh_token_refresh': Refactored for highly reliable token retrieval using semantic sorting."
 
 bugfixes:

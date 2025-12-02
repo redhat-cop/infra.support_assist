@@ -1,0 +1,83 @@
+# --- Main Task File for rh_case role ---
+---
+- name: Main | Determine operation mode
+  ansible.builtin.include_tasks: 0-determine_mode.yml
+  when: operation_mode is not defined
+
+- name: Main | Validate operation mode
+  ansible.builtin.assert:
+    that:
+      - operation_mode != 'unknown'
+    fail_msg: >-
+      FAILED! Oh, No! => Cannot determine operation mode.
+      For CREATE mode: Provide case_summary, case_product, case_description, case_product_version, case_type, case_severity
+      For UPDATE mode: Provide case_id and case_updates_needed
+      For HYBRID mode: Provide both create fields AND case_updates_needed
+    success_msg: "Operation mode determined: {{ operation_mode }}"
+  run_once: true
+
+- name: Main | Print on screen role execution status
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: >-
+      Starting Red Hat Support Case {{ 'Creation' if operation_mode == 'create' else 'Update' if operation_mode == 'update' else 'Creation and Update' }} Process Role Execution
+  run_once: true
+
+- name: Main | Include Pre-Validation Tasks
+  ansible.builtin.include_tasks: 1-pre_validation.yml
+
+- name: Main | Create Case (if needed)
+  when:
+    - operation_mode in ['create', 'hybrid']
+  ansible.builtin.include_tasks: 2-create_case.yml
+
+- name: Main | Post-Validation (after creation)
+  when:
+    - operation_mode in ['create', 'hybrid']
+  ansible.builtin.include_tasks: 3-post_validation.yml
+
+- name: Main | Post-Creation Comment (if enabled)
+  when:
+    - operation_mode in ['create', 'hybrid']
+    - post_create_comment | bool
+  ansible.builtin.include_tasks: 4-post_comment.yml
+
+- name: Main | Set case_id for update operations
+  when:
+    - operation_mode in ['create', 'hybrid']
+  ansible.builtin.set_fact:
+    case_id: "{{ new_case_id }}"
+  run_once: true
+
+- name: Main | Re-evaluate mode for hybrid operations (if case_updates_needed became available)
+  when:
+    - operation_mode == 'create'
+    - case_updates_needed is defined
+    - case_updates_needed | length > 0
+  ansible.builtin.set_fact:
+    operation_mode: 'hybrid'
+  run_once: true
+
+- name: Main | Update Case (if needed)
+  when:
+    - case_id is defined
+    - case_id | length > 0
+    - case_updates_needed is defined
+    - case_updates_needed | length > 0
+  ansible.builtin.include_tasks: 5-update_loop.yml
+
+- name: Main | Print on screen role completion status
+  ansible.builtin.debug:
+    msg:
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+  vars:
+    message_text: >-
+      Completed Red Hat Support Case {{ 'Creation' if operation_mode == 'create' else 'Update' if operation_mode == 'update' else 'Creation and Update' }} Process Role Execution
+  run_once: true
+...
