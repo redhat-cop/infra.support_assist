@@ -186,14 +186,14 @@ The role queries predefined API endpoints for each component. These are defined 
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                      aap_api_dump                                │
+│                      aap_api_dump                               │
 ├─────────────────────────────────────────────────────────────────┤
 │  1. Pre-validation                                              │
-│     ├── Verify API token is available                            │
-│     └── Verify component URLs are provided                       │
+│     ├── Verify API token is available                           │
+│     └── Verify component URLs are provided                      │
 │                                                                 │
 │  2. Gather API Data                                             │
-│     └── Loop through selected components                         │
+│     └── Loop through selected components                        │
 │         └── Query each endpoint and save as JSON                │
 │                                                                 │
 │  3. Create Archive                                              │
