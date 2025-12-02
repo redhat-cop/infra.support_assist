@@ -1,26 +1,47 @@
 ---
 # Pre-validation tasks for aap_api_dump role
 
-- name: Ensure API Token is provided
+- name: Pre-Validation | Ensure API Token is provided
   ansible.builtin.assert:
     that:
       - aap_token | length > 0
     fail_msg: "AAP API Token is required. Please provide 'aap_token' as an extra-var or set the 'aap_token' environment variable."
     quiet: true
 
-- name: Ensure URLs are provided for selected components
+- name: Pre-Validation | Set aap_controller_url to aap_gateway_url if not defined
+  when:
+    - aap_gateway_url | default('') | length > 0
+    - aap_controller_url | default('') | length == 0
+  ansible.builtin.set_fact:
+    aap_controller_url: "{{ aap_gateway_url }}"
+
+- name: Pre-Validation | Set aap_hub_url to aap_gateway_url if not defined
+  when:
+    - aap_gateway_url | default('') | length > 0
+    - aap_hub_url | default('') | length == 0
+  ansible.builtin.set_fact:
+    aap_hub_url: "{{ aap_gateway_url }}"
+
+- name: Pre-Validation | Set aap_eda_url to aap_gateway_url if not defined
+  when:
+    - aap_gateway_url | default('') | length > 0
+    - aap_eda_url | default('') | length == 0
+  ansible.builtin.set_fact:
+    aap_eda_url: "{{ aap_gateway_url }}"
+
+- name: Pre-Validation | Ensure URLs are provided for selected components
   ansible.builtin.assert:
     that:
       - (item == 'controller' and aap_controller_url | length > 0) or
         (item == 'hub' and aap_hub_url | length > 0) or
         (item == 'eda' and aap_eda_url | length > 0)
     fail_msg: "The URL for the '{{ item }}' component is required but not defined. Please provide 'aap_{{ item }}_url' as an extra-var or set the 'AAP_{{ item | upper }}_URL' environment variable."
-    quiet: true
+    # quiet: true
   loop: "{{ aap_api_dump_components }}"
   loop_control:
     label: "Checking URL for {{ item }}"
 
-- name: Ensure destination base directory exists on control node
+- name: Pre-Validation | Ensure destination base directory exists on control node
   ansible.builtin.file:
     path: "{{ aap_api_dump_dest }}"
     state: directory

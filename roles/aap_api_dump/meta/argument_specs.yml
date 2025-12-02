@@ -66,11 +66,9 @@ argument_specs:
       component_name:
         description: 'Variable used in included task file: gather_apis.yml'
         type: str
-        required: true
         version_added: 0.1.0-devel
       endpoint_path:
         description: 'Variable used in included task file: gather_apis_component_loop.yml'
         type: str
-        required: true
         version_added: 0.1.0-devel
 ...

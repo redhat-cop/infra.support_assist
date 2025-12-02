@@ -1,0 +1,3 @@
+---
+major_changes:
+  - Added the `aap_api_dump` role to gather diagnostic output from AAP component APIs (Controller, Hub, EDA).

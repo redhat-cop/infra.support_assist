@@ -1,7 +1,16 @@
 ---
 # Tasks to gather data from selected AAP component APIs
 
-- name: Loop through selected components
+- name: Gather APIs | Verify API token is available
+  ansible.builtin.assert:
+    that:
+      - aap_token is defined
+      - aap_token | length > 0
+    fail_msg: "AAP API Token is not available. Ensure aap_api_token role runs before this role and sets aap_token fact."
+    quiet: true
+  run_once: true
+
+- name: Gather APIs | Loop through selected components
   loop: "{{ aap_api_dump_components }}"
   loop_control:
     loop_var: component_name

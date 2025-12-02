@@ -1,12 +1,12 @@
 ---
-- name: "{{ __task_name }}"
+- name: "{{ __endpoint_task_name }}"
   vars:
-    __task_name: "Query {{ component_name }} endpoint: {{ endpoint_path }}"
+    __endpoint_task_name: "Gather APIs | Endpoint Loop | Query {{ component_name }} endpoint: {{ endpoint_path }}"
   ansible.builtin.uri:
     url: "{{ _full_url }}"
     method: GET
     headers:
-      Authorization: "Bearer {{ aap_token }}"
+      Authorization: "Bearer {{ aap_token.token | default(aap_token) }}"
       Accept: "application/json"
     return_content: true
     validate_certs: "{{ aap_validate_certs }}"
@@ -16,19 +16,19 @@
   register: api_result
   ignore_errors: true # Continue if one endpoint fails
 
-- name: "{{ __task_name }}"
+- name: "{{ __endpoint_task_name }}"
   vars:
-    __task_name: "Save output for {{ endpoint_path }} if successful"
+    __endpoint_task_name: "Gather APIs | Endpoint Loop | Save output for {{ endpoint_path }} if successful"
   when: api_result.status == 200 and api_result.content is defined
   ansible.builtin.copy:
-    content: "{{ api_result.content }}"
+    content: "{{ api_result.json | to_nice_json }}"
     dest: "{{ _output_file_path }}"
     mode: '0644'
   delegate_to: localhost # Save on control node
 
-- name: "{{ __task_name }}"
+- name: "{{ __endpoint_task_name }}"
   vars:
-    __task_name: "Log warning if {{ endpoint_path }} query failed"
+    __endpoint_task_name: "Gather APIs | Endpoint Loop | Log warning if {{ endpoint_path }} query failed"
   when: api_result.status != 200
   ansible.builtin.debug:
     msg: >-

@@ -1,0 +1,67 @@
+---
+# Tasks to create a compressed archive of the API dumps and prepare for rh_case role
+
+- name: Archive | Ensure necessary setup facts are gathered
+  ansible.builtin.setup:
+    filter:
+      - ansible_fqdn
+      - ansible_date_time
+  delegate_to: localhost
+  run_once: true
+
+- name: Archive | Set fact for the archive name
+  ansible.builtin.set_fact:
+    __aap_api_dump_archive_name: >-
+      {{ ('aap-api-dump-' ~ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-')
+         ~ '-' ~ ansible_date_time.date
+         ~ '-' ~ (ansible_date_time.time | replace(':', ''))
+         ~ '.tar.gz') | regex_replace('[^a-zA-Z0-9._-]', '-') }}
+  delegate_to: localhost
+  run_once: true
+
+- name: Archive | Set fact for the source directory path
+  ansible.builtin.set_fact:
+    _aap_api_dump_source_path: "{{ aap_api_dump_dest }}/{{ inventory_hostname }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Archive | Verify source directory exists and has content
+  ansible.builtin.stat:
+    path: "{{ _aap_api_dump_source_path }}"
+  register: _aap_api_dump_source_stat
+  delegate_to: localhost
+  run_once: true
+
+- name: Archive | Create a compressed archive of the API dump directory
+  community.general.archive:
+    path: "{{ _aap_api_dump_source_path }}"
+    dest: "{{ aap_api_dump_dest }}/{{ __aap_api_dump_archive_name }}"
+    format: gz
+    mode: "0644"
+  when:
+    - _aap_api_dump_source_stat.stat.exists
+    - _aap_api_dump_source_stat.stat.isdir
+  delegate_to: localhost
+  run_once: true
+  register: _archive_result
+
+- name: Archive | Add API dump archive path to case_updates_needed
+  when:
+    - _aap_api_dump_source_stat.stat.exists
+    - _aap_api_dump_source_stat.stat.isdir
+    - _archive_result is defined
+    - _archive_result.changed | default(false) or _archive_result.archived is defined
+  ansible.builtin.set_fact:
+    case_updates_needed: >-
+      {{ case_updates_needed | default([]) +
+      [{
+        'attachment': aap_api_dump_dest ~ '/' ~ __aap_api_dump_archive_name,
+        'attachmentDescription': (
+          "Ansible Automation Platform API dump collected from '" ~ inventory_hostname
+          ~ "' (" ~ (ansible_fqdn | default('N/A')) ~ ") using the 'infra.support_assist' collection. "
+          ~ "Components queried: " ~ (aap_api_dump_components | join(', '))
+        )
+      }] }}
+  delegate_to: localhost
+  run_once: true
+...

@@ -3,6 +3,16 @@
 
 aap_api_endpoints:
   controller:
+    - "/api/controller/v2/ping/"
+    - "/api/controller/v2/instances/"
+    - "/api/controller/v2/settings/all/"
+  hub:
+    - "/pulp/api/v3/status/"
+    - "/pulp/api/v3/tasks/"
+  eda: []
+
+aap_api_legacy_endpoints:
+  controller:
     - "/api/v2/ping/"
     - "/api/v2/instances/"
     - "/api/v2/settings/all/"
