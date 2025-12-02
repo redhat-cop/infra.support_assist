@@ -1,97 +1,197 @@
-infra.support_assist.openshift_must_gather
-==========================================
+# infra.support_assist.aap_api_dump
 
-This role executes oc adm must-gather against a target OpenShift cluster and retrieves the diagnostic archive to the Ansible control node.
+This role gathers diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, EDA) and saves them as JSON files. The role can then create a compressed archive of all collected data and prepare it for upload to a Red Hat Support Case via the `rh_case` role.
 
-Requirements
-------------
+## Requirements
 
-oc CLI: The oc command-line tool must be installed on the host where this role executes (typically the Ansible control node or a designated bastion host).
+* **On Control Node:**
+    * `community.general` collection (for the `archive` module used to create the tarball)
 
-OpenShift Authentication: The oc CLI must be logged into the target OpenShift cluster before running this role. Authentication is typically handled via the KUBECONFIG environment variable or the default ~/.kube/config file. This role does not handle oc login.
+* **AAP API Access:**
+    * Valid AAP API token (obtained via `aap_api_token` role or provided directly)
+    * Network access to AAP component URLs (Controller, Hub, EDA)
 
-Execution Context
------------------
+## Role Variables
 
-This role is designed to run on a host that has access to the target OpenShift cluster's API, usually localhost (the Ansible control node) using delegate_to: localhost.
+### Input Variables
 
-Role Variables
---------------
+* `aap_token`:
+    * **(Required)** A valid AAP API access token. This is typically provided by running the `infra.support_assist.aap_api_token` role first.
+    * Can also be provided via extra-var or environment variable (`AAP_TOKEN` or `aap_token`).
+    * Type: `string`
 
-case_id: (Required) The Red Hat Support Case number. Used for organizing fetched files.
+* `aap_gateway_url`:
+    * **(Optional)** The base URL for the AAP Gateway. If provided, this will be used as a fallback for component URLs that are not explicitly set.
+    * Can be provided via extra-var or environment variable (`AAP_GATEWAY_URL`).
+    * Type: `string`
 
-openshift_must_gather_dest_dir: (Optional) A temporary directory on the execution host (where oc runs) to store the must-gather output before archiving and fetching.
+* `aap_controller_url`:
+    * **(Required if `controller` is in `aap_api_dump_components`)** The base URL for the AAP Controller API.
+    * If not provided, will default to `aap_gateway_url` if available.
+    * Can be provided via extra-var or environment variable (`AAP_CONTROLLER_URL`).
+    * Type: `string`
 
-Default: /tmp/must-gather-output
+* `aap_hub_url`:
+    * **(Required if `hub` is in `aap_api_dump_components`)** The base URL for the AAP Hub API.
+    * If not provided, will default to `aap_gateway_url` if available.
+    * Can be provided via extra-var or environment variable (`AAP_HUB_URL`).
+    * Type: `string`
 
-openshift_must_gather_image: (Optional) Specify a custom container image for oc adm must-gather.
+* `aap_eda_url`:
+    * **(Required if `eda` is in `aap_api_dump_components`)** The base URL for the AAP EDA API.
+    * If not provided, will default to `aap_gateway_url` if available.
+    * Can be provided via extra-var or environment variable (`AAP_EDA_URL`).
+    * Type: `string`
 
-Default: Not set (uses OpenShift's default image).
+* `aap_api_dump_components`:
+    * List of AAP components to query. Valid options: `controller`, `hub`, `eda`.
+    * Default: `['controller', 'hub', 'eda']`
+    * Type: `list`
 
-openshift_must_gather_options: (Optional) A string containing any additional command-line options to pass directly to oc adm must-gather (e.g., -- /usr/bin/gather_audit_logs).
+* `aap_api_dump_dest`:
+    * Destination directory on the control node where API outputs will be saved.
+    * Default: `/tmp/aap_api_dumps`
+    * Type: `string`
 
-Default: ""
+* `aap_validate_certs`:
+    * Whether to validate SSL/TLS certificates when making API requests.
+    * Default: `true`
+    * Type: `bool`
 
-openshift_must_gather_clean: (Optional) Set to true to remove the temporary openshift_must_gather_dest_dir from the execution host after fetching the archive. Inherits the global clean variable by default.
+### Output Variables
 
-Default: {{ clean | default(false) | bool }}
+* `case_updates_needed`:
+    * This fact is set after successful API collection and archive creation.
+    * Contains a list with one dictionary entry:
+        * `attachment`: Full path to the created tarball archive
+        * `attachmentDescription`: Description of the archive including hostname, FQDN, and components queried
+    * This fact is ready for use with the `infra.support_assist.rh_case` role.
 
-sos_report_dest: (Required, inherited) The base directory on the Ansible control node where the final fetched archive will be placed (under case_{{ case_id }}/{{ inventory_hostname }}-must_gather/). This variable is typically set globally or by the calling playbook and reused from the sos_report role's defaults.
+## Dependencies
 
-Default (from sos_report role): /tmp/sos_reports
+* This role **should** be run after `infra.support_assist.aap_api_token` to populate the required `aap_token` fact.
+* This role **can** be followed by `infra.support_assist.rh_case` to upload the created archive to a Red Hat Support Case.
 
-Dependencies
-------------
+## Example Playbook
 
-None.
-
-Example Playbook
-----------------
+### Example 1: Basic API Dump (Standalone)
 
 ```yaml
-- name: Gather OpenShift Must Gather
-  # Run this play against a host that has oc CLI and is logged in
+- name: Gather AAP API Data
   hosts: localhost
   connection: local
   gather_facts: false
-
-  vars:
-    case_id: "04288106"
-    # sos_report_dest: "/tmp/my_support_files" # Optional override
-    # openshift_must_gather_image: "[registry.example.com/my-must-gather:latest](https://registry.example.com/my-must-gather:latest)" # Optional custom image
-    # openshift_must_gather_options: "-- /usr/bin/gather_network_info" # Optional extra args
-    clean: true # Set to true to clean up temp dir on execution host
-
   tasks:
-    - name: Include the openshift_must_gather role
+    - name: Get AAP API Token
       ansible.builtin.include_role:
-        name: infra.support_assist.openshift_must_gather
-      # Use delegate_to if running the play against a different host group
-      # delegate_to: localhost
+        name: infra.support_assist.aap_api_token
 
-# --- Subsequent Play to Upload ---
-# This assumes the 'case_updates_needed' fact was populated by the role above
-- name: Upload Files to Red Hat Support Case Portal
-  hosts: localhost
-  connection: local
-  gather_facts: false
-  # vars: # Ensure api token and case_id are available
-  tasks:
-    - name: Aggregate 'case_updates_needed' data from all sources (if needed)
-      ansible.builtin.set_fact:
-        case_updates_needed: |
-          {% set combined_list = [] %}
-          {% for host in groups['all'] %} # Or specific group must-gather ran against
-          {%   if hostvars[host].case_updates_needed is defined %}
-          {%     set _ = combined_list.extend(hostvars[host].case_updates_needed) %}
-          {%   endif %}
-          {% endfor %}
-          {{ combined_list }}
-      run_once: true # Aggregation only needed once
-
-    # Include token refresh and case update roles here...
-    - name: Include rh_token_refresh role...
-    - name: Include rh_case_update role...
+    - name: Gather API Data
+      ansible.builtin.include_role:
+        name: infra.support_assist.aap_api_dump
+      vars:
+        aap_controller_url: "https://aap-controller.example.com"
+        aap_hub_url: "https://aap-hub.example.com"
+        aap_api_dump_components:
+          - controller
+          - hub
 ```
 
-OutputThe role fetches a compressed archive (.tar.gz) of the must-gather output to the control node under:{{ sos_report_dest }}/case_{{ case_id }}/{{ inventory_hostname }}-must_gather/must-gather.local.<timestamp>.tar.gzIt also populates the case_updates_needed fact with the path to this archive for use with the rh_case_update role.LicenseGPL-3.0-or-laterAuthor InformationLenny Shirley
+### Example 2: Full Pipeline (Dump + Case Upload)
+
+```yaml
+- name: AAP API Dump and Case Upload
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: AAP API Dump Block
+      block:
+        - name: Get AAP API Token
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_token
+
+        - name: Gather API Data
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_dump
+          vars:
+            aap_controller_url: "https://aap-controller.example.com"
+            aap_hub_url: "https://aap-hub.example.com"
+
+      always:
+        - name: Clear AAP Token
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_token
+            tasks_from: clear_token.yml
+
+    - name: Case Upload Block
+      when:
+        - upload | default(true) | bool
+        - case_updates_needed is defined
+        - case_updates_needed | length > 0
+      block:
+        - name: Get Red Hat API Token
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_token_refresh
+
+        - name: Upload to Case
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_case
+          vars:
+            case_id: "01234567"
+```
+
+### Example 3: Using Environment Variables
+
+```bash
+export AAP_CONTROLLER_URL="https://aap-controller.example.com"
+export AAP_HUB_URL="https://aap-hub.example.com"
+export AAP_TOKEN="your-token-here"
+
+ansible-playbook playbook.yml
+```
+
+## Output
+
+The role creates the following structure on the control node:
+
+```
+{{ aap_api_dump_dest }}/{{ inventory_hostname }}/{{ component_name }}/{{ sanitized_endpoint_path }}.json
+```
+
+For example:
+```
+/tmp/aap_api_dumps/localhost/controller/api_controller_v2_ping_.json
+/tmp/aap_api_dumps/localhost/controller/api_controller_v2_instances_.json
+/tmp/aap_api_dumps/localhost/hub/pulp_api_v3_status_.json
+```
+
+After collection, the role creates a compressed tarball:
+```
+{{ aap_api_dump_dest }}/aap-api-dump-{{ hostname }}-{{ date }}-{{ time }}.tar.gz
+```
+
+The tarball contains all JSON files from the collection and is automatically added to `case_updates_needed` for upload via the `rh_case` role.
+
+## API Endpoints
+
+The role queries predefined API endpoints for each component. These are defined in `vars/main.yml`:
+
+* **Controller**: `/api/controller/v2/ping/`, `/api/controller/v2/instances/`, `/api/controller/v2/settings/all/`
+* **Hub**: `/pulp/api/v3/status/`, `/pulp/api/v3/tasks/`
+* **EDA**: (Currently empty - can be customized)
+
+## Notes
+
+* The role automatically sanitizes endpoint paths to create safe filenames (replacing `/`, `?`, `&`, `=` with `_`).
+* Failed API requests are logged but do not stop the collection process (the role uses `ignore_errors: true`).
+* The archive creation step only runs if the source directory exists and contains files.
+* All operations run on `localhost` (control node) using `delegate_to: localhost` and `run_once: true`.
+
+## License
+
+GPL-3.0-or-later
+
+## Author Information
+
+Lenny Shirley

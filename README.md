@@ -6,6 +6,7 @@ This Ansible Collection will gather various reports/outputs that are commonly as
 
 This collection currently includes the following playbooks and roles:
 
+* **`aap_api_dump`**: Gathers diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, EDA) and creates compressed archives for case upload.
 * **`aap_api_token`**: Obtains and manages OAuth2 API tokens for Ansible Automation Platform (AAP).
 * **`ocp_must_gather`**: Gathers an `oc adm must-gather` archive from an OpenShift cluster.
 * **`rh_case`**: Unified role for creating and updating Red Hat Support Cases via API (creates cases, uploads files, adds comments).
@@ -135,7 +136,27 @@ spec:
 
 ## Playbooks
 
-This collection provides four main playbooks for common operations:
+This collection provides five main playbooks for common operations:
+
+* **`infra.support_assist.aap_api_dump`**: Gathers diagnostic output from AAP component APIs (Controller, Hub, EDA), creates a compressed archive, and optionally uploads it to a Red Hat Support Case.
+    * **Role-specific documentation:** [roles/aap_api_dump/README.md](roles/aap_api_dump/README.md)
+    * **Example (with case upload):**
+        ~~~shell
+        export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
+        export AAP_CONTROLLER_URL="https://aap-controller.example.com"
+        export AAP_HUB_URL="https://aap-hub.example.com"
+        
+        ansible-playbook playbooks/aap_api_dump.yml \
+          -e case_id=01234567 \
+          -e upload=true
+        ~~~
+    * **Example (standalone dump without upload):**
+        ~~~shell
+        export AAP_CONTROLLER_URL="https://aap-controller.example.com"
+        
+        ansible-playbook playbooks/aap_api_dump.yml \
+          -e upload=false
+        ~~~
 
 * **`infra.support_assist.sos_report`**: Gathers `sosreport`s from all hosts in your inventory, fetches them to the control node, and uploads them to the specified case.
     * **Role-specific documentation:** [roles/sos_report/README.md](roles/sos_report/README.md)
@@ -221,6 +242,7 @@ Please consult the dedicated documentation file for the full list of valid optio
 
 ## Roles
 
+* **[aap_api_dump](roles/aap_api_dump/README.md)**: Gathers diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, EDA) and saves them as JSON files. Creates a compressed archive and prepares it for upload to a Red Hat Support Case via the `rh_case` role.
 * **[aap_api_token](roles/aap_api_token/README.md)**: Obtains and manages OAuth2 API tokens for Ansible Automation Platform (AAP). Automatically detects Controller version and uses the appropriate collection (`ansible.controller` or `ansible.platform`).
 * **[ocp_must_gather](roles/ocp_must_gather/README.md)**: Logs into an OpenShift cluster, runs `oc adm must-gather`, and archives the result.
     > **NEW FEATURES:**
@@ -259,7 +281,7 @@ Releasing the current major version happens from the `devel` branch.
   - [x] Add a role that will run `oc adm must-gather` on an OpenShift cluster
   - [x] Add a playbook that can be used to attach other requested files to a Red Hat Support Case
   - [x] Add a playbook that can be used to add comments in either `markdown` or `plaintext` to a Red Hat Support Case
-  - [ ] Add a role for grabbing output from one or more Ansible Automation Platform API endpoints
+  - [x] Add a role for grabbing output from one or more Ansible Automation Platform API endpoints
   - [ ] Add more CLI parameter options to the `sos_report` role (particularly `clean|mask`, etc.)
   - [x] Make it easier to pick a defined scope if needed to the `ocp_must_gather` role (would replace/compliment the `container image` option)
   - [x] Add Custom Feature Collection (acronyms): The `ocp_must_gather_image` variable allows selecting specialized component collections to the `ocp_must_gather` role - **All available options are listed in:** [ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md](./roles/ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md)

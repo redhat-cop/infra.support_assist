@@ -57,8 +57,7 @@
       [{
         'attachment': aap_api_dump_dest ~ '/' ~ __aap_api_dump_archive_name,
         'attachmentDescription': (
-          "Ansible Automation Platform API dump collected from '" ~ inventory_hostname
-          ~ "' (" ~ (ansible_fqdn | default('N/A')) ~ ") using the 'infra.support_assist' collection. "
+          "Ansible Automation Platform API dump collected using the 'infra.support_assist' collection. "
           ~ "Components queried: " ~ (aap_api_dump_components | join(', '))
         )
       }] }}
