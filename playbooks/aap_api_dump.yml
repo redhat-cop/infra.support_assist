@@ -1,0 +1,36 @@
+---
+- name: Ansible Automation Platform API Dump and Case Upload
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: AAP API Dump Block
+      block:
+        - name: Call aap_api_token role | Get Token
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_token
+
+        - name: Call aap_api_dump role
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_dump
+
+      always:
+        - name: Call aap_api_token role | Clear Token (if needed)
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_token
+            tasks_from: clear_token.yml
+
+    - name: Case Upload Block
+      when:
+        - upload | default(true) | bool
+        - case_updates_needed is defined
+        - case_updates_needed | length > 0
+      block:
+        - name: Call rh_token_refresh role
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_token_refresh
+
+        - name: Call rh_case role
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_case
+...
