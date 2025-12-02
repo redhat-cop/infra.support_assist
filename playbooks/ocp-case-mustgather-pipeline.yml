@@ -12,7 +12,7 @@
     # ===============================================================================
     case_product: "OpenShift Container Platform"
     # Inject a unique timestamp guaranteed to be UTC
-    run_timestamp: "{{ lookup('pipe', 'date -u +%Y%m%d%H%M%S') }}"
+    # run_timestamp: "{{ lookup('pipe', 'date -u +%Y%m%d%H%M%S') }}"
     # ===============================================================================
     # --- CONTROL VARIABLES ---
     # If case_id is blank, a new case will be created. If set, the must-gather will be uploaded to the existing case.
