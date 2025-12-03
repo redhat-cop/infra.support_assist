@@ -18,40 +18,53 @@ def patch_molecule_validation():
         
         def patched_validate(self):
             """Patched _validate that skips schema validation errors."""
+            # Import what we need
+            from molecule import logger
+            from molecule.util import sysexit_with_message
+            
+            # Get scenario name for logging
             try:
-                # Try to run the original validation
-                return original_validate(self)
-            except Exception as e:
-                error_str = str(e).lower()
-                error_msg = str(e)
-                error_type = type(e).__name__
-                
-                # Check if it's a schema validation error - be very permissive
+                scenario_name = self.config.get("scenario", {}).get("name", "default")
+            except (AttributeError, KeyError, TypeError):
+                scenario_name = "default"
+            
+            validation_log = logger.get_scenario_logger(__name__, scenario_name, "validate")
+            msg = f"Validating schema {self.molecule_file}."
+            validation_log.debug(msg)
+            
+            # Patch sysexit_with_message to catch schema errors
+            original_sysexit = sysexit_with_message
+            
+            def patched_sysexit(msg, code=1):
+                """Patched sysexit that skips schema validation errors."""
+                msg_lower = str(msg).lower()
+                # Check if it's a schema validation error
                 is_schema_error = (
-                    'schema' in error_str or
-                    'does not provide a schema' in error_str or
-                    'failed to validate' in error_str or
-                    'driver' in error_str and 'schema' in error_str
+                    'schema' in msg_lower and
+                    ('does not provide' in msg_lower or 'failed to validate' in msg_lower or 'driver' in msg_lower)
                 )
                 
                 if is_schema_error:
-                    # Log a warning but don't fail
-                    try:
-                        from molecule import logger
-                        # Try to get scenario name, but handle if config isn't available yet
-                        try:
-                            scenario_name = getattr(self, 'config', {}).get("scenario", {}).get("name", "default") if hasattr(self, 'config') else "default"
-                        except (AttributeError, KeyError, TypeError):
-                            scenario_name = "default"
-                        validation_log = logger.get_scenario_logger(__name__, scenario_name, "validate")
-                        validation_log.warning(f"Skipping schema validation (known molecule 25.x issue): {error_msg}")
-                    except Exception:
-                        # If logging fails, just print to stderr
-                        print(f"⚠️  Skipping schema validation (known molecule 25.x issue): {error_type}: {error_msg}", file=sys.stderr)
-                    # Return without raising - validation passed (skipped)
+                    # Log a warning but don't exit
+                    validation_log.warning(f"Skipping schema validation (known molecule 25.x issue): {msg}")
+                    print(f"⚠️  Skipping schema validation (known molecule 25.x issue)", file=sys.stderr)
                     return
-                # Re-raise other errors
-                raise
+                else:
+                    # Real error - call original
+                    original_sysexit(msg, code)
+            
+            # Temporarily patch sysexit_with_message
+            import molecule.util
+            molecule.util.sysexit_with_message = patched_sysexit
+            molecule.config.sysexit_with_message = patched_sysexit
+            
+            try:
+                # Now call the original _validate - it will use our patched sysexit
+                return original_validate(self)
+            finally:
+                # Restore original
+                molecule.util.sysexit_with_message = original_sysexit
+                molecule.config.sysexit_with_message = original_sysexit
         
         # Apply the patch
         config.Config._validate = patched_validate
