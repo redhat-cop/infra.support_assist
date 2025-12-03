@@ -1,0 +1,11 @@
+---
+- name: Converge
+  hosts: all
+  tasks:
+    - name: "Include sos_report"
+      ansible.builtin.include_role:
+        name: "sos_report"
+      vars:
+        sos_report_dest: "/tmp/sos_reports_test"
+        sos_report_cleanup: false
+

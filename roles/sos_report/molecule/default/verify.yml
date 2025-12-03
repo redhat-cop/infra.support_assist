@@ -1,0 +1,25 @@
+---
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Verify sosreport destination directory exists
+      ansible.builtin.stat:
+        path: "{{ sos_report_dest | default('/tmp/sos_reports_test') }}"
+      register: dest_stat
+      failed_when: false
+
+    - name: Check if sos package is installed
+      become: true
+      ansible.builtin.command:
+        cmd: rpm -q sos
+      register: sos_check
+      failed_when: sos_check.rc != 0
+      changed_when: false
+
+    - name: Display verification results
+      ansible.builtin.debug:
+        msg:
+          - "SOS package installed: {{ sos_check.rc == 0 }}"
+          - "Destination directory exists: {{ dest_stat.stat.exists | default(false) }}"
+

@@ -1,0 +1,37 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: instance
+    image: quay.io/ansible/molecule-fedora:latest
+    pre_build_image: true
+    privileged: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    command: "/usr/sbin/init"
+    tmpfs:
+      - /tmp
+      - /run
+    capabilities:
+      - SYS_ADMIN
+provisioner:
+  name: ansible
+  inventory:
+    host_vars:
+      instance:
+        ansible_python_interpreter: auto
+  playbooks:
+    prepare: prepare.yml
+  config_options:
+    defaults:
+      roles_path: ../../../
+verifier:
+  name: ansible
+  options:
+    show-diff: true
+  lint: |
+    ansible-lint
+    yamllint
+
