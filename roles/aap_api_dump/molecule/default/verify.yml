@@ -6,4 +6,4 @@
     - name: Verify role execution attempted
       ansible.builtin.debug:
         msg: "Role execution completed (may have failed due to missing AAP instance, which is expected in test environment)"
-
+...

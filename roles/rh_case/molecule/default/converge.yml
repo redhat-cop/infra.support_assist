@@ -9,4 +9,4 @@
         offline_token: "test_token_placeholder"
         case_mode: "validate"
       # Note: This will fail without valid Red Hat API token, but tests role structure
-
+...

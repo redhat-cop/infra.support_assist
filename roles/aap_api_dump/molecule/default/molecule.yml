@@ -34,4 +34,4 @@ verifier:
   lint: |
     ansible-lint
     yamllint
-
+...

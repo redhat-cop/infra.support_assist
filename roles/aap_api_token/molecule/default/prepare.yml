@@ -3,10 +3,8 @@
   hosts: all
   gather_facts: false
   tasks:
-    - name: Ensure system is updated
+    - name: Update package cache
       become: true
       ansible.builtin.dnf:
-        name: "*"
-        state: latest
         update_cache: true
-
+...

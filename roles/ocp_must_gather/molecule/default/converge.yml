@@ -11,4 +11,4 @@
         ocp_password: "test_password"
         ocp_validate_certs: false
       # Note: This will fail without actual OpenShift cluster, but tests role structure
-
+...
