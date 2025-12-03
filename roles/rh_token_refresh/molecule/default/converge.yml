@@ -1,0 +1,9 @@
+---
+- name: Converge
+  hosts: all
+  roles:
+    - role: ../..
+      vars:
+        offline_token: "test_token_placeholder"
+      # Note: This will fail without valid Red Hat API token, but tests role structure
+...

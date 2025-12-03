@@ -1,0 +1,12 @@
+---
+- name: Converge
+  hosts: all
+  roles:
+    - role: ../..
+      vars:
+        aap_gateway_url: "https://example.com"
+        aap_username: "test_user"
+        aap_password: "test_password"
+        aap_validate_certs: false
+      # Note: This will fail without actual AAP instance, but tests role structure
+...

@@ -27,6 +27,79 @@ jobs:
     needs:
       - ansible-lint
     uses: ansible/ansible-content-actions/.github/workflows/unit.yaml@main
+  molecule:
+    name: Molecule Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      matrix:
+        role:
+          - sos_report
+          - aap_api_token
+          - aap_api_dump
+          - rh_token_refresh
+          - rh_case
+          - ocp_must_gather
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+          # Configure podman for rootless operation
+          podman system migrate || true
+          # Enable lingering for the runner user to allow systemd user services
+          sudo loginctl enable-linger $USER || true
+          # Start podman socket service
+          systemctl --user enable podman.socket || true
+          systemctl --user start podman.socket || true
+          # Wait a moment for socket to be ready
+          sleep 2
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r test-requirements.txt
+          pip install ansible-core
+      - name: Install collection dependencies
+        run: |
+          ansible-galaxy collection install -r collections/requirements.yml
+      - name: Verify Podman is available
+        run: |
+          podman --version
+          podman info
+      - name: Run molecule test
+        working-directory: roles/${{ matrix.role }}
+        run: |
+          # Workaround for molecule 25.x schema validation issue with podman driver
+          # Use wrapper script to bypass validation, fallback to individual commands
+          set +e
+          WRAPPER_SCRIPT="${{ github.workspace }}/.github/scripts/molecule-wrapper.py"
+          python3 "$WRAPPER_SCRIPT" test 2>&1 | tee /tmp/molecule-output.log
+          WRAPPER_EXIT=${PIPESTATUS[0]}
+
+          # If wrapper failed with validation error, try individual commands
+          if [ $WRAPPER_EXIT -ne 0 ]; then
+            if grep -q "does not provide a schema\|Failed to validate" /tmp/molecule-output.log; then
+              echo "⚠️  Schema validation issue detected, running commands individually..."
+              python3 "$WRAPPER_SCRIPT" create && \
+              python3 "$WRAPPER_SCRIPT" converge && \
+              python3 "$WRAPPER_SCRIPT" verify && \
+              python3 "$WRAPPER_SCRIPT" destroy
+              exit $?
+            else
+              exit $WRAPPER_EXIT
+            fi
+          fi
+        env:
+          PY_COLORS: "1"
+          ANSIBLE_FORCE_COLOR: "1"
   all_green:
     if: ${{ always() }}
     needs:
@@ -35,6 +108,7 @@ jobs:
       - sanity
       - unit-galaxy
       - ansible-lint
+      - molecule
     runs-on: ubuntu-latest
     steps:
       - run: >-
@@ -43,5 +117,7 @@ jobs:
           '${{ needs.changelog.result }}',
           '${{ needs.sanity.result }}',
           '${{ needs.unit-galaxy.result }}',
-          '${{ needs.ansible-lint.result }}'
+          '${{ needs.ansible-lint.result }}',
+          '${{ needs.molecule.result }}'
           ])"
+...

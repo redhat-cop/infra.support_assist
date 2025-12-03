@@ -1,0 +1,47 @@
+---
+prerun: false
+driver:
+  name: podman
+dependency:
+  name: galaxy
+  enabled: true
+lint: |
+  set -e
+  yamllint
+  ansible-lint
+platforms:
+  - name: rhel9-instance
+    image: registry.access.redhat.com/ubi9-init:latest
+    pre_build_image: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
+    command: "/lib/systemd/systemd"
+  - name: rhel10-instance
+    image: registry.access.redhat.com/ubi10-init:latest
+    pre_build_image: true
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    cgroupns_mode: host
+    privileged: true
+    command: "/lib/systemd/systemd"
+provisioner:
+  name: ansible
+  inventory:
+    host_vars:
+      instance:
+        ansible_python_interpreter: auto
+  playbooks:
+    prepare: prepare.yml
+  config_options:
+    defaults:
+      roles_path: ../../../
+verifier:
+  name: ansible
+  options:
+    show-diff: true
+  lint: |
+    ansible-lint
+    yamllint
+...

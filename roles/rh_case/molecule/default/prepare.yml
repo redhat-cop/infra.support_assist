@@ -1,0 +1,22 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Install sudo (required for become tasks in containers)
+      ansible.builtin.dnf:
+        name: sudo
+        state: present
+
+    - name: Configure passwordless sudo for root (safe in test containers)
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        line: "root ALL=(ALL) NOPASSWD: ALL"
+        regexp: "^root.*NOPASSWD"
+        state: present
+        validate: "visudo -cf %s"
+
+    - name: Update package cache
+      ansible.builtin.dnf:
+        update_cache: true
+...

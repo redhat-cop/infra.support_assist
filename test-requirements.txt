@@ -1,3 +1,5 @@
 pytest-ansible
 pytest-xdist
 molecule
+molecule-plugins[docker]
+molecule-podman
