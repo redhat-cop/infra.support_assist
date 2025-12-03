@@ -1,43 +1,24 @@
 #!/usr/bin/env python3
 """
 Wrapper script to bypass molecule 25.x schema validation issue.
-This patches molecule's validation to skip schema checks when drivers don't provide schemas.
+This script simply calls molecule and lets the shell script handle schema validation errors.
+The actual workaround is in the GitHub Actions workflow which falls back to individual commands.
 """
 import sys
-import os
+import subprocess
 
-# Import and patch before molecule CLI runs
-try:
-    # Import molecule modules
-    from molecule import config
-    from molecule import logger
-    
-    # Store original validate method
-    original_validate = config.Config.validate
-    
-    def patched_validate(self):
-        """Patched validate that skips schema validation errors."""
-        try:
-            return original_validate(self)
-        except Exception as e:
-            error_str = str(e).lower()
-            error_msg = str(e)
-            # If it's a schema validation error, skip it
-            if any(term in error_str for term in ['schema', 'does not provide a schema', 'failed to validate']):
-                logger.warning(f"Skipping schema validation (known molecule 25.x issue): {error_msg}")
-                return True
-            # Re-raise other errors
-            raise
-    
-    # Apply the patch
-    config.Config.validate = patched_validate
-    
-except Exception as e:
-    # If patching fails, continue anyway
-    print(f"Warning: Could not patch molecule validation: {e}", file=sys.stderr)
-
-# Now run molecule CLI
 if __name__ == '__main__':
-    from molecule import cli
-    sys.exit(cli.main())
-
+    # Get command line arguments (skip script name)
+    args = sys.argv[1:] if len(sys.argv) > 1 else []
+    
+    # Simply call molecule - the shell script will handle schema validation errors
+    # by falling back to individual commands if this fails
+    try:
+        result = subprocess.run(['molecule'] + args, check=False)
+        sys.exit(result.returncode)
+    except FileNotFoundError:
+        print("Error: molecule command not found", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error running molecule: {e}", file=sys.stderr)
+        sys.exit(1)
