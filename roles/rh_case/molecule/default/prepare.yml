@@ -3,6 +3,11 @@
   hosts: all
   gather_facts: false
   tasks:
+    - name: Install sudo (required for become tasks in containers)
+      ansible.builtin.dnf:
+        name: sudo
+        state: present
+
     - name: Update package cache
       become: true
       ansible.builtin.dnf:
