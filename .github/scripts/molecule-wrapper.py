@@ -4,7 +4,7 @@ Wrapper script to bypass molecule 25.x schema validation issue.
 This patches molecule's _validate method to skip schema validation errors.
 """
 import sys
-import os
+
 
 # Patch molecule's sysexit_with_message globally BEFORE any imports
 def patch_sysexit_with_message():
@@ -12,15 +12,15 @@ def patch_sysexit_with_message():
     try:
         # Import molecule.util early
         from molecule import util
-        
+
         # Store the original function
         original_sysexit = util.sysexit_with_message
-        
+
         def patched_sysexit(msg, code=1, warns=()):
             """Patched sysexit that skips schema validation errors."""
             msg_lower = str(msg).lower()
             msg_str = str(msg)
-            
+
             # Check if it's a schema validation error - be very permissive
             # The message format is: "Failed to validate {file}\n\n{errors}"
             is_schema_error = (
@@ -28,19 +28,19 @@ def patch_sysexit_with_message():
                 ('schema' in msg_lower and ('does not provide' in msg_lower or 'driver' in msg_lower)) or
                 ('validate' in msg_lower and 'molecule.yml' in msg_str and ('schema' in msg_lower or 'driver' in msg_lower))
             )
-            
+
             if is_schema_error:
                 # Log a warning but don't exit
-                print(f"⚠️  Skipping schema validation (known molecule 25.x issue)", file=sys.stderr)
+                print("⚠️  Skipping schema validation (known molecule 25.x issue)", file=sys.stderr)
                 # Just return instead of exiting
                 return
             else:
                 # Real error - call original
                 original_sysexit(msg, code, warns)
-        
+
         # Apply the patch globally in util first
         util.sysexit_with_message = patched_sysexit
-        
+
         # Now import config - it will get our patched version
         # But also patch config's namespace to be sure
         try:
@@ -49,13 +49,15 @@ def patch_sysexit_with_message():
             config.sysexit_with_message = patched_sysexit
         except (ImportError, AttributeError):
             pass
-        
+
     except (ImportError, AttributeError) as e:
         # If patching fails, log a warning but continue
         print(f"Warning: Could not patch sysexit_with_message: {e}", file=sys.stderr)
 
+
 # Patch sysexit_with_message before any molecule imports
 patch_sysexit_with_message()
+
 
 # Patch molecule's validation
 def patch_molecule_validation():
@@ -63,10 +65,10 @@ def patch_molecule_validation():
     try:
         # Import molecule modules
         from molecule import config
-        
+
         # Store the original _validate method
         original_validate = config.Config._validate
-        
+
         def patched_validate(self):
             """Patched _validate that skips schema validation errors."""
             try:
@@ -83,13 +85,13 @@ def patch_molecule_validation():
                     print(f"⚠️  Skipping schema validation (known molecule 25.x issue): {e}", file=sys.stderr)
                     return
                 raise
-        
+
         # Apply the patch
         config.Config._validate = patched_validate
-        
+
         # Also patch __init__ to catch validation errors there as a backup
         original_init = config.Config.__init__
-        
+
         def patched_init(self, *args, **kwargs):
             """Patched __init__ that catches schema validation errors."""
             try:
@@ -110,12 +112,13 @@ def patch_molecule_validation():
                     return
                 # Re-raise other errors
                 raise
-        
+
         config.Config.__init__ = patched_init
-        
+
     except (ImportError, AttributeError) as e:
         # If patching fails, log a warning but continue
         print(f"Warning: Could not patch molecule validation: {e}", file=sys.stderr)
+
 
 # Apply patch before any molecule CLI imports
 patch_molecule_validation()
@@ -134,3 +137,4 @@ if __name__ == '__main__':
             print(f"⚠️  Schema validation error (known molecule 25.x issue): {e}", file=sys.stderr)
             sys.exit(1)
         raise
+

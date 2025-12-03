@@ -80,8 +80,7 @@ jobs:
           # Workaround for molecule 25.x schema validation issue with podman driver
           # Use wrapper script to bypass validation, fallback to individual commands
           set +e
-          # Path from roles/<role>/molecule/default/ to project root is ../../../../../
-          WRAPPER_SCRIPT="${{ github.workspace }}/molecule-wrapper.py"
+          WRAPPER_SCRIPT="${{ github.workspace }}/.github/scripts/molecule-wrapper.py"
           python3 "$WRAPPER_SCRIPT" test 2>&1 | tee /tmp/molecule-output.log
           WRAPPER_EXIT=${PIPESTATUS[0]}
 
