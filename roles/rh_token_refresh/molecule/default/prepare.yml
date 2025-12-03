@@ -8,8 +8,15 @@
         name: sudo
         state: present
 
+    - name: Configure passwordless sudo for root (safe in test containers)
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        line: "root ALL=(ALL) NOPASSWD: ALL"
+        regexp: "^root.*NOPASSWD"
+        state: present
+        validate: "visudo -cf %s"
+
     - name: Update package cache
-      become: true
       ansible.builtin.dnf:
         update_cache: true
 ...
