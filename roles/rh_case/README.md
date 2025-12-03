@@ -330,7 +330,7 @@ To disable the automatic post-creation comment, set `post_create_comment: false`
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                        rh_case                                   │
+│                        rh_case                                  │
 ├─────────────────────────────────────────────────────────────────┤
 │  1. Mode Detection                                              │
 │     └── Determines: create, update, or hybrid                   │
@@ -338,65 +338,27 @@ To disable the automatic post-creation comment, set `post_create_comment: false`
 │  2. Pre-validation                                              │
 │     ├── Verify API token                                        │
 │     ├── Retrieve account info                                   │
-│     ├── Validate create fields (if create/hybrid)              │
-│     └── Validate update fields (if update/hybrid)              │
+│     ├── Validate create fields (if create/hybrid)               │
+│     └── Validate update fields (if update/hybrid)               │
 │                                                                 │
-│  3. Create Case (if create/hybrid)                             │
+│  3. Create Case (if create/hybrid)                              │
 │     ├── Build case payload                                      │
 │     ├── POST to /v1/cases                                       │
 │     ├── Validate response                                       │
 │     └── Extract case_id                                         │
 │                                                                 │
-│  4. Post-Creation Comment (if enabled)                         │
+│  4. Post-Creation Comment (if enabled)                          │
 │     └── POST comment via template                               │
 │                                                                 │
 │  5. Update Case (if update/hybrid)                              │
 │     └── Loop through case_updates_needed                        │
 │         ├── Upload attachments (via curl)                       │
-│         └── Add comments                                         │
+│         └── Add comments                                        │
 │                                                                 │
 │  6. Display Summary                                             │
 │     └── Show case details and URL                               │
 └─────────────────────────────────────────────────────────────────┘
 ```
-
-## Migration from Separate Roles
-
-If you're migrating from `rh_case_create` and `rh_case_update` roles:
-
-### Variable Name Changes
-
-| Old Variable | New Variable |
-|--------------|--------------|
-| `rh_case_create_use_proxy` | `rh_case_use_proxy` |
-| `rh_case_create_http_proxy` | `rh_case_http_proxy` |
-| `rh_case_create_no_log` | `rh_case_no_log` |
-| `rh_case_update_use_proxy` | `rh_case_use_proxy` |
-| `rh_case_update_http_proxy` | `rh_case_http_proxy` |
-| `rh_case_update_no_log` | `rh_case_no_log` |
-| `rh_case_update_timeout` | `rh_case_timeout` |
-
-### Playbook Changes
-
-**Before (separate roles):**
-```yaml
-- name: Create case
-  ansible.builtin.include_role:
-    name: infra.support_assist.rh_case_create
-
-- name: Update case
-  ansible.builtin.include_role:
-    name: infra.support_assist.rh_case_update
-```
-
-**After (unified role):**
-```yaml
-- name: Create and update case
-  ansible.builtin.include_role:
-    name: infra.support_assist.rh_case
-```
-
-Or use hybrid mode to do both in one call.
 
 ## License
 

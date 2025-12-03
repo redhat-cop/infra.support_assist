@@ -1,0 +1,37 @@
+---
+# This workflow manually releases the collection to Ansible Galaxy and Automation Hub
+# Triggered when a GitHub release is published
+name: Release - Manual
+
+on: # yamllint disable-line rule:truthy
+  release:
+    types: [published]
+
+jobs:
+  release:
+    name: Release Collection to galaxy/AH
+    uses: "redhat-cop/ansible_collections_tooling/.github/workflows/release_pipeline_dual_crc.yml@main"
+    with:
+      # Galaxy Publish
+      collection_namespace_1: infra
+      collection_name_1: support_assist
+      publish_url_collection_1: https://galaxy.ansible.com/api/
+      galaxy_publish_1: true
+      ah_publish_1: false
+      # CRC Publish
+      collection_namespace_2: infra
+      collection_name_2: support_assist
+      publish_url_collection_2: https://cloud.redhat.com/api/automation-hub/
+      galaxy_publish_2: false
+      ah_publish_2: true
+      collection_repo: https://github.com/redhat-cop/infra.support_assist/
+      quay_username: redhat_cop
+      collection_dependencies: community.general
+      matrix_message: This Ansible collection gathers various reports/outputs commonly asked for in Red Hat Support Cases, and can optionally create the case and upload diagnostics directly to the Support Case Portal.
+    secrets:
+      collection_api_key_1: ${{ secrets.GALAXY_INFRA_KEY }}
+      collection_api_key_2: ${{ secrets.CRC_PUBLISH_KEY }}
+      git_token: ${{ secrets.GITHUB_TOKEN }}
+      quay_token: ${{ secrets.quay_token }}
+      matrix_token: ${{ secrets.matrix_token }}
+...

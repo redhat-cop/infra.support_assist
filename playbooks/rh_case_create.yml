@@ -33,7 +33,7 @@
           block:
             - name: "RUN: Red Hat SSO Access Token Manager Execution Summary"
               ansible.builtin.include_role:
-                name: rh_token_refresh
+                name: infra.support_assist.rh_token_refresh
           rescue:
             - name: "Rescue | Token Refresh failed"
               ansible.builtin.fail:
@@ -44,7 +44,7 @@
           block:
             - name: Call rh_case role (Creates case and sets new_case_id)
               ansible.builtin.include_role:
-                name: rh_case
+                name: infra.support_assist.rh_case
           rescue:
             - name: "Rescue | Case Creation failed"
               ansible.builtin.fail:

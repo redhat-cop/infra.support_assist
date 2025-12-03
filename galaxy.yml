@@ -1,7 +1,7 @@
 ---
 namespace: infra
 name: support_assist
-version: 0.1.0-devel
+version: 1.0.0-devel
 description: Ansible Collection that will gather various reports/outputs that are commonly asked for in Red Hat Support Cases
 readme: README.md
 authors:
@@ -11,20 +11,41 @@ repository: https://github.com/redhat-cop/infra.support_assist
 issues: https://github.com/redhat-cop/infra.support_assist/issues
 documentation: https://github.com/redhat-cop/infra.support_assist/docs
 build_ignore:
-  - galaxy.yml.j2
-  - release.yml
   - .github
+  - "__pycache__"
+  - ".coverage"
+  - ".pytest_cache"
+  - ".rh_offline_token*"
+  - "*.egg-info"
+  - "*.log"
+  - "*.pyc"
   - "*.tar.gz"
+  - "ignore_*"
+  - "inventory-*"
+  - changelogs/
+  - collections/
+  - devfile.yaml
+  - galaxy.yml.j2
+  - pyproject.toml
+  - release.yml
+  - requirements.txt
+  - roles/ignore_*
+  - test-requirements.txt
+  - test-workflow.txt
   - tests/*
+  - tox-ansible.ini
 license:
   - GPL-3.0-or-later
 tags:
-  - tools
-  - linux
+  - ansible
+  - automation
   - infrastructure
-  - support
-  - sosreport
+  - linux
   - mustgather
+  - redhat
+  - sosreport
+  - support
+  - tools
 dependencies:
   community.general: ">=11.4.0"
 ...

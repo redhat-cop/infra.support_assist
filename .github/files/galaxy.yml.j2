@@ -6,23 +6,46 @@ description: Ansible Collection that will gather various reports/outputs that ar
 readme: README.md
 authors:
   - Lenny Shirley @lennysh
+  - Diego Mateus @dfelipem
 repository: {{ collection_repo }}
-issues: {{ collection_repo }}issues
-documentation: {{ collection_repo }}docs
+issues: {{ collection_repo }}/issues
+documentation: {{ collection_repo }}/docs
 build_ignore:
-  - galaxy.yml.j2
-  - release.yml
   - .github
+  - "__pycache__"
+  - ".coverage"
+  - ".pytest_cache"
+  - ".rh_offline_token*"
+  - "*.egg-info"
+  - "*.log"
+  - "*.pyc"
   - "*.tar.gz"
+  - "ignore_*"
+  - "inventory-*"
+  - changelogs/
+  - collections/
+  - devfile.yaml
+  - galaxy.yml.j2
+  - pyproject.toml
+  - release.yml
+  - requirements.txt
+  - roles/ignore_*
+  - test-requirements.txt
+  - test-workflow.txt
   - tests/*
+  - tox-ansible.ini
 license:
   - GPL-3.0-or-later
 tags:
-  - tools
-  - linux
+  - ansible
+  - automation
   - infrastructure
-  - support
-  - sosreport
+  - linux
   - mustgather
-dependencies: []
+  - redhat
+  - sosreport
+  - support
+  - tools
+dependencies:
+  community.general: ">=11.4.0"
 ...

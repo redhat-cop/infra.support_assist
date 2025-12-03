@@ -49,7 +49,7 @@
       block:
         - name: "RUN: OCP Must Gather (Login, Collect, and Archive)"
           ansible.builtin.include_role:
-            name: ocp_must_gather
+            name: infra.support_assist.ocp_must_gather
       rescue:
         - name: "Rescue | Must Gather failed"
           ansible.builtin.fail:
@@ -67,7 +67,7 @@
           block:
             - name: "Call rh_token_refresh role (CRITICAL: Gets Red Hat API token)"
               ansible.builtin.include_role:
-                name: rh_token_refresh
+                name: infra.support_assist.rh_token_refresh
           rescue:
             - name: "Rescue | Token Refresh failed"
               ansible.builtin.fail:
@@ -79,7 +79,7 @@
           block:
             - name: Call rh_case role (Automatically detects create/update/hybrid mode)
               ansible.builtin.include_role:
-                name: rh_case
+                name: infra.support_assist.rh_case
           rescue:
             - name: "Rescue | Case Creation/Update failed"
               ansible.builtin.fail:
