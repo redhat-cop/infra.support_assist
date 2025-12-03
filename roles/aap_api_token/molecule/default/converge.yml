@@ -1,10 +1,8 @@
 ---
 - name: Converge
   hosts: all
-  tasks:
-    - name: "Include aap_api_token"
-      ansible.builtin.include_role:
-        name: "aap_api_token"
+  roles:
+    - role: ../..
       vars:
         aap_gateway_url: "https://example.com"
         aap_username: "test_user"

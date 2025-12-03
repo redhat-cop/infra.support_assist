@@ -1,10 +1,8 @@
 ---
 - name: Converge
   hosts: all
-  tasks:
-    - name: "Include rh_case"
-      ansible.builtin.include_role:
-        name: "rh_case"
+  roles:
+    - role: ../..
       vars:
         offline_token: "test_token_placeholder"
         case_mode: "validate"

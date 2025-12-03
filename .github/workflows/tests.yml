@@ -98,7 +98,6 @@ jobs:
               exit $WRAPPER_EXIT
             fi
           fi
-        continue-on-error: true
         env:
           PY_COLORS: "1"
           ANSIBLE_FORCE_COLOR: "1"

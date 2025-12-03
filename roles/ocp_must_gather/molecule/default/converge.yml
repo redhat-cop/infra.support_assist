@@ -1,10 +1,8 @@
 ---
 - name: Converge
   hosts: all
-  tasks:
-    - name: "Include ocp_must_gather"
-      ansible.builtin.include_role:
-        name: "ocp_must_gather"
+  roles:
+    - role: ../..
       vars:
         ocp_api_url: "https://api.example.com:6443"
         ocp_username: "test_user"
