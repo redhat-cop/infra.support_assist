@@ -9,7 +9,6 @@
       register: dest_stat
       failed_when: false
     - name: Check if sos package is installed
-      become: true
       ansible.builtin.dnf:
         list: sos
       register: sos_pkg_check
