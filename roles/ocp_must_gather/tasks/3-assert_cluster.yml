@@ -29,7 +29,7 @@
   ansible.builtin.assert:
     that:
       # Check if the stripped stdout equals the SA name (meaning the SA was found with the role) or the system:admin role
-      - cluster_admin_check.stdout | trim == sa_name OR cluster_admin_check.stdout | trim == 'system:admin'
+      - (cluster_admin_check.stdout | trim == sa_name) or (cluster_admin_check.stdout | trim == 'system:admin')
     fail_msg: >-
       FAILED! Oh, No! => The authenticated user/service account '{{ sa_name }}' does NOT have 'cluster-admin' privileges.
       This permission is required to execute 'oc adm must-gather'.
