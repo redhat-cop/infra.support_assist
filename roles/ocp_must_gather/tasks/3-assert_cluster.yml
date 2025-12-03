@@ -15,7 +15,7 @@
     sa_name: "{{ oc_whoami.stdout | trim | split(':') | last }}"
   when: oc_whoami.rc == 0
 
-- name: Assert Cluster | Check if service account has cluster-admin privileges
+- name: Assert Cluster | Check if authenticated account has cluster-admin privileges
   ansible.builtin.shell: |
     set -o pipefail
     oc get clusterrolebindings -o jsonpath='{.items[*].subjects[*].name}' \
@@ -25,11 +25,11 @@
   changed_when: false
   failed_when: false
 
-- name: Assert Cluster | Assert that service account has cluster-admin privileges
+- name: Assert Cluster | Assert that authenticated account has cluster-admin privileges
   ansible.builtin.assert:
     that:
-      # Check if the stripped stdout equals the SA name (meaning the SA was found with the role)
-      - cluster_admin_check.stdout | trim == sa_name
+      # Check if the stripped stdout equals the SA name (meaning the SA was found with the role) or the system:admin role
+      - cluster_admin_check.stdout | trim == sa_name OR cluster_admin_check.stdout | trim == 'system:admin'
     fail_msg: >-
       FAILED! Oh, No! => The authenticated user/service account '{{ sa_name }}' does NOT have 'cluster-admin' privileges.
       This permission is required to execute 'oc adm must-gather'.
