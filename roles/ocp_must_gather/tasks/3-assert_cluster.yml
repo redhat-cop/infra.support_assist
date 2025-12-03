@@ -31,12 +31,12 @@
       # Check if the stripped stdout equals the SA name (meaning the SA was found with the role) or the system:admin role
       - (cluster_admin_check.stdout | trim == sa_name) or (cluster_admin_check.stdout | trim == 'system:admin')
     fail_msg: >-
-      FAILED! Oh, No! => The authenticated user/service account '{{ sa_name }}' does NOT have 'cluster-admin' privileges.
+      FAILED! Oh, No! => The authenticated user/service account '{{ sa_name }}' does NOT have 'cluster-admin' or 'system:admin' privileges.
       This permission is required to execute 'oc adm must-gather'.
       Please ensure the correct token or rolebinding is configured when you get a chance and try again.
       For more information, check the Resolution Link (KCS) - https://access.redhat.com/solutions/6375111
     success_msg: >-
-      PASSED! Oh, Yes! => User/Service account '{{ sa_name }}' has 'cluster-admin' privileges, so we are good to go. Proceeding with must-gather execution.
+      PASSED! Oh, Yes! => User/Service account '{{ sa_name }}' has 'cluster-admin' or 'system:admin' privileges, so we are good to go. Proceeding with must-gather execution.
 
 - name: Assert Cluster | Check the Cluster ID
   ansible.builtin.shell: |
