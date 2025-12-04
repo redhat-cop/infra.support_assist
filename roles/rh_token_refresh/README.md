@@ -166,4 +166,4 @@ This role is typically used in conjunction with other roles in the `infra.suppor
 - `rh_case` – Create and update Red Hat support cases (unified role)
 - `ocp_must_gather` – Gather OpenShift diagnostics
 - `sos_report` – Generate SOS reports
-- `aap_api_dump` – Gather diagnostic output from AAP component APIs
+- `aap_api_gather` – Gather diagnostic output from AAP component APIs

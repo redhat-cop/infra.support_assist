@@ -1,6 +1,6 @@
-# aap_api_dump
+# aap_api_gather
 
-An Ansible role to gather diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, EDA) and create compressed archives for Red Hat Support Case upload.
+An Ansible role to gather diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, Gateway, EDA) and create compressed archives for Red Hat Support Case upload.
 
 ## Description
 
@@ -34,11 +34,11 @@ This role gathers diagnostic output from Ansible Automation Platform (AAP) compo
 | `aap_controller_url` | The base URL for the AAP Controller API. If not provided, will default to `aap_gateway_url` if available. Can be provided via extra-var or environment variable (`AAP_CONTROLLER_URL`). | `string` | Conditional* | — |
 | `aap_hub_url` | The base URL for the AAP Hub API. If not provided, will default to `aap_gateway_url` if available. Can be provided via extra-var or environment variable (`AAP_HUB_URL`). | `string` | Conditional* | — |
 | `aap_eda_url` | The base URL for the AAP EDA API. If not provided, will default to `aap_gateway_url` if available. Can be provided via extra-var or environment variable (`AAP_EDA_URL`). | `string` | Conditional* | — |
-| `aap_api_dump_components` | List of AAP components to query. Valid options: `controller`, `hub`, `gateway`, `eda`. | `list` | No | `['controller', 'hub', 'gateway', 'eda']` |
-| `aap_api_dump_dest` | Destination directory on the control node where API outputs will be saved. | `string` | No | `/tmp/aap_api_dumps` |
+| `aap_api_gather_components` | List of AAP components to query. Valid options: `controller`, `hub`, `gateway`, `eda`. | `list` | No | `['controller', 'hub', 'gateway', 'eda']` |
+| `aap_api_gather_dest` | Destination directory on the control node where API outputs will be saved. | `string` | No | `/tmp/aap_api_gathers` |
 | `aap_validate_certs` | Whether to validate SSL/TLS certificates when making API requests. | `bool` | No | `true` |
 
-\* Required if the corresponding component is in `aap_api_dump_components`
+\* Required if the corresponding component is in `aap_api_gather_components`
 
 ### Output Variables
 
@@ -69,11 +69,11 @@ This role gathers diagnostic output from Ansible Automation Platform (AAP) compo
 
     - name: Gather API Data
       ansible.builtin.include_role:
-        name: infra.support_assist.aap_api_dump
+        name: infra.support_assist.aap_api_gather
       vars:
         aap_controller_url: "https://aap-controller.example.com"
         aap_hub_url: "https://aap-hub.example.com"
-        aap_api_dump_components:
+        aap_api_gather_components:
           - controller
           - hub
 ```
@@ -96,7 +96,7 @@ This role gathers diagnostic output from Ansible Automation Platform (AAP) compo
 
         - name: Gather API Data
           ansible.builtin.include_role:
-            name: infra.support_assist.aap_api_dump
+            name: infra.support_assist.aap_api_gather
           vars:
             aap_controller_url: "https://aap-controller.example.com"
             aap_hub_url: "https://aap-hub.example.com"
@@ -145,7 +145,7 @@ export AAP_CONTROLLER_URL="https://aap-controller.example.com"
 export AAP_HUB_URL="https://aap-hub.example.com"
 
 # Run the full pipeline
-ansible-playbook playbooks/aap_api_dump.yml \
+ansible-playbook playbooks/aap_api_gather.yml \
   -e case_id=01234567 \
   -e upload=true
 ```
@@ -155,19 +155,19 @@ ansible-playbook playbooks/aap_api_dump.yml \
 The role creates the following structure on the control node:
 
 ```text
-{{ aap_api_dump_dest }}/{{ inventory_hostname }}/{{ component_name }}/{{ sanitized_endpoint_path }}.json
+{{ aap_api_gather_dest }}/{{ inventory_hostname }}/{{ component_name }}/{{ sanitized_endpoint_path }}.json
 ```
 
 For example:
 ```text
-/tmp/aap_api_dumps/localhost/controller/api_controller_v2_ping_.json
-/tmp/aap_api_dumps/localhost/controller/api_controller_v2_instances_.json
-/tmp/aap_api_dumps/localhost/hub/pulp_api_v3_status_.json
+/tmp/aap_api_gathers/localhost/controller/api_controller_v2_ping_.json
+/tmp/aap_api_gathers/localhost/controller/api_controller_v2_instances_.json
+/tmp/aap_api_gathers/localhost/hub/pulp_api_v3_status_.json
 ```
 
 After collection, the role creates a compressed tarball:
 ```text
-{{ aap_api_dump_dest }}/aap-api-dump-{{ hostname }}-{{ date }}-{{ time }}.tar.gz
+{{ aap_api_gather_dest }}/aap-api-gather-{{ hostname }}-{{ date }}-{{ time }}.tar.gz
 ```
 
 The tarball contains all JSON files from the collection and is automatically added to `case_updates_needed` for upload via the `rh_case` role.
@@ -186,7 +186,7 @@ The role queries predefined API endpoints for each component. These are defined 
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                      aap_api_dump                               │
+│                      aap_api_gather                             │
 ├─────────────────────────────────────────────────────────────────┤
 │  1. Pre-validation                                              │
 │     ├── Verify API token is available                           │

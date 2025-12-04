@@ -11,8 +11,8 @@
 
 - name: Archive | Set fact for the archive name
   ansible.builtin.set_fact:
-    __aap_api_dump_archive_name: >-
-      {{ ('aap-api-dump-' ~ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-')
+    __aap_api_gather_archive_name: >-
+      {{ ('aap-api-gather-' ~ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-')
          ~ '-' ~ ansible_date_time.date
          ~ '-' ~ (ansible_date_time.time | replace(':', ''))
          ~ '.tar.gz') | regex_replace('[^a-zA-Z0-9._-]', '-') }}
@@ -21,44 +21,44 @@
 
 - name: Archive | Set fact for the source directory path
   ansible.builtin.set_fact:
-    _aap_api_dump_source_path: "{{ aap_api_dump_dest }}/{{ inventory_hostname }}"
+    _aap_api_gather_source_path: "{{ aap_api_gather_dest }}/{{ inventory_hostname }}"
   delegate_to: localhost
   run_once: true
 
 - name: Archive | Verify source directory exists and has content
   ansible.builtin.stat:
-    path: "{{ _aap_api_dump_source_path }}"
-  register: _aap_api_dump_source_stat
+    path: "{{ _aap_api_gather_source_path }}"
+  register: _aap_api_gather_source_stat
   delegate_to: localhost
   run_once: true
 
-- name: Archive | Create a compressed archive of the API dump directory
+- name: Archive | Create a compressed archive of the API gather directory
   community.general.archive:
-    path: "{{ _aap_api_dump_source_path }}"
-    dest: "{{ aap_api_dump_dest }}/{{ __aap_api_dump_archive_name }}"
+    path: "{{ _aap_api_gather_source_path }}"
+    dest: "{{ aap_api_gather_dest }}/{{ __aap_api_gather_archive_name }}"
     format: gz
     mode: "0644"
   when:
-    - _aap_api_dump_source_stat.stat.exists
-    - _aap_api_dump_source_stat.stat.isdir
+    - _aap_api_gather_source_stat.stat.exists
+    - _aap_api_gather_source_stat.stat.isdir
   delegate_to: localhost
   run_once: true
   register: _archive_result
 
-- name: Archive | Add API dump archive path to case_updates_needed
+- name: Archive | Add API gather archive path to case_updates_needed
   when:
-    - _aap_api_dump_source_stat.stat.exists
-    - _aap_api_dump_source_stat.stat.isdir
+    - _aap_api_gather_source_stat.stat.exists
+    - _aap_api_gather_source_stat.stat.isdir
     - _archive_result is defined
     - _archive_result.changed | default(false) or _archive_result.archived is defined
   ansible.builtin.set_fact:
     case_updates_needed: >-
       {{ case_updates_needed | default([]) +
       [{
-        'attachment': aap_api_dump_dest ~ '/' ~ __aap_api_dump_archive_name,
+        'attachment': aap_api_gather_dest ~ '/' ~ __aap_api_gather_archive_name,
         'attachmentDescription': (
-          "Ansible Automation Platform API dump collected using the 'infra.support_assist' collection. "
-          ~ "Components queried: " ~ (aap_api_dump_components | join(', '))
+          "Ansible Automation Platform API gather collected using the 'infra.support_assist' collection. "
+          ~ "Components queried: " ~ (aap_api_gather_components | join(', '))
         )
       }] }}
   delegate_to: localhost

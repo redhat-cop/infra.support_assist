@@ -1,24 +1,25 @@
 ---
 argument_specs:
   main:
-    short_description: Auto-generated specs for aap_api_dump role - main entry point
+    short_description: Auto-generated specs for aap_api_gather role - main entry point
     description:
-      - Gathers diagnostic output from AAP component APIs (Controller, Hub, EDA).
+      - Gathers diagnostic output from AAP component APIs (Controller, Hub, Gateway, EDA).
     author:
       - Lenny Shirley
     options:
-      aap_api_dump_components:
-        description: List of aap api dump components items
+      aap_api_gather_components:
+        description: List of aap api gather components items
         type: list
         default:
           - controller
           - hub
+          - gateway
         elements: str
         version_added: 0.1.0-devel
-      aap_api_dump_dest:
-        description: Configuration value for aap api dump dest
+      aap_api_gather_dest:
+        description: Configuration value for aap api gather dest
         type: str
-        default: /tmp/aap_api_dumps
+        default: /tmp/aap_api_gathers
         version_added: 0.1.0-devel
       aap_api_endpoints:
         description: API endpoint URL (dictionary with default configuration) (defined in vars)

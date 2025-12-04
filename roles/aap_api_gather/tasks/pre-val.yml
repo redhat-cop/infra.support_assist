@@ -1,5 +1,5 @@
 ---
-# Pre-validation tasks for aap_api_dump role
+# Pre-validation tasks for aap_api_gather role
 
 - name: Pre-Validation | Ensure API Token is provided
   ansible.builtin.assert:
@@ -39,13 +39,13 @@
         (item == 'eda' and aap_eda_url | length > 0)
     fail_msg: "The URL for the '{{ item }}' component is required but not defined. Please provide 'aap_{{ item }}_url' as an extra-var or set the 'AAP_{{ item | upper }}_URL' environment variable."
     # quiet: true
-  loop: "{{ aap_api_dump_components }}"
+  loop: "{{ aap_api_gather_components }}"
   loop_control:
     label: "Checking URL for {{ item }}"
 
 - name: Pre-Validation | Ensure destination base directory exists on control node
   ansible.builtin.file:
-    path: "{{ aap_api_dump_dest }}"
+    path: "{{ aap_api_gather_dest }}"
     state: directory
     mode: '0755'
   delegate_to: localhost

@@ -1,5 +1,5 @@
 ---
-# Default variables for the aap_api_dump role
+# Default variables for the aap_api_gather role
 
 # API Token (Required - must be provided via extra-vars, ENV, or set by aap_api_token role)
 # Note: aap_api_token role sets this as a fact, so it should be available when that role runs first
@@ -13,14 +13,14 @@ aap_hub_url: "{{ hub_url | default(lookup('env', 'AAP_HUB_URL')) | default('') }
 aap_eda_url: "{{ eda_url | default(lookup('env', 'AAP_EDA_URL')) | default('') }}"
 
 # List of components to query by default
-aap_api_dump_components:
+aap_api_gather_components:
   - controller
   - hub
   - gateway
   - eda # Add 'eda' here or via extra-vars to query it
 
 # Destination directory on the control node for saved API outputs
-aap_api_dump_dest: "/tmp/aap_api_dumps"
+aap_api_gather_dest: "/tmp/aap_api_gathers"
 
 # Validate SSL/TLS certificates
 aap_validate_certs: true

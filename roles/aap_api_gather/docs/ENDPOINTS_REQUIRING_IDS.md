@@ -1,6 +1,6 @@
 # API Endpoints Requiring Dynamic IDs
 
-This document lists AAP API endpoints that were requested in support cases but require dynamic IDs (object IDs, job IDs, etc.) to be queried. These endpoints cannot be automatically added to the `aap_api_dump` role without additional logic to discover and iterate over the required IDs.
+This document lists AAP API endpoints that were requested in support cases but require dynamic IDs (object IDs, job IDs, etc.) to be queried. These endpoints cannot be automatically added to the `aap_api_gather` role without additional logic to discover and iterate over the required IDs.
 
 ## Controller Endpoints
 
@@ -155,7 +155,7 @@ This document lists AAP API endpoints that were requested in support cases but r
 
 ## Notes
 
-These endpoints were extracted from 200+ Ansible support cases. To add these endpoints to the `aap_api_dump` role in the future, the following approach would be needed:
+These endpoints were extracted from 200+ Ansible support cases. To add these endpoints to the `aap_api_gather` role in the future, the following approach would be needed:
 
 1. **Discovery Phase**: Query list endpoints (e.g., `/api/v2/jobs/`, `/api/v2/job_templates/`) to get IDs
 2. **Iteration Phase**: Loop through discovered IDs and query the detail endpoints

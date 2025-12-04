@@ -1,18 +1,18 @@
 ---
-- name: Ansible Automation Platform API Dump and Case Upload
+- name: Ansible Automation Platform API Gather and Case Upload
   hosts: localhost
   connection: local
   gather_facts: false
   tasks:
-    - name: AAP API Dump Block
+    - name: AAP API Gather Block
       block:
         - name: Call aap_api_token role | Get Token
           ansible.builtin.include_role:
             name: infra.support_assist.aap_api_token
 
-        - name: Call aap_api_dump role
+        - name: Call aap_api_gather role
           ansible.builtin.include_role:
-            name: infra.support_assist.aap_api_dump
+            name: infra.support_assist.aap_api_gather
 
       always:
         - name: Call aap_api_token role | Clear Token (if needed)

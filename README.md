@@ -6,7 +6,7 @@ This Ansible Collection will gather various reports/outputs that are commonly as
 
 This collection currently includes the following playbooks and roles:
 
-* **`aap_api_dump`**: Gathers diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, EDA) and creates compressed archives for case upload.
+* **`aap_api_gather`**: Gathers diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, Gateway, EDA) and creates compressed archives for case upload.
 * **`aap_api_token`**: Obtains and manages OAuth2 API tokens for Ansible Automation Platform (AAP).
 * **`ocp_must_gather`**: Gathers an `oc adm must-gather` archive from an OpenShift cluster.
 * **`rh_case`**: Unified role for creating and updating Red Hat Support Cases via API (creates cases, uploads files, adds comments).
@@ -138,23 +138,23 @@ spec:
 
 This collection provides five main playbooks for common operations:
 
-* **`infra.support_assist.aap_api_dump`**: Gathers diagnostic output from AAP component APIs (Controller, Hub, EDA), creates a compressed archive, and optionally uploads it to a Red Hat Support Case.
-    * **Role-specific documentation:** [roles/aap_api_dump/README.md](roles/aap_api_dump/README.md)
+* **`infra.support_assist.aap_api_gather`**: Gathers diagnostic output from AAP component APIs (Controller, Hub, Gateway, EDA), creates a compressed archive, and optionally uploads it to a Red Hat Support Case.
+    * **Role-specific documentation:** [roles/aap_api_gather/README.md](roles/aap_api_gather/README.md)
     * **Example (with case upload):**
         ~~~shell
         export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
         export AAP_CONTROLLER_URL="https://aap-controller.example.com"
         export AAP_HUB_URL="https://aap-hub.example.com"
         
-        ansible-playbook playbooks/aap_api_dump.yml \
+        ansible-playbook playbooks/aap_api_gather.yml \
           -e case_id=01234567 \
           -e upload=true
         ~~~
-    * **Example (standalone dump without upload):**
+    * **Example (standalone gather without upload):**
         ~~~shell
         export AAP_CONTROLLER_URL="https://aap-controller.example.com"
         
-        ansible-playbook playbooks/aap_api_dump.yml \
+        ansible-playbook playbooks/aap_api_gather.yml \
           -e upload=false
         ~~~
 
@@ -242,7 +242,7 @@ Please consult the dedicated documentation file for the full list of valid optio
 
 ## Roles
 
-* **[aap_api_dump](roles/aap_api_dump/README.md)**: Gathers diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, EDA) and saves them as JSON files. Creates a compressed archive and prepares it for upload to a Red Hat Support Case via the `rh_case` role.
+* **[aap_api_gather](roles/aap_api_gather/README.md)**: Gathers diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, Gateway, EDA) and saves them as JSON files. Creates a compressed archive and prepares it for upload to a Red Hat Support Case via the `rh_case` role.
 * **[aap_api_token](roles/aap_api_token/README.md)**: Obtains and manages OAuth2 API tokens for Ansible Automation Platform (AAP). Automatically detects Controller version and uses the appropriate collection (`ansible.controller` or `ansible.platform`).
 * **[ocp_must_gather](roles/ocp_must_gather/README.md)**: Logs into an OpenShift cluster, runs `oc adm must-gather`, and archives the result.
     > **NEW FEATURES:**

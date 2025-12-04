@@ -1,5 +1,5 @@
 ---
-# Main task file for aap_api_dump role
+# Main task file for aap_api_gather role
 
 - name: Main | Perform Input Validation
   ansible.builtin.include_tasks: pre-val.yml

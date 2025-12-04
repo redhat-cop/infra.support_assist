@@ -244,7 +244,7 @@ GPL-3.0-or-later
 
 This role is typically used in conjunction with other roles in the `infra.support_assist` collection:
 
-- `aap_api_dump` – Gather diagnostic output from AAP component APIs (Controller, Hub, EDA)
+- `aap_api_gather` – Gather diagnostic output from AAP component APIs (Controller, Hub, Gateway, EDA)
 - `rh_case` – Create and update Red Hat support cases (unified role)
 - `rh_token_refresh` – Handle Red Hat API token authentication and caching
 - `ocp_must_gather` – Gather OpenShift diagnostics
