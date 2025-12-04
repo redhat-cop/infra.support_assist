@@ -67,9 +67,9 @@
     case_product_version: "{{ cluster_version_check.stdout | default('N/A') }}"
   when: cluster_version_check is defined
 
-- name: Assert Cluster | Discover all operators for selected component (AAP multi-namespace support)  # noqa: command-instead-of-module
-  # shell is required here because the discovery_command uses pipes (|) and jq with complex quoting
-  ansible.builtin.shell: "{{ selected_component_config.discovery_command }}"
+- name: Assert Cluster | Discover all operators for selected component (AAP multi-namespace support)
+  # Use command module to get JSON, then parse with Ansible's json_query filter (no jq required on target host)
+  ansible.builtin.command: "{{ selected_component_config.discovery_command }}"
   register: component_discovery_result
   changed_when: false
   failed_when: false
@@ -79,23 +79,23 @@
     - component_key == 'aap'
     - "'discovery_command' in selected_component_config"
 
-- name: Assert Cluster | Parse discovered AAP operators into list
+- name: Assert Cluster | Parse discovered AAP operators into list using Ansible's json_query filter
   ansible.builtin.set_fact:
     discovered_operators: >-
       {%- set operators = [] -%}
       {%- if component_discovery_result.stdout is defined and component_discovery_result.stdout | trim | length > 0 -%}
-        {%- for line in component_discovery_result.stdout.split('\n') -%}
-          {%- if line | trim | length > 0 -%}
-            {%- set parts = line.split(' ') -%}
-            {%- if parts | length >= 2 -%}
-              {%- set ns = parts[0] | trim -%}
-              {%- set ver = parts[1] | trim -%}
+        {%- set csv_data = component_discovery_result.stdout | from_json -%}
+        {%- if csv_data['items'] is defined -%}
+          {%- for item in csv_data['items'] -%}
+            {%- if item.spec.displayName is defined and item.spec.displayName == "Ansible Automation Platform" -%}
+              {%- set ns = item.metadata.namespace | default('') | trim -%}
+              {%- set ver = item.spec.version | default('') | trim -%}
               {%- if ns | length > 0 and ver | length > 0 -%}
                 {%- set _ = operators.append({'namespace': ns, 'version': ver}) -%}
               {%- endif -%}
             {%- endif -%}
-          {%- endif -%}
-        {%- endfor -%}
+          {%- endfor -%}
+        {%- endif -%}
       {%- endif -%}
       {{ operators }}
   when:
