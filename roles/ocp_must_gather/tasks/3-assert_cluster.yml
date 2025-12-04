@@ -127,9 +127,9 @@
       - (component_key == 'aap' and component_discovery_result.rc is defined and component_discovery_result.rc == 0) or
         (component_key != 'aap' and component_version_result.rc is defined and component_version_result.rc == 0)
     fail_msg:
-      "FAILED! Oh, No! => The discovery/version command for component {{ component_key }} failed. Please check if the Operator is installed and the authentication is correct."
+      "FAILED! Oh, No! => The discovery/version command for component {{ component_key | upper }} failed. Please check if the Operator is installed and the authentication is correct."
     success_msg:
-      "PASSED! Oh, Yes! => Discovery/version command for component '{{ component_key }}' executed successfully. Proceeding to extract version(s)..."
+      "PASSED! Oh, Yes! => Discovery/version command for component '{{ component_key | upper }}' executed successfully. Proceeding to extract version(s)..."
   when: selected_component_config is defined
 
 - name: Assert Cluster | Assert that at least one AAP operator was discovered
@@ -165,12 +165,12 @@
       - raw_version is defined
       - raw_version | length > 0
     fail_msg: >-
-      FAILED! Oh, No! => Component '{{ component_key }}' was selected but the operator version
+      FAILED! Oh, No! => Component '{{ component_key | upper }}' was selected but the operator version
       could not be retrieved (RC: {{ component_version_result.rc | default('N/A') }}).
       This means the Operator is likely NOT installed, or the authentication is incorrect.
       Check: oc get csv -n <namespace>.
     success_msg: >-
-      PASSED! Oh, Yes! => Component '{{ component_key }}' version ({{ raw_version }})
+      PASSED! Oh, Yes! => Component '{{ component_key | upper }}' version ({{ raw_version }})
       retrieved successfully. Proceeding to construct the image tag...
   when:
     - raw_version is defined
@@ -271,11 +271,11 @@
       - ocp_must_gather_image_custom | length > 0
     fail_msg: >-
       FAILED! Oh, No! => The final Must Gather Image could not be constructed
-      for component {{ component_key }}. Please check the version retrieval and
+      for component {{ component_key | upper }}. Please check the version retrieval and
       tag logic.
     success_msg: >-
       PASSED! Oh, Yes! => Final Must Gather Image for component
-      {{ component_key }} | constructed successfully:
+      {{ component_key | upper }} | constructed successfully:
       {{ ocp_must_gather_image_custom | trim }}. Proceeding to next steps...
   when:
     - selected_component_config is defined
@@ -301,7 +301,7 @@
 
 - name: Assert Cluster | Set fact variables for Must-Gather image construction (non-AAP)
   ansible.builtin.set_fact:
-    __component_key: "{{ component_key | default('N/A') | trim }}"
+    __component_key: "{{ component_key | default('N/A') | upper | trim }}"
     __component_purpose: "{{ selected_component_config.purpose | default('N/A') | trim }}"
     __component_version: "{{ component_version | default('N/A') | trim }}"
     __constructed_image: "{{ ocp_must_gather_image_custom | default('') | trim }}"
@@ -312,7 +312,7 @@
 
 - name: Assert Cluster | Set fact variables for Must-Gather image construction (AAP - use first operator)
   ansible.builtin.set_fact:
-    __component_key: "{{ component_key | default('N/A') | trim }}"
+    __component_key: "{{ component_key | default('N/A') | upper | trim }}"
     __component_purpose: "{{ selected_component_config.purpose | default('N/A') | trim }}"
     __component_version: "{{ aap_operators_processed[0].version | default('N/A') | trim }}"
     __constructed_image: "{{ aap_operators_processed[0].image | default('') | trim }}"
@@ -327,7 +327,7 @@
   ansible.builtin.debug:
     msg:
       - "MUST-GATHER IMAGE DETAILS"
-      - "component_key: {{ __component_key | trim }}"
+      - "component_key: {{ __component_key | upper | trim }}"
       - "purpose: {{ __component_purpose | trim }}"
       - "version: {{ __component_version | trim }}"
       - "constructed_image: {{ __constructed_image | trim }}"
@@ -340,7 +340,7 @@
   ansible.builtin.debug:
     msg:
       - "MUST-GATHER IMAGE DETAILS - AAP OPERATORS"
-      - "component_key: {{ component_key }}"
+      - "component_key: {{ component_key | upper }}"
       - "purpose: {{ selected_component_config.purpose }}"
       - "total_operators_discovered: {{ aap_operators_processed | length }}"
       - "NOTE: Must-gather will use the first operator's image, but all operators are listed below:"

@@ -59,7 +59,7 @@
 
 - name: Assert Vars | Set component_key (always set for consistency)
   ansible.builtin.set_fact:
-    component_key: "{{ ocp_must_gather_image | default('DEFAULT') }}"
+    component_key: "{{ ocp_must_gather_image | default('DEFAULT') | lower }}"
 
 - name: Assert Vars | Set dynamic component configuration (from user acronym)
   # The component_key is the user input (acronym). Lookup is performed on the lowercase version.
