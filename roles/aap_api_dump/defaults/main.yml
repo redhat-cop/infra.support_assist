@@ -16,6 +16,7 @@ aap_eda_url: "{{ eda_url | default(lookup('env', 'AAP_EDA_URL')) | default('') }
 aap_api_dump_components:
   - controller
   - hub
+  - gateway
   - eda # Add 'eda' here or via extra-vars to query it
 
 # Destination directory on the control node for saved API outputs

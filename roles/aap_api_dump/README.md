@@ -34,7 +34,7 @@ This role gathers diagnostic output from Ansible Automation Platform (AAP) compo
 | `aap_controller_url` | The base URL for the AAP Controller API. If not provided, will default to `aap_gateway_url` if available. Can be provided via extra-var or environment variable (`AAP_CONTROLLER_URL`). | `string` | Conditional* | — |
 | `aap_hub_url` | The base URL for the AAP Hub API. If not provided, will default to `aap_gateway_url` if available. Can be provided via extra-var or environment variable (`AAP_HUB_URL`). | `string` | Conditional* | — |
 | `aap_eda_url` | The base URL for the AAP EDA API. If not provided, will default to `aap_gateway_url` if available. Can be provided via extra-var or environment variable (`AAP_EDA_URL`). | `string` | Conditional* | — |
-| `aap_api_dump_components` | List of AAP components to query. Valid options: `controller`, `hub`, `eda`. | `list` | No | `['controller', 'hub', 'eda']` |
+| `aap_api_dump_components` | List of AAP components to query. Valid options: `controller`, `hub`, `gateway`, `eda`. | `list` | No | `['controller', 'hub', 'gateway', 'eda']` |
 | `aap_api_dump_dest` | Destination directory on the control node where API outputs will be saved. | `string` | No | `/tmp/aap_api_dumps` |
 | `aap_validate_certs` | Whether to validate SSL/TLS certificates when making API requests. | `bool` | No | `true` |
 

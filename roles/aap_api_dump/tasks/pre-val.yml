@@ -29,11 +29,13 @@
   ansible.builtin.set_fact:
     aap_eda_url: "{{ aap_gateway_url }}"
 
+
 - name: Pre-Validation | Ensure URLs are provided for selected components
   ansible.builtin.assert:
     that:
       - (item == 'controller' and aap_controller_url | length > 0) or
         (item == 'hub' and aap_hub_url | length > 0) or
+        (item == 'gateway' and aap_gateway_url | length > 0) or
         (item == 'eda' and aap_eda_url | length > 0)
     fail_msg: "The URL for the '{{ item }}' component is required but not defined. Please provide 'aap_{{ item }}_url' as an extra-var or set the 'AAP_{{ item | upper }}_URL' environment variable."
     # quiet: true
