@@ -1,22 +1,66 @@
 ---
-- name: Gather OpenShift Must Gather(s)
+- name: OpenShift Must-Gather Pipeline - Full Automation Flow
   hosts: localhost
   connection: local
   gather_facts: false
+  any_errors_fatal: true   # Ensures immediate stop for any failure
   tasks:
-    - name: Call ocp_must_gather role
-      ansible.builtin.include_role:
-        name: ocp_must_gather
-
-    - name: Upload Block
+    - name: "Block | Role Validation(s)"
+      delegate_to: localhost
+      run_once: true
       when:
         - upload | default(true) | bool
       block:
         - name: Call rh_token_refresh role
           ansible.builtin.include_role:
             name: infra.support_assist.rh_token_refresh
+            tasks_from: 1-pre_validation.yml
 
-        - name: Call rh_case role
+        - name: Call rh_case role for validation
           ansible.builtin.include_role:
             name: infra.support_assist.rh_case
+            tasks_from: 1-pre_validation.yml
+
+    - name: "Block | Generate OCP Must Gather"
+      block:
+        - name: "RUN: OCP Must Gather (Login, Collect, and Archive)"
+          ansible.builtin.include_role:
+            name: infra.support_assist.ocp_must_gather
+      rescue:
+        - name: "Rescue | Must Gather failed"
+          ansible.builtin.fail:
+            msg: >
+              [ERROR] Must Gather execution failed during collection or archiving.
+              Stopping pipeline immediately; check the logs above for details.
+
+    - name: Upload Block
+      delegate_to: localhost
+      run_once: true
+      when:
+        - upload | default(true) | bool
+      block:
+        - name: "Block | Refresh Red Hat API Token"
+          block:
+            - name: "Call rh_token_refresh role (CRITICAL: Gets Red Hat API token)"
+              ansible.builtin.include_role:
+                name: infra.support_assist.rh_token_refresh
+          rescue:
+            - name: "Rescue | Token Refresh failed"
+              ansible.builtin.fail:
+                msg: >
+                  [ERROR] Oh, No! => Refresh Red Hat API token failed.
+                  Stopping pipeline immediately, check the logs above for details.
+
+        - name: "Block | Create/Update Red Hat Support Case"
+          block:
+            - name: Call rh_case role (Automatically detects create/update/hybrid mode)
+              ansible.builtin.include_role:
+                name: infra.support_assist.rh_case
+          rescue:
+            - name: "Rescue | Case Creation/Update failed"
+              ansible.builtin.fail:
+                msg: >
+                  [ERROR] Oh, No! => Case creation/update failed.
+                  Stopping pipeline immediately, check the logs above for details.
+                  Check the API response for invalid subscription or product/version mismatch.
 ...
