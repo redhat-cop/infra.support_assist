@@ -57,14 +57,27 @@
     success_msg: "PASSED! Oh, Yes! => The 'oc' command is found and ready on the execution host. Proceeding..."
   when: oc_check is defined
 
-- name: Assert Vars | Set dynamic component configuration and key (from user acronym)
+- name: Assert Vars | Set component_key (always set for consistency)
+  ansible.builtin.set_fact:
+    component_key: "{{ ocp_must_gather_image | default('DEFAULT') }}"
+
+- name: Assert Vars | Set dynamic component configuration (from user acronym)
   # The component_key is the user input (acronym). Lookup is performed on the lowercase version.
   ansible.builtin.set_fact:
-    component_key: "{{ ocp_must_gather_image }}"
     # Lookup the configuration data using the lowercase acronym as the key.
-    selected_component_config: "{{ must_gather_components[ocp_must_gather_image | lower] }}"
+    # Safely check if key exists before accessing to avoid attribute errors
+    selected_component_config: >-
+      {%- set image_key = ocp_must_gather_image | lower -%}
+      {%- if image_key in must_gather_components -%}
+        {{- must_gather_components[image_key] -}}
+      {%- else -%}
+        {}
+      {%- endif -%}
   # Only run this logic if the user selected a custom component (not the default baseline)
-  when: ocp_must_gather_image | upper != 'DEFAULT'
+  when:
+    - ocp_must_gather_image is defined
+    - ocp_must_gather_image | length > 0
+    - ocp_must_gather_image | upper != 'DEFAULT'
 
 - name: Assert Vars | Assert user selected a valid component acronym
   ansible.builtin.assert:

@@ -67,33 +67,99 @@
     case_product_version: "{{ cluster_version_check.stdout | default('N/A') }}"
   when: cluster_version_check is defined
 
-- name: Assert Cluster | Execute version command for selected component to retrieve operator version
-  ansible.builtin.command: "{{ selected_component_config.version_command }}"
+- name: Assert Cluster | Discover all operators for selected component (AAP multi-namespace support)  # noqa: command-instead-of-module
+  # shell is required here because the discovery_command uses pipes (|) and jq with complex quoting
+  ansible.builtin.shell: "{{ selected_component_config.discovery_command }}"
+  register: component_discovery_result
+  changed_when: false
+  failed_when: false
+  when:
+    - selected_component_config is defined
+    - component_key is defined
+    - component_key == 'aap'
+    - "'discovery_command' in selected_component_config"
+
+- name: Assert Cluster | Parse discovered AAP operators into list
+  ansible.builtin.set_fact:
+    discovered_operators: >-
+      {%- set operators = [] -%}
+      {%- if component_discovery_result.stdout is defined and component_discovery_result.stdout | trim | length > 0 -%}
+        {%- for line in component_discovery_result.stdout.split('\n') -%}
+          {%- if line | trim | length > 0 -%}
+            {%- set parts = line.split(' ') -%}
+            {%- if parts | length >= 2 -%}
+              {%- set ns = parts[0] | trim -%}
+              {%- set ver = parts[1] | trim -%}
+              {%- if ns | length > 0 and ver | length > 0 -%}
+                {%- set _ = operators.append({'namespace': ns, 'version': ver}) -%}
+              {%- endif -%}
+            {%- endif -%}
+          {%- endif -%}
+        {%- endfor -%}
+      {%- endif -%}
+      {{ operators }}
+  when:
+    - component_key is defined
+    - component_key == 'aap'
+    - component_discovery_result is defined
+    - component_discovery_result.rc == 0
+
+- name: Assert Cluster | Execute version command for selected component to retrieve operator version (non-AAP)
+  ansible.builtin.command: >-
+    {%- if 'version_command' in selected_component_config -%}
+      {{- selected_component_config.version_command -}}
+    {%- else -%}
+      echo "version_command not available"
+    {%- endif -%}
   register: component_version_result
   changed_when: false
   failed_when: false
-  when: selected_component_config is defined
+  when:
+    - selected_component_config is defined
+    - component_key is defined
+    - component_key != 'aap'
+    - "'version_command' in selected_component_config"
 
-- name: Assert Cluster | Assert that version command executed successfully
+- name: Assert Cluster | Assert that discovery/version command executed successfully
   ansible.builtin.assert:
     that:
-      - component_version_result.rc is defined
-      - component_version_result.rc == 0
+      - component_key is defined
+      - (component_key == 'aap' and component_discovery_result.rc is defined and component_discovery_result.rc == 0) or
+        (component_key != 'aap' and component_version_result.rc is defined and component_version_result.rc == 0)
     fail_msg:
-      "FAILED! Oh, No! => The version command for component {{ component_key }}. Please check if the Operator is installed and the authentication is correct."
+      "FAILED! Oh, No! => The discovery/version command for component {{ component_key }} failed. Please check if the Operator is installed and the authentication is correct."
     success_msg:
-      "PASSED! Oh, Yes! => Version command for component '{{ component_key }}' executed successfully. Proceeding to extract version..."
+      "PASSED! Oh, Yes! => Discovery/version command for component '{{ component_key }}' executed successfully. Proceeding to extract version(s)..."
   when: selected_component_config is defined
 
-- name: Assert Cluster | Set raw_version fact for consumption
+- name: Assert Cluster | Assert that at least one AAP operator was discovered
+  ansible.builtin.assert:
+    that:
+      - discovered_operators is defined
+      - discovered_operators | length > 0
+    fail_msg: >-
+      FAILED! Oh, No! => No AAP operators were discovered on the cluster.
+      Please ensure AAP is installed and the authentication has proper permissions.
+    success_msg: >-
+      PASSED! Oh, Yes! => Discovered {{ discovered_operators | length }} AAP operator(s).
+      Proceeding to process each operator...
+  when:
+    - component_key is defined
+    - component_key == 'aap'
+    - component_discovery_result is defined
+    - component_discovery_result.rc == 0
+
+- name: Assert Cluster | Set raw_version fact for consumption (non-AAP)
   ansible.builtin.set_fact:
     raw_version: "{{ component_version_result.stdout | trim }}"
   when:
     - component_version_result is defined
     - component_version_result.rc is defined
     - component_version_result.rc == 0
+    - component_key is defined
+    - component_key != 'aap'
 
-- name: Assert Cluster | Assert component operator version was successfully retrieved
+- name: Assert Cluster | Assert component operator version was successfully retrieved (non-AAP)
   ansible.builtin.assert:
     that:
       - raw_version is defined
@@ -106,10 +172,50 @@
     success_msg: >-
       PASSED! Oh, Yes! => Component '{{ component_key }}' version ({{ raw_version }})
       retrieved successfully. Proceeding to construct the image tag...
-  when: raw_version is defined
+  when:
+    - raw_version is defined
+    - component_key is defined
+    - component_key != 'aap'
 
-- name: Assert Cluster | Construct and set the final versioned image string
-  when: raw_version is defined
+- name: Assert Cluster | Process each discovered AAP operator and construct images
+  ansible.builtin.set_fact:
+    aap_operators_processed: >-
+      {%- set processed = [] -%}
+      {%- for operator in discovered_operators -%}
+        {%- set raw_version = operator.version -%}
+        {%- set namespace = operator.namespace -%}
+        {%- set config = selected_component_config -%}
+        {%- set logic = config.tag_logic | trim -%}
+        {%- set version_parts = raw_version.split('.') -%}
+        {%- set major_minor_tag = version_parts[0] ~ '.' ~ version_parts[1] | default('') -%}
+        {%- set major_minor_num_str = major_minor_tag | replace('.', '') -%}
+        {%- set final_url = "" -%}
+        {%- if logic == 'aap_dynamic_rhel' -%}
+          {%- set major_num_int = major_minor_tag.split('.') | first | int -%}
+          {%- set rhel_suffix = "/aap-must-gather-rhel8" -%}
+          {%- if major_minor_num_str | int >= 26 -%}
+            {%- set rhel_suffix = "/aap-must-gather-rhel9" -%}
+          {%- endif -%}
+          {%- set final_url = config.image_base_prefix ~ major_minor_num_str ~ rhel_suffix -%}
+        {%- endif -%}
+        {%- set _ = processed.append({
+            'namespace': namespace,
+            'version': raw_version,
+            'image': final_url | trim
+          }) -%}
+      {%- endfor -%}
+      {{ processed }}
+  when:
+    - component_key is defined
+    - component_key == 'aap'
+    - discovered_operators is defined
+    - discovered_operators | length > 0
+
+- name: Assert Cluster | Construct and set the final versioned image string (non-AAP)
+  when:
+    - raw_version is defined
+    - component_key is defined
+    - component_key != 'aap'
   ansible.builtin.set_fact:
     ocp_must_gather_image_custom: >-
       {% set raw_version = raw_version | default('') %}
@@ -158,7 +264,7 @@
       {{ final_url | trim }}
     component_version: "{{ raw_version }}"
 
-- name: Assert Cluster | Final confirmation of dynamic image selection
+- name: Assert Cluster | Final confirmation of dynamic image selection (non-AAP)
   ansible.builtin.assert:
     that:
       - ocp_must_gather_image_custom is defined
@@ -171,17 +277,53 @@
       PASSED! Oh, Yes! => Final Must Gather Image for component
       {{ component_key }} | constructed successfully:
       {{ ocp_must_gather_image_custom | trim }}. Proceeding to next steps...
-  when: selected_component_config is defined
+  when:
+    - selected_component_config is defined
+    - component_key is defined
+    - component_key != 'aap'
 
-- name: Assert Cluster | Set fact variables for Must-Gather image construction
+- name: Assert Cluster | Final confirmation of AAP operators processing
+  ansible.builtin.assert:
+    that:
+      - aap_operators_processed is defined
+      - aap_operators_processed | length > 0
+    fail_msg: >-
+      FAILED! Oh, No! => Could not process discovered AAP operators.
+      Please check the version parsing and image construction logic.
+    success_msg: >-
+      PASSED! Oh, Yes! => Successfully processed {{ aap_operators_processed | length }} AAP operator(s).
+      Proceeding to next steps...
+  when:
+    - component_key is defined
+    - component_key == 'aap'
+    - discovered_operators is defined
+    - discovered_operators | length > 0
+
+- name: Assert Cluster | Set fact variables for Must-Gather image construction (non-AAP)
   ansible.builtin.set_fact:
     __component_key: "{{ component_key | default('N/A') | trim }}"
     __component_purpose: "{{ selected_component_config.purpose | default('N/A') | trim }}"
     __component_version: "{{ component_version | default('N/A') | trim }}"
     __constructed_image: "{{ ocp_must_gather_image_custom | default('') | trim }}"
-  when: selected_component_config is defined
+  when:
+    - selected_component_config is defined
+    - component_key is defined
+    - component_key != 'aap'
 
-- name: Assert Cluster | Constructed Must-Gather Image (Minimal JSON)
+- name: Assert Cluster | Set fact variables for Must-Gather image construction (AAP - use first operator)
+  ansible.builtin.set_fact:
+    __component_key: "{{ component_key | default('N/A') | trim }}"
+    __component_purpose: "{{ selected_component_config.purpose | default('N/A') | trim }}"
+    __component_version: "{{ aap_operators_processed[0].version | default('N/A') | trim }}"
+    __constructed_image: "{{ aap_operators_processed[0].image | default('') | trim }}"
+    __aap_all_operators: "{{ aap_operators_processed }}"
+  when:
+    - component_key is defined
+    - component_key == 'aap'
+    - aap_operators_processed is defined
+    - aap_operators_processed | length > 0
+
+- name: Assert Cluster | Constructed Must-Gather Image (Minimal JSON) - Non-AAP
   ansible.builtin.debug:
     msg:
       - "MUST-GATHER IMAGE DETAILS"
@@ -189,7 +331,31 @@
       - "purpose: {{ __component_purpose | trim }}"
       - "version: {{ __component_version | trim }}"
       - "constructed_image: {{ __constructed_image | trim }}"
-  when: selected_component_config is defined
+  when:
+    - selected_component_config is defined
+    - component_key is defined
+    - component_key != 'aap'
+
+- name: Assert Cluster | Display all discovered AAP operators with images
+  ansible.builtin.debug:
+    msg:
+      - "MUST-GATHER IMAGE DETAILS - AAP OPERATORS"
+      - "component_key: {{ component_key }}"
+      - "purpose: {{ selected_component_config.purpose }}"
+      - "total_operators_discovered: {{ aap_operators_processed | length }}"
+      - "NOTE: Must-gather will use the first operator's image, but all operators are listed below:"
+      - "operators:"
+      - "{{ aap_operators_processed | to_nice_yaml(indent=2) }}"
+      - ""
+      - "Selected operator for must-gather:"
+      - "  namespace: {{ aap_operators_processed[0].namespace }}"
+      - "  version: {{ aap_operators_processed[0].version }}"
+      - "  image: {{ aap_operators_processed[0].image }}"
+  when:
+    - component_key is defined
+    - component_key == 'aap'
+    - aap_operators_processed is defined
+    - aap_operators_processed | length > 0
 
 - name: Assert Cluster | Ensure temporary destination directory is empty first
   ansible.builtin.file:

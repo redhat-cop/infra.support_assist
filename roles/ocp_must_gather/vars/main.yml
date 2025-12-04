@@ -9,7 +9,8 @@ must_gather_components:
 # KCS(Solution) Reference: https://access.redhat.com/solutions/6997224
   aap:
     purpose: "Data Collection for Red Hat Ansible Automation Platform on OpenShift"
-    version_command: "oc get csv -n aap -l 'operators.coreos.com/ansible-automation-platform-operator.aap=' -o jsonpath='{.items[0].spec.version}'"
+    # Discover all AAP operators across all namespaces using jq to filter by displayName
+    discovery_command: "oc get csv -A -o json | jq -r '.items[] | select(.spec.displayName == \"Ansible Automation Platform\") | \"\\(.metadata.namespace) \\(.spec.version)\"'"
     image_base_prefix: "registry.redhat.io/ansible-automation-platform-"
     tag_logic: "aap_dynamic_rhel"
 

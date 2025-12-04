@@ -1,2 +1,3 @@
 # This file contains ignores rule violations for ansible-lint
 roles/rh_case_update/tasks/upload.yml command-instead-of-module
+roles/ocp_must_gather/tasks/3-assert_cluster.yml command-instead-of-module
