@@ -6,6 +6,7 @@
     existing_token: "{{ controller_token }}"
     state: absent
     validate_certs: "{{ aap_api_token_aap_validate_certs }}"
+  no_log: "{{ aap_api_token_no_log | default(true) | bool }}"
   when: __clear_token | default(false)
   tags:
     - always
