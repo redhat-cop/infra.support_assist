@@ -3,45 +3,191 @@
 
 aap_api_endpoints:
   gateway:
+    # Core system endpoints
     - "/api/gateway/v1/ping/"
     - "/api/gateway/v1/status/"
-    - "/api/gateway/v1/authenticators/"
-    - "/api/gateway/v1/legacy_auth/"
     - "/api/gateway/v1/me/"
+    # Authentication
+    - "/api/gateway/v1/authenticators/"
+    - "/api/gateway/v1/authenticator_plugins/"
+    - "/api/gateway/v1/authenticator_maps/"
+    - "/api/gateway/v1/authenticator_users/"
+    - "/api/gateway/v1/legacy_auth/"
+    - "/api/gateway/v1/ui_auth/"
+    - "/api/gateway/v1/session/"
+    # Activity
+    - "/api/gateway/v1/activitystream/"
+    # Applications and OAuth
+    - "/api/gateway/v1/applications/"
+    - "/api/gateway/v1/app_urls/"
+    # Services and infrastructure
+    - "/api/gateway/v1/services/"
     - "/api/gateway/v1/service_clusters/"
     - "/api/gateway/v1/service_nodes/"
-    - "/api/gateway/v1/session/"
-    - "/api/gateway/v1/ui_auth/"
+    - "/api/gateway/v1/service_types/"
+    - "/api/gateway/v1/service_keys/"
+    - "/api/gateway/v1/http_ports/"
+    - "/api/gateway/v1/routes/"
+    - "/api/gateway/v1/ui_plugin_routes/"
+    - "/api/gateway/v1/trigger_definition/"
+    # User and access management
     - "/api/gateway/v1/users/"
+    - "/api/gateway/v1/teams/"
+    - "/api/gateway/v1/organizations/"
+    - "/api/gateway/v1/role_definitions/"
+    - "/api/gateway/v1/role_user_assignments/"
+    - "/api/gateway/v1/role_team_assignments/"
+    # Tokens
+    - "/api/gateway/v1/tokens/"
+    # Settings
+    - "/api/gateway/v1/settings/"
+    - "/api/gateway/v1/settings/all/"
+    - "/api/gateway/v1/settings/analytics/"
+    - "/api/gateway/v1/settings/configuration/"
+    - "/api/gateway/v1/settings/local_login/"
+    - "/api/gateway/v1/settings/notification/"
+    - "/api/gateway/v1/settings/oauth2_provider/"
+    - "/api/gateway/v1/settings/proxy/"
+    - "/api/gateway/v1/settings/social_auth/"
   controller:
+    # Core system endpoints
+    - "/api/controller/v2/ping/"
+    - "/api/controller/v2/status/"
     - "/api/controller/v2/config/"
-    - "/api/controller/v2/credential_types/"
-    - "/api/controller/v2/execution_environments/"
+    - "/api/controller/v2/me/"
+    - "/api/controller/v2/dashboard/"
+    - "/api/controller/v2/service-index/"
+    - "/api/controller/v2/service-index/metadata/"
+    # Activity and monitoring
+    - "/api/controller/v2/activity_stream/"
+    - "/api/controller/v2/metrics/"
+    - "/api/controller/v2/analytics/"
+    # Instances and infrastructure
     - "/api/controller/v2/instances/"
+    - "/api/controller/v2/instance_groups/"
+    - "/api/controller/v2/receptor_addresses/"
+    # Inventory management
+    - "/api/controller/v2/inventories/"
+    - "/api/controller/v2/constructed_inventories/"
+    - "/api/controller/v2/inventory_sources/"
+    - "/api/controller/v2/inventory_updates/"
+    - "/api/controller/v2/groups/"
+    - "/api/controller/v2/hosts/"
+    - "/api/controller/v2/host_metrics/"
+    - "/api/controller/v2/host_metric_summary_monthly/"
+    # Projects and execution
+    - "/api/controller/v2/projects/"
+    - "/api/controller/v2/project_updates/"
+    - "/api/controller/v2/execution_environments/"
+    # Credentials
+    - "/api/controller/v2/credentials/"
+    - "/api/controller/v2/credential_types/"
+    - "/api/controller/v2/credential_input_sources/"
+    # Job execution
     - "/api/controller/v2/job_templates/"
     - "/api/controller/v2/jobs/"
-    - "/api/controller/v2/ping/"
-    - "/api/controller/v2/project_updates/"
-    - "/api/controller/v2/projects/"
-    - "/api/controller/v2/service-index/metadata/"
-    - "/api/controller/v2/settings/all/"
-    - "/api/controller/v2/settings/authentication/"
-    - "/api/controller/v2/settings/jobs/"
-    - "/api/controller/v2/settings/ldap/"
-    - "/api/controller/v2/settings/oidc/"
-    - "/api/controller/v2/settings/saml/"
-    - "/api/controller/v2/settings/system/"
-    - "/api/controller/v2/status/"
-    - "/api/controller/v2/tokens/"
+    - "/api/controller/v2/ad_hoc_commands/"
+    - "/api/controller/v2/system_job_templates/"
+    - "/api/controller/v2/system_jobs/"
+    - "/api/controller/v2/unified_job_templates/"
     - "/api/controller/v2/unified_jobs/"
+    # Workflows
     - "/api/controller/v2/workflow_job_templates/"
     - "/api/controller/v2/workflow_jobs/"
+    - "/api/controller/v2/workflow_job_template_nodes/"
+    - "/api/controller/v2/workflow_job_nodes/"
+    - "/api/controller/v2/workflow_approvals/"
+    # Schedules
+    - "/api/controller/v2/schedules/"
+    # Notifications
+    - "/api/controller/v2/notification_templates/"
+    - "/api/controller/v2/notifications/"
+    # Labels
+    - "/api/controller/v2/labels/"
+    # User and access management
+    - "/api/controller/v2/users/"
+    - "/api/controller/v2/teams/"
+    - "/api/controller/v2/organizations/"
+    - "/api/controller/v2/roles/"
+    - "/api/controller/v2/role_definitions/"
+    - "/api/controller/v2/role_user_assignments/"
+    - "/api/controller/v2/role_team_assignments/"
+    # Applications (OAuth)
+    - "/api/controller/v2/applications/"
+    # Tokens
+    - "/api/controller/v2/tokens/"
+    # Mesh visualizer
+    - "/api/controller/v2/mesh_visualizer/"
+    # Bulk operations
+    - "/api/controller/v2/bulk/"
+    # Settings - general
+    - "/api/controller/v2/settings/"
+    - "/api/controller/v2/settings/all/"
+    - "/api/controller/v2/settings/changed/"
+    - "/api/controller/v2/settings/debug/"
+    - "/api/controller/v2/settings/logging/"
+    - "/api/controller/v2/settings/named-url/"
+    - "/api/controller/v2/settings/ui/"
+    - "/api/controller/v2/settings/bulk/"
+    - "/api/controller/v2/settings/policyascode/"
+    # Settings - authentication
+    - "/api/controller/v2/settings/authentication/"
+    - "/api/controller/v2/settings/ldap/"
+    - "/api/controller/v2/settings/saml/"
+    - "/api/controller/v2/settings/oidc/"
+    - "/api/controller/v2/settings/radius/"
+    - "/api/controller/v2/settings/tacacsplus/"
+    - "/api/controller/v2/settings/google-oauth2/"
+    - "/api/controller/v2/settings/azuread-oauth2/"
+    # Settings - GitHub integration
+    - "/api/controller/v2/settings/github/"
+    - "/api/controller/v2/settings/github-org/"
+    - "/api/controller/v2/settings/github-team/"
+    - "/api/controller/v2/settings/github-enterprise/"
+    - "/api/controller/v2/settings/github-enterprise-org/"
+    - "/api/controller/v2/settings/github-enterprise-team/"
+    # Settings - system and jobs
+    - "/api/controller/v2/settings/system/"
+    - "/api/controller/v2/settings/jobs/"
   hub:
     - "/pulp/api/v3/status/"
     - "/pulp/api/v3/tasks/"
     - "/pulp/api/v3/repositories/container/container/"
     - "/pulp/api/v3/repositories/container/container-push/"
-  eda: []
+  eda:
+    # Core system endpoints
+    - "/api/eda/v1/status/"
+    - "/api/eda/v1/config/"
+    # API documentation
+    - "/api/eda/v1/openapi.json/"
+    - "/api/eda/v1/docs/"
+    - "/api/eda/v1/redoc/"
+    # Authentication
+    - "/api/eda/v1/auth/session/login/"
+    - "/api/eda/v1/auth/session/logout/"
+    - "/api/eda/v1/auth/token/refresh/"
+    # Activations
+    - "/api/eda/v1/activations/"
+    - "/api/eda/v1/activation-instances/"
+    # Credentials
+    - "/api/eda/v1/eda-credentials/"
+    - "/api/eda/v1/credential-types/"
+    - "/api/eda/v1/credential-input-sources/"
+    # Decision environments
+    - "/api/eda/v1/decision-environments/"
+    # Projects
+    - "/api/eda/v1/projects/"
+    # Rulebooks and event streams
+    - "/api/eda/v1/rulebooks/"
+    - "/api/eda/v1/event-streams/"
+    # Audit
+    - "/api/eda/v1/audit-rules/"
+    # User and access management
+    - "/api/eda/v1/users/"
+    - "/api/eda/v1/users/me/"
+    - "/api/eda/v1/users/me/awx-tokens/"
+    - "/api/eda/v1/teams/"
+    - "/api/eda/v1/organizations/"
 
 aap_api_legacy_endpoints:
   controller:
