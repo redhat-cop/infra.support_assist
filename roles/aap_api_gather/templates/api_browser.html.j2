@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Red Hat AAP API Browser - {{ inventory_hostname | default('AAP') }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #cc0000 0%, #8b0000 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #cc0000 0%, #ff0000 50%, #cc0000 100%);
+        }
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .header .rh-logo {
+            font-size: 1.8rem;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        .header .collection-info {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            opacity: 0.85;
+            font-style: italic;
+        }
+        .footer {
+            background: #f5f5f5;
+            border-top: 1px solid #e0e0e0;
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+        }
+        .footer a {
+            color: #cc0000;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            gap: 2rem;
+        }
+        .sidebar-wrapper {
+            position: relative;
+            flex-shrink: 0;
+            width: 300px;
+        }
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+            min-width: 300px;
+            max-width: 600px;
+            width: 100%;
+            overflow: auto;
+        }
+        .resize-handle {
+            position: absolute;
+            right: -5px;
+            top: 0;
+            bottom: 0;
+            width: 5px;
+            background: #e0e0e0;
+            cursor: ew-resize;
+            z-index: 10;
+            border-radius: 0 4px 4px 0;
+        }
+        .resize-handle:hover {
+            background: #cc0000;
+        }
+        .search-box {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #cc0000;
+        }
+        .component-list {
+            list-style: none;
+        }
+        .component-item {
+            margin-bottom: 0.5rem;
+        }
+        .component-header {
+            font-weight: 600;
+            color: #cc0000;
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .component-header:hover {
+            background: #fff5f5;
+        }
+        .component-header.active {
+            background: #cc0000;
+            color: white;
+        }
+        .endpoint-list {
+            list-style: none;
+            margin-left: 1rem;
+            margin-top: 0.5rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .component-item.expanded .endpoint-list {
+            max-height: 1000px;
+        }
+        .endpoint-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            word-break: break-all;
+            overflow-wrap: break-word;
+        }
+        .endpoint-item span:first-child {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .endpoint-item:hover {
+            background: #fff5f5;
+        }
+        .endpoint-item.active {
+            background: #cc0000;
+            color: white;
+        }
+        .endpoint-item.has-pages::after {
+            content: '📄';
+            margin-left: 0.5rem;
+            font-size: 0.8rem;
+        }
+        .main-content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-height: 500px;
+            flex: 1;
+            min-width: 0;
+        }
+        .endpoint-viewer {
+            display: none;
+        }
+        .endpoint-viewer.active {
+            display: block;
+        }
+        .endpoint-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+            border-bottom: 2px solid #cc0000;
+            padding-bottom: 0.5rem;
+        }
+        .endpoint-meta {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .endpoint-meta strong {
+            color: #cc0000;
+        }
+        .pagination-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #cc0000;
+            background: white;
+            color: #cc0000;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        .page-btn:hover {
+            background: #cc0000;
+            color: white;
+        }
+        .page-btn.active {
+            background: #cc0000;
+            color: white;
+        }
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .json-viewer {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 1.5rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            max-height: 70vh;
+            overflow-y: auto;
+            white-space: pre;
+        }
+        .json-key {
+            color: #e06c75;
+        }
+        .json-string {
+            color: #98c379;
+        }
+        .json-number {
+            color: #d19a66;
+        }
+        .json-boolean {
+            color: #56b6c2;
+        }
+        .json-null {
+            color: #5c6370;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #999;
+        }
+        .empty-state h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            flex: 1;
+            min-width: 150px;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #cc0000;
+        }
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #cc0000;
+        }
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span class="rh-logo">🔴</span>
+            <span>AAP API Browser</span>
+        </h1>
+        <p>Host: {{ inventory_hostname | default('Unknown') }} | Generated: {{ ansible_date_time.date | default('Unknown') }} {{ ansible_date_time.time | default('') }}</p>
+        <p class="collection-info">Generated by Red Hat Validated Ansible Collection: infra.support_assist</p>
+    </div>
+    <div class="container">
+        <div class="sidebar-wrapper">
+            <div class="sidebar" id="sidebar">
+                <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search endpoints...">
+                <ul class="component-list" id="componentList">
+                {% for component in api_structure %}
+                {% set endpoints = api_structure[component] %}
+                <li class="component-item" data-component="{{ component }}">
+                    <div class="component-header" onclick="toggleComponent('{{ component }}')">
+                        <span>{{ component | upper }}</span>
+                        <span class="endpoint-count">({{ endpoints | length }})</span>
+                    </div>
+                    <ul class="endpoint-list">
+                        {% for endpoint in endpoints | sort(attribute='path') %}
+                        <li class="endpoint-item" 
+                            data-component="{{ component }}"
+                            data-endpoint="{{ endpoint.path }}"
+                            data-files="{{ endpoint.files | join(',') }}"
+                            data-endpoint-files='{{ endpoint.files | to_json }}'>
+                            <span>{{ endpoint.display_name }}</span>
+                            {% if endpoint.page_count > 1 %}
+                            <span class="page-count">{{ endpoint.page_count }}p</span>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endfor %}
+            </ul>
+            </div>
+            <div class="resize-handle" id="resizeHandle"></div>
+        </div>
+        <div class="main-content">
+            <div id="emptyState" class="empty-state">
+                <h2>👈 Select an endpoint</h2>
+                <p>Choose an endpoint from the sidebar to view its API response</p>
+            </div>
+            <div id="endpointViewer" class="endpoint-viewer">
+                <div class="endpoint-title" id="endpointTitle"></div>
+                <div class="endpoint-meta" id="endpointMeta"></div>
+                <div class="pagination-controls" id="paginationControls"></div>
+                <div class="json-viewer" id="jsonViewer"></div>
+            </div>
+        </div>
+    </div>
+
+    <noscript>
+        <div style="padding: 2rem; background: #fee; border: 2px solid #c33; margin: 2rem; border-radius: 8px;">
+            <h2 style="color: #c33; margin-bottom: 1rem;">⚠️ JavaScript Required</h2>
+            <p>This browser requires JavaScript to function. Please enable JavaScript in your browser or use a different viewer.</p>
+            <p style="margin-top: 1rem;"><strong>Available Components:</strong></p>
+            <ul>
+                {% for component in api_structure %}
+                <li>{{ component | upper }}: {{ api_structure[component] | length }} endpoints</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </noscript>
+    <script>
+        // API data structure embedded in the page
+        // All data is embedded inline - no external requests needed
+        const apiData = {{ api_data | to_json }};
+        const api_structure = {{ api_structure | to_json }};
+        let currentComponent = null;
+        let currentEndpoint = null;
+        let currentPage = 1;
+        let currentFiles = [];
+
+        // Check if data loaded correctly
+        if (typeof apiData === 'undefined' || typeof api_structure === 'undefined') {
+            console.error('API data not loaded correctly');
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'padding: 2rem; background: #fee; border: 2px solid #c33; margin: 2rem; border-radius: 8px;';
+            errorDiv.innerHTML = '<h2 style="color: #c33;">Data Loading Error</h2><p>The API data failed to load. This may be due to security restrictions in the viewer.</p><p>Check the browser console (F12) for more details.</p>';
+            document.body.insertBefore(errorDiv, document.body.firstChild);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verify data is available
+            if (typeof apiData === 'undefined' || typeof api_structure === 'undefined') {
+                console.error('API data not available on DOMContentLoaded');
+                console.log('apiData type:', typeof apiData);
+                console.log('api_structure type:', typeof api_structure);
+                return;
+            }
+            
+            console.log('API Browser initialized successfully');
+            console.log('Components available:', Object.keys(api_structure));
+            console.log('Total files loaded:', Object.keys(apiData).length);
+            
+            // Expand first component by default
+            const firstComponent = document.querySelector('.component-item');
+            if (firstComponent) {
+                toggleComponent(firstComponent.dataset.component);
+            }
+
+            // Search functionality
+            const searchBox = document.getElementById('searchBox');
+            if (searchBox) {
+                searchBox.addEventListener('input', function(e) {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const endpointItems = document.querySelectorAll('.endpoint-item');
+                    endpointItems.forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        if (text.includes(searchTerm)) {
+                            item.style.display = 'flex';
+                            // Expand parent component if match found
+                            const component = item.closest('.component-item');
+                            if (searchTerm && component && !component.classList.contains('expanded')) {
+                                component.classList.add('expanded');
+                            }
+                        } else {
+                            item.style.display = searchTerm ? 'none' : 'flex';
+                        }
+                    });
+                });
+            }
+
+            // Resizable sidebar
+            const sidebar = document.getElementById('sidebar');
+            const sidebarWrapper = document.querySelector('.sidebar-wrapper');
+            const resizeHandle = document.getElementById('resizeHandle');
+            if (sidebar && sidebarWrapper && resizeHandle) {
+                let isResizing = false;
+                let startX, startWidth;
+
+                resizeHandle.addEventListener('mousedown', function(e) {
+                    isResizing = true;
+                    startX = e.clientX;
+                    startWidth = parseInt(document.defaultView.getComputedStyle(sidebarWrapper).width, 10);
+                    document.addEventListener('mousemove', handleResize);
+                    document.addEventListener('mouseup', stopResize);
+                    e.preventDefault();
+                });
+
+                function handleResize(e) {
+                    if (!isResizing) return;
+                    const width = startWidth + e.clientX - startX;
+                    if (width >= 300 && width <= 600) {
+                        sidebarWrapper.style.width = width + 'px';
+                    }
+                }
+
+                function stopResize() {
+                    isResizing = false;
+                    document.removeEventListener('mousemove', handleResize);
+                    document.removeEventListener('mouseup', stopResize);
+                }
+            }
+
+            // Attach click handlers to endpoint items
+            const endpointItems = document.querySelectorAll('.endpoint-item');
+            endpointItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const component = this.dataset.component;
+                    const endpoint = this.dataset.endpoint;
+                    const filesJson = this.dataset.endpointFiles;
+                    let files = [];
+                    try {
+                        files = JSON.parse(filesJson || '[]');
+                    } catch (err) {
+                        console.error('Error parsing files JSON:', err);
+                    }
+                    console.log('Endpoint clicked:', { component, endpoint, files });
+                    loadEndpoint(this, component, endpoint, files);
+                });
+            });
+
+            // Debug: Log API data structure
+            console.log('API Data loaded:', Object.keys(apiData).length, 'files');
+            console.log('API Structure:', api_structure);
+        });
+
+        function toggleComponent(component) {
+            const item = document.querySelector(`[data-component="${component}"]`);
+            item.classList.toggle('expanded');
+            
+            // Update active state
+            document.querySelectorAll('.component-header').forEach(header => {
+                header.classList.remove('active');
+            });
+            item.querySelector('.component-header').classList.add('active');
+        }
+
+        function loadEndpoint(element, component, endpoint, files) {
+            console.log('loadEndpoint called', { element, component, endpoint, files });
+            
+            if (!element || !component || !endpoint) {
+                console.error('Missing required parameters', { element, component, endpoint });
+                return;
+            }
+
+            currentComponent = component;
+            currentEndpoint = endpoint;
+            currentFiles = Array.isArray(files) ? files : [];
+            currentPage = 1;
+
+            // Update active state
+            document.querySelectorAll('.endpoint-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            element.classList.add('active');
+
+            // Show viewer, hide empty state
+            const emptyState = document.getElementById('emptyState');
+            const endpointViewer = document.getElementById('endpointViewer');
+            if (emptyState) emptyState.style.display = 'none';
+            if (endpointViewer) endpointViewer.classList.add('active');
+
+            // Update title
+            const titleEl = document.getElementById('endpointTitle');
+            if (titleEl) titleEl.textContent = endpoint;
+
+            // Update meta
+            const meta = document.getElementById('endpointMeta');
+            if (meta) {
+                meta.innerHTML = `
+                    <strong>Component:</strong> ${component.toUpperCase()}<br>
+                    <strong>Endpoint:</strong> ${endpoint}<br>
+                    <strong>Files:</strong> ${currentFiles.length} file(s)
+                `;
+            }
+
+            // Load first page
+            loadPage(1);
+        }
+
+        function loadPage(page) {
+            currentPage = page;
+
+            // Try to find the file by matching component and filename pattern
+            let fileData = null;
+            let matchedKey = null;
+
+            // First, try exact match with page number
+            for (const [key, data] of Object.entries(apiData)) {
+                if (key.startsWith(currentComponent + '/')) {
+                    const filename = key.split('/').pop();
+                    // Check if this file matches the endpoint and page
+                    const pageMatch = filename.match(/_page(\d+)\.json$/);
+                    const filePage = pageMatch ? parseInt(pageMatch[1]) : 1;
+
+                    // Check if filename matches endpoint pattern
+                    const endpointPattern = currentEndpoint.replace(/\//g, '_').replace(/^_/, '');
+                    if (filename.includes(endpointPattern) && filePage === page) {
+                        fileData = data;
+                        matchedKey = key;
+                        break;
+                    }
+                }
+            }
+
+            // If not found, try using the files array
+            if (!fileData && currentFiles.length > 0) {
+                let targetFile = null;
+                if (page === 1) {
+                    // For page 1, prefer file without _page suffix, otherwise _page1
+                    targetFile = currentFiles.find(f => !f.includes('_page')) ||
+                                 currentFiles.find(f => f.includes('_page1'));
+                } else {
+                    targetFile = currentFiles.find(f => f.includes(`_page${page}`));
+                }
+
+                if (targetFile) {
+                    const fullKey = `${currentComponent}/${targetFile}`;
+                    fileData = apiData[fullKey];
+                    matchedKey = fullKey;
+                }
+            }
+
+            if (!fileData) {
+                document.getElementById('jsonViewer').innerHTML = '<div class="error">❌ File not found or could not be loaded</div>';
+                return;
+            }
+
+            // Render JSON
+            renderJSON(fileData);
+
+            // Update pagination controls
+            updatePaginationControls();
+        }
+
+        function updatePaginationControls() {
+            const controls = document.getElementById('paginationControls');
+            const pageCount = currentFiles.length || 1;
+            
+            if (pageCount <= 1) {
+                controls.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            for (let i = 1; i <= pageCount; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="loadPage(${i})">Page ${i}</button>`;
+            }
+            controls.innerHTML = html;
+        }
+
+        function renderJSON(data) {
+            const viewer = document.getElementById('jsonViewer');
+            // Ensure data is properly stringified with indentation
+            const jsonString = JSON.stringify(data, null, 2);
+            viewer.innerHTML = syntaxHighlight(jsonString);
+        }
+
+        function syntaxHighlight(json) {
+            // Ensure we have a string
+            if (typeof json !== 'string') {
+                json = JSON.stringify(json, null, 2);
+            }
+            
+            // Escape HTML special characters
+            json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // Preserve whitespace and newlines by wrapping in <pre> style
+            // First, split by lines to preserve indentation
+            const lines = json.split('\n');
+            const highlightedLines = lines.map(line => {
+                // Highlight each line while preserving indentation
+                return line.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+                    let cls = 'json-number';
+                    if (/^"/.test(match)) {
+                        if (/:$/.test(match)) {
+                            cls = 'json-key';
+                        } else {
+                            cls = 'json-string';
+                        }
+                    } else if (/true|false/.test(match)) {
+                        cls = 'json-boolean';
+                    } else if (/null/.test(match)) {
+                        cls = 'json-null';
+                    }
+                    return '<span class="' + cls + '">' + match + '</span>';
+                });
+            });
+            
+            return highlightedLines.join('\n');
+        }
+    </script>
+    <div class="footer">
+        <p>
+            <strong>Red Hat Validated Ansible Collection</strong><br>
+            <a href="https://github.com/redhat-cop/infra_support_assist" target="_blank">infra.support_assist</a> | 
+            <a href="https://www.redhat.com" target="_blank">Red Hat, Inc.</a>
+        </p>
+        <p style="margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.7;">
+            This browser was generated by the <code>aap_api_gather</code> role from the 
+            <code>infra.support_assist</code> Ansible Collection.
+        </p>
+    </div>
+</body>
+</html>

@@ -10,6 +10,9 @@
 - name: Main | Gather API Data
   ansible.builtin.include_tasks: gather_apis.yml
 
+- name: Main | Generate HTML Browser
+  ansible.builtin.include_tasks: generate_browser.yml
+
 - name: Main | Create Archive and Prepare for rh_case
   ansible.builtin.include_tasks: create_archive.yml
 

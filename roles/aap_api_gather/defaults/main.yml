@@ -111,4 +111,10 @@ aap_api_gather_use_query_params: true
 # If true, max_pages limits (from endpoint config or defaults) will be enforced
 # If false, all pages will be fetched (may be very slow for high-volume endpoints)
 aap_api_gather_enforce_max_pages: true
+
+# Generate static HTML browser (no JavaScript) for case viewer compatibility
+# Only generated when both this AND upload are true
+# Set to false to skip static file generation even when uploading
+# DISABLED: Currently disabled due to navigation issues in case viewer iframe
+aap_api_gather_generate_static_browser: false
 ...

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base target="_self">
+    <title>Red Hat AAP API Browser - {{ inventory_hostname | default('AAP') }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #cc0000 0%, #8b0000 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #cc0000 0%, #ff0000 50%, #cc0000 100%);
+        }
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .header .rh-logo {
+            font-size: 1.8rem;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        .header .collection-info {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            opacity: 0.85;
+            font-style: italic;
+        }
+        .footer {
+            background: #f5f5f5;
+            border-top: 1px solid #e0e0e0;
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+        }
+        .footer a {
+            color: #cc0000;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: flex;
+            gap: 2rem;
+        }
+        .sidebar-wrapper {
+            position: relative;
+            flex-shrink: 0;
+            width: 350px;
+        }
+        .sidebar {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+            width: 100%;
+            overflow: auto;
+        }
+        /* Resize handle removed - requires JavaScript which is stripped in viewer */
+        .component-list {
+            list-style: none;
+        }
+        .component-item {
+            margin-bottom: 0.5rem;
+        }
+        .component-header {
+            font-weight: 600;
+            color: #cc0000;
+            padding: 0.5rem;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        details {
+            margin-bottom: 0.5rem;
+        }
+        details summary {
+            font-weight: 600;
+            color: #cc0000;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+        details summary::before {
+            content: '▶';
+            margin-right: 0.5rem;
+            transition: transform 0.2s;
+        }
+        details[open] summary::before {
+            transform: rotate(90deg);
+        }
+        details summary:hover {
+            background: #fff5f5;
+        }
+        .endpoint-list {
+            list-style: none;
+            margin-left: 1rem;
+            margin-top: 0.5rem;
+        }
+        .endpoint-item {
+            padding: 0.5rem;
+            border-radius: 4px;
+            margin-bottom: 0.25rem;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            word-break: break-all;
+            overflow-wrap: break-word;
+        }
+        .endpoint-item a {
+            color: #333;
+            text-decoration: none;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .endpoint-item a:hover {
+            color: #cc0000;
+            text-decoration: underline;
+        }
+        .endpoint-item:target a,
+        .endpoint-item:target {
+            background: #cc0000;
+            color: white;
+        }
+        .endpoint-item:target a {
+            color: white;
+        }
+        .main-content {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-height: 500px;
+            flex: 1;
+            min-width: 0;
+        }
+        .empty-state {
+            display: block;
+        }
+        /* Hide empty state when any endpoint or page is targeted */
+        /* Use :has() to detect when endpoint sections are visible (modern browsers) */
+        .main-content:has(.endpoint-section:target) .empty-state,
+        .main-content:has(.page-section:target) .empty-state {
+            display: none;
+        }
+        /* For browsers without :has(), use sibling selector (endpoint sections come after empty-state) */
+        .endpoint-section:target ~ .empty-state,
+        .page-section:target ~ .empty-state {
+            display: none;
+        }
+        /* Also hide when the no-endpoint-selected anchor is NOT targeted */
+        #no-endpoint-selected:not(:target) ~ .empty-state {
+            /* This won't work - CSS limitation */
+        }
+        .endpoint-section {
+            display: none;
+            position: relative;
+        }
+        .endpoint-section:target {
+            display: block;
+        }
+        /* Show endpoint when any of its child pages are targeted - using :has() if supported */
+        .endpoint-section:has(.page-section:target) {
+            display: block;
+        }
+        /* Fallback: When page 2+ is targeted, the endpoint section (parent) should also be visible */
+        /* Since CSS can't select parents, we rely on :has() which is supported in modern browsers */
+        /* For browsers without :has() support, the endpoint may not show when pages 2+ are targeted */
+        .endpoint-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+            border-bottom: 2px solid #cc0000;
+            padding-bottom: 0.5rem;
+        }
+        .endpoint-meta {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .endpoint-meta strong {
+            color: #cc0000;
+        }
+        .pagination-controls {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .page-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid #cc0000;
+            background: white;
+            color: #cc0000;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            display: inline-block;
+        }
+        .page-btn:hover {
+            background: #cc0000;
+            color: white;
+        }
+        .page-section {
+            display: none;
+        }
+        /* Show first page when endpoint is targeted (but no specific page) */
+        .endpoint-section:target > .page-section:first-of-type {
+            display: block;
+        }
+        /* Show specific page when it's targeted */
+        .page-section:target {
+            display: block;
+        }
+        /* For single-page endpoints, always show the page when endpoint is targeted */
+        .endpoint-section:target > .page-section-default {
+            display: block;
+        }
+        /* When a page is targeted, also show its parent endpoint (using :has if supported) */
+        .endpoint-section:has(.page-section:target) {
+            display: block;
+        }
+        .json-viewer {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 1.5rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            max-height: 70vh;
+            overflow-y: auto;
+            white-space: pre;
+        }
+        .json-key {
+            color: #e06c75;
+        }
+        .json-string {
+            color: #98c379;
+        }
+        .json-number {
+            color: #d19a66;
+        }
+        .json-boolean {
+            color: #56b6c2;
+        }
+        .json-null {
+            color: #5c6370;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #999;
+        }
+        .empty-state h2 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .intro-message {
+            background: #fff5f5;
+            border-left: 4px solid #cc0000;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span class="rh-logo">🔴</span>
+            <span>AAP API Browser</span>
+        </h1>
+        <p>Host: {{ inventory_hostname | default('Unknown') }} | Generated: {{ ansible_date_time.date | default('Unknown') }} {{ ansible_date_time.time | default('') }}</p>
+        <p class="collection-info">Generated by Red Hat Validated Ansible Collection: infra.support_assist</p>
+    </div>
+    <div class="container">
+        <div class="sidebar-wrapper">
+            <div class="sidebar" id="sidebar">
+                <div class="intro-message">
+                    <strong>📋 Static Browser</strong><br>
+                    <small>This version works without JavaScript. Click endpoints to view data.</small>
+                </div>
+                <ul class="component-list" id="componentList">
+                {% for component in api_structure %}
+                {% set endpoints = api_structure[component] %}
+                <li class="component-item" data-component="{{ component }}">
+                    <details open>
+                        <summary>
+                            <span>{{ component | upper }}</span>
+                            <span class="endpoint-count">({{ endpoints | length }})</span>
+                        </summary>
+                        <ul class="endpoint-list">
+                            {% for endpoint in endpoints | sort(attribute='path') %}
+                            {% set endpoint_id = (component + '_' + endpoint.path | replace('/', '_') | replace('-', '_') | trim | regex_replace('^_', '') | regex_replace('_+', '_')) | lower %}
+                            <li class="endpoint-item" id="nav-{{ endpoint_id }}">
+                                {% if endpoint.page_count > 1 %}
+                                <a href="#{{ endpoint_id }}-page1" target="_self">{{ endpoint.display_name }}</a>
+                                {% else %}
+                                <a href="#{{ endpoint_id }}" target="_self">{{ endpoint.display_name }}</a>
+                                {% endif %}
+                                {% if endpoint.page_count > 1 %}
+                                <span class="page-count">{{ endpoint.page_count }}p</span>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </details>
+                </li>
+                {% endfor %}
+            </ul>
+            </div>
+        </div>
+        <div class="main-content">
+            <a id="no-endpoint-selected" style="position: absolute; top: -200px; visibility: hidden;"></a>
+            {% for component in api_structure %}
+            {% for endpoint in api_structure[component] | sort(attribute='path') %}
+            {% set endpoint_id = (component + '_' + endpoint.path | replace('/', '_') | replace('-', '_') | trim | regex_replace('^_', '') | regex_replace('_+', '_')) | lower %}
+            {% set endpoint_key_base = component + '/' + endpoint.files[0] | regex_replace('_page\\d+\\.json$', '') | regex_replace('\\.json$', '') if endpoint.files | length > 0 else '' %}
+            <div class="endpoint-section" id="{{ endpoint_id }}">
+                <a id="{{ endpoint_id }}-show" style="position: absolute; top: -200px; visibility: hidden;"></a>
+                <div class="endpoint-title">{{ endpoint.path }}</div>
+                <div class="endpoint-meta">
+                    <strong>Component:</strong> {{ component | upper }}<br>
+                    <strong>Endpoint:</strong> {{ endpoint.path }}<br>
+                    <strong>Files:</strong> {{ endpoint.files | length }} file(s)
+                </div>
+                {% if endpoint.page_count > 1 %}
+                <div class="pagination-controls">
+                    {% for page_num in range(1, endpoint.page_count + 1) %}
+                    <a href="#{{ endpoint_id }}-page{{ page_num }}" class="page-btn{% if page_num == 1 %} active{% endif %}" target="_self">Page {{ page_num }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% for page_num in range(1, endpoint.page_count + 1) %}
+                {% set page_file = '' %}
+                {% if endpoint.files | length > 0 %}
+                    {% if page_num == 1 %}
+                        {# For page 1, prefer file without _page suffix, otherwise _page1 #}
+                        {% set page1_files = endpoint.files | select('match', '.*_page1\\.json$') | list %}
+                        {% set no_page_files = endpoint.files | reject('match', '.*_page\\d+\\.json$') | list %}
+                        {% if no_page_files | length > 0 %}
+                            {% set page_file = no_page_files[0] %}
+                        {% elif page1_files | length > 0 %}
+                            {% set page_file = page1_files[0] %}
+                        {% else %}
+                            {% set page_file = endpoint.files[0] %}
+                        {% endif %}
+                    {% else %}
+                        {# For pages 2+, look for _pageN.json pattern #}
+                        {% set page_pattern = '_page' + page_num | string + '\\.json$' %}
+                        {% set matching_files = endpoint.files | select('match', '.*' + page_pattern) | list %}
+                        {% if matching_files | length > 0 %}
+                            {% set page_file = matching_files[0] %}
+                        {% endif %}
+                    {% endif %}
+                {% endif %}
+                {% set file_key = component + '/' + page_file if page_file else '' %}
+                {% if endpoint.page_count > 1 %}
+                    {% set page_id = endpoint_id + '-page' + page_num | string %}
+                {% else %}
+                    {% set page_id = endpoint_id %}
+                {% endif %}
+                <div class="page-section{% if page_num == 1 and endpoint.page_count == 1 %} page-section-default{% endif %}" id="{{ page_id }}">
+                    {% if file_key and api_data[file_key] is defined %}
+                    {% if api_data_formatted[file_key] is defined %}
+                    <pre class="json-viewer">{{ api_data_formatted[file_key] }}</pre>
+                    {% else %}
+                    <pre class="json-viewer">{{ api_data[file_key] | to_json(indent=2) }}</pre>
+                    {% endif %}
+                    {% else %}
+                    <div class="error">❌ File not found: {{ file_key }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+            {% endfor %}
+            <div class="empty-state" id="emptyState">
+                <h2>👈 Select an endpoint</h2>
+                <p>Choose an endpoint from the sidebar to view its API response</p>
+                <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.7;">
+                    This browser works without JavaScript. All data is pre-rendered in the page.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>
+            <strong>Red Hat Validated Ansible Collection</strong><br>
+            <a href="https://github.com/redhat-cop/infra_support_assist" target="_blank">infra.support_assist</a> | 
+            <a href="https://www.redhat.com" target="_blank">Red Hat, Inc.</a>
+        </p>
+        <p style="margin-top: 0.5rem; font-size: 0.75rem; opacity: 0.7;">
+            This browser was generated by the <code>aap_api_gather</code> role from the 
+            <code>infra.support_assist</code> Ansible Collection. This is a static version that works without JavaScript.
+        </p>
+    </div>
+</body>
+</html>

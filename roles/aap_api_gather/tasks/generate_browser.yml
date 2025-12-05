@@ -1,0 +1,202 @@
+---
+# Tasks to generate an HTML browser for the collected API data
+
+- name: Browser | Set fact for the source directory path
+  ansible.builtin.set_fact:
+    _aap_api_gather_source_path: "{{ aap_api_gather_dest }}/{{ _browser_hostname_override | default(inventory_hostname) }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Browser | Verify source directory exists
+  ansible.builtin.stat:
+    path: "{{ _aap_api_gather_source_path }}"
+  register: _browser_source_stat
+  delegate_to: localhost
+  run_once: true
+
+- name: Browser | Find all JSON files in the source directory
+  ansible.builtin.find:
+    paths: "{{ _aap_api_gather_source_path }}"
+    patterns: "*.json"
+    recurse: true
+  register: _browser_json_files
+  delegate_to: localhost
+  run_once: true
+  when: _browser_source_stat.stat.exists
+
+- name: Browser | Build API structure and load JSON data using Python script
+  when: _browser_source_stat.stat.exists and _browser_json_files.files | length > 0
+  ansible.builtin.shell: |
+    python3 << 'PYTHON_EOF'
+    import json
+    import os
+    import re
+    import sys
+    from collections import defaultdict
+
+    source_path = "{{ _aap_api_gather_source_path }}"
+    json_files = {{ _browser_json_files.files | map(attribute='path') | list | to_json }}
+
+    # Build structure
+    api_structure = defaultdict(lambda: defaultdict(lambda: {
+        'path': '',
+        'display_name': '',
+        'files': [],
+        'page_count': 0
+    }))
+    api_data = {}
+    api_data_formatted = {}  # Pre-formatted JSON strings for static template
+
+    # Process all JSON files
+    for json_file in json_files:
+        rel_path = json_file.replace(source_path + '/', '')
+        path_parts = rel_path.split('/')
+
+        if len(path_parts) < 2:
+            continue
+
+        component = path_parts[0]
+        filename = path_parts[-1]
+
+        # Extract endpoint path from filename
+        # Convert: api_controller_v2_jobs__page1.json -> /api/controller/v2/jobs/
+        filename_base = re.sub(r'_page\d+\.json$', '.json', filename)
+        filename_base = re.sub(r'\.json$', '', filename_base)
+
+        # Convert underscores to slashes, but preserve structure
+        # api_controller_v2_jobs -> /api/controller/v2/jobs
+        endpoint_path = '/' + filename_base.replace('_', '/')
+
+        # Extract page number
+        page_match = re.search(r'_page(\d+)\.json$', filename)
+        page_num = int(page_match.group(1)) if page_match else 1
+
+        # Load JSON content
+        try:
+            # Check file size first to avoid loading huge files
+            file_size = os.path.getsize(json_file)
+            if file_size > 10 * 1024 * 1024:  # Skip files larger than 10MB
+                print(f"Skipping large file: {json_file} ({file_size} bytes)", file=sys.stderr)
+                continue
+
+            with open(json_file, 'r', encoding='utf-8') as f:
+                json_content = json.load(f)
+            api_data[rel_path] = json_content
+
+            # Pre-format JSON for static template (much faster than doing it in Jinja2)
+            # Only format if content size is reasonable (< 500KB formatted) to avoid memory issues
+            try:
+                json_str = json.dumps(json_content, ensure_ascii=False)
+                if len(json_str) < 512 * 1024:  # 500KB
+                    api_data_formatted[rel_path] = json.dumps(json_content, indent=2, ensure_ascii=False)
+                # For larger files, template will format on-demand (slower but works)
+            except (MemoryError, OverflowError):
+                # Skip formatting for very large structures
+                pass
+        except Exception as e:
+            print(f"Error loading {json_file}: {e}", file=sys.stderr)
+            continue
+
+        # Add to structure
+        if endpoint_path not in api_structure[component]:
+            api_structure[component][endpoint_path] = {
+                'path': endpoint_path,
+                'display_name': endpoint_path,
+                'files': [],
+                'page_count': 0
+            }
+
+        api_structure[component][endpoint_path]['files'].append(filename)
+        api_structure[component][endpoint_path]['page_count'] = max(
+            api_structure[component][endpoint_path]['page_count'],
+            page_num
+        )
+
+    # Convert to list format for Jinja2
+    final_structure = {}
+    for component, endpoints in api_structure.items():
+        final_structure[component] = list(endpoints.values())
+
+    # Output as JSON
+    output = {
+        'structure': final_structure,
+        'data': api_data,
+        'data_formatted': api_data_formatted
+    }
+    print(json.dumps(output, indent=2))
+    PYTHON_EOF
+  register: _browser_consolidated
+  delegate_to: localhost
+  run_once: true
+  changed_when: false
+
+- name: Browser | Parse consolidated structure
+  when: _browser_source_stat.stat.exists and _browser_json_files.files | length > 0
+  ansible.builtin.set_fact:
+    _browser_parsed_json: "{{ _browser_consolidated.stdout | from_json }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Browser | Extract structure and data
+  when: _browser_source_stat.stat.exists and _browser_json_files.files | length > 0
+  ansible.builtin.set_fact:
+    _api_structure: "{{ _browser_parsed_json.structure }}"
+    _api_data: "{{ _browser_parsed_json.data }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Browser | Generate HTML browser file (JavaScript version)
+  when: _browser_source_stat.stat.exists and _browser_json_files.files | length > 0
+  ansible.builtin.template:
+    src: api_browser.html.j2
+    dest: "{{ _aap_api_gather_source_path }}/api_browser.html"
+    mode: '0644'
+  vars:
+    api_structure: "{{ _api_structure }}"
+    api_data: "{{ _api_data }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Browser | Generate HTML browser file (Static/No-JS version)
+  when:
+    - _browser_source_stat.stat.exists
+    - _browser_json_files.files | length > 0
+    - upload | default(true) | bool
+    - aap_api_gather_generate_static_browser | default(true) | bool
+  ansible.builtin.template:
+    src: api_browser_static.html.j2
+    dest: "{{ _aap_api_gather_source_path }}/api_browser_static.html"
+    mode: '0644'
+  vars:
+    api_structure: "{{ _api_structure }}"
+    api_data: "{{ _api_data }}"
+    api_data_formatted: "{{ _browser_parsed_json.data_formatted | default({}) }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Browser | Display browser file locations
+  when:
+    - _browser_source_stat.stat.exists
+    - _browser_json_files.files | length > 0
+    - upload | default(true) | bool
+    - aap_api_gather_generate_static_browser | default(true) | bool
+  ansible.builtin.debug:
+    msg:
+      - "HTML browsers generated:"
+      - "  - JavaScript version: {{ _aap_api_gather_source_path }}/api_browser.html"
+      - "  - Static/No-JS version: {{ _aap_api_gather_source_path }}/api_browser_static.html (for viewers that strip JavaScript)"
+  delegate_to: localhost
+  run_once: true
+
+- name: Browser | Display browser file location (no static version)
+  when:
+    - _browser_source_stat.stat.exists
+    - _browser_json_files.files | length > 0
+    - not (upload | default(true) | bool) or not (aap_api_gather_generate_static_browser | default(true) | bool)
+  ansible.builtin.debug:
+    msg: >-
+      HTML browser generated: {{ _aap_api_gather_source_path }}/api_browser.html
+      (Static version skipped - upload={{ upload | default(true) | bool }}, generate_static_browser={{ aap_api_gather_generate_static_browser | default(true) | bool }})
+  delegate_to: localhost
+  run_once: true
+...
