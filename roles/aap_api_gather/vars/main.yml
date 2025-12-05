@@ -1,5 +1,13 @@
 ---
 # Defines the API endpoints to query for each component type
+# Endpoints can be defined as:
+#   - Simple string: "/api/controller/v2/ping/" (uses defaults)
+#   - Dict with config: { path: "/api/controller/v2/jobs/", max_pages: 5, query_params: "order_by=-created" }
+#
+# Configuration options per endpoint:
+#   - path: Endpoint path (required)
+#   - max_pages: Maximum pages to fetch (default: from aap_api_gather_max_pages defaults)
+#   - query_params: Query string to append (e.g., "order_by=-created" for newest first)
 
 aap_api_endpoints:
   gateway:
@@ -16,7 +24,9 @@ aap_api_endpoints:
     - "/api/gateway/v1/ui_auth/"
     - "/api/gateway/v1/session/"
     # Activity
-    - "/api/gateway/v1/activitystream/"
+    - path: "/api/gateway/v1/activitystream/"
+      max_pages: 10
+      query_params: "order_by=-timestamp"
     # Applications and OAuth
     - "/api/gateway/v1/applications/"
     - "/api/gateway/v1/app_urls/"
@@ -59,7 +69,9 @@ aap_api_endpoints:
     - "/api/controller/v2/service-index/"
     - "/api/controller/v2/service-index/metadata/"
     # Activity and monitoring
-    - "/api/controller/v2/activity_stream/"
+    - path: "/api/controller/v2/activity_stream/"
+      max_pages: 10
+      query_params: "order_by=-timestamp"
     - "/api/controller/v2/metrics/"
     - "/api/controller/v2/analytics/"
     # Instances and infrastructure
@@ -77,7 +89,9 @@ aap_api_endpoints:
     - "/api/controller/v2/host_metric_summary_monthly/"
     # Projects and execution
     - "/api/controller/v2/projects/"
-    - "/api/controller/v2/project_updates/"
+    - path: "/api/controller/v2/project_updates/"
+      max_pages: 10
+      query_params: "order_by=-created"
     - "/api/controller/v2/execution_environments/"
     # Credentials
     - "/api/controller/v2/credentials/"
@@ -85,15 +99,23 @@ aap_api_endpoints:
     - "/api/controller/v2/credential_input_sources/"
     # Job execution
     - "/api/controller/v2/job_templates/"
-    - "/api/controller/v2/jobs/"
+    - path: "/api/controller/v2/jobs/"
+      max_pages: 5
+      query_params: "order_by=-created"
     - "/api/controller/v2/ad_hoc_commands/"
     - "/api/controller/v2/system_job_templates/"
-    - "/api/controller/v2/system_jobs/"
+    - path: "/api/controller/v2/system_jobs/"
+      max_pages: 5
+      query_params: "order_by=-created"
     - "/api/controller/v2/unified_job_templates/"
-    - "/api/controller/v2/unified_jobs/"
+    - path: "/api/controller/v2/unified_jobs/"
+      max_pages: 5
+      query_params: "order_by=-created"
     # Workflows
     - "/api/controller/v2/workflow_job_templates/"
-    - "/api/controller/v2/workflow_jobs/"
+    - path: "/api/controller/v2/workflow_jobs/"
+      max_pages: 5
+      query_params: "order_by=-created"
     - "/api/controller/v2/workflow_job_template_nodes/"
     - "/api/controller/v2/workflow_job_nodes/"
     - "/api/controller/v2/workflow_approvals/"
@@ -101,7 +123,9 @@ aap_api_endpoints:
     - "/api/controller/v2/schedules/"
     # Notifications
     - "/api/controller/v2/notification_templates/"
-    - "/api/controller/v2/notifications/"
+    - path: "/api/controller/v2/notifications/"
+      max_pages: 10
+      query_params: "order_by=-created"
     # Labels
     - "/api/controller/v2/labels/"
     # User and access management
@@ -151,7 +175,9 @@ aap_api_endpoints:
     - "/api/controller/v2/settings/jobs/"
   hub:
     - "/pulp/api/v3/status/"
-    - "/pulp/api/v3/tasks/"
+    - path: "/pulp/api/v3/tasks/"
+      max_pages: 10
+      query_params: "ordering=-pulp_created"
     - "/pulp/api/v3/repositories/container/container/"
     - "/pulp/api/v3/repositories/container/container-push/"
   eda:
@@ -214,7 +240,9 @@ aap_api_legacy_endpoints:
     - "/api/v2/workflow_jobs/"
   hub:
     - "/pulp/api/v3/status/"
-    - "/pulp/api/v3/tasks/"
+    - path: "/pulp/api/v3/tasks/"
+      max_pages: 10
+      query_params: "ordering=-pulp_created"
     - "/pulp/api/v3/repositories/container/container/"
     - "/pulp/api/v3/repositories/container/container-push/"
   eda: []

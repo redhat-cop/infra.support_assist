@@ -7,29 +7,13 @@
   delegate_to: localhost
   run_once: true
 
-- name: Cleanup | Remove old JSON files from previous runs
-  ansible.builtin.find:
-    paths: "{{ _aap_api_gather_source_path }}"
-    patterns:
-      - "*.json"
-    recurse: true
-  register: _old_json_files
-  delegate_to: localhost
-  run_once: true
-  failed_when: false
-  when: aap_api_gather_cleanup_json | default(true) | bool
-
-- name: Cleanup | Delete old JSON files
+- name: Cleanup | Remove entire source directory with all JSON files
   ansible.builtin.file:
-    path: "{{ item.path }}"
+    path: "{{ _aap_api_gather_source_path }}"
     state: absent
-  loop: "{{ _old_json_files.files | default([]) }}"
   delegate_to: localhost
   run_once: true
-  when:
-    - aap_api_gather_cleanup_json | default(true) | bool
-    - _old_json_files.files is defined
-    - _old_json_files.files | length > 0
+  when: aap_api_gather_cleanup_json | default(true) | bool
 
 - name: Cleanup | Remove old archive files (if cleanup_archives is enabled)
   ansible.builtin.find:

@@ -12,4 +12,33 @@
 
 - name: Main | Create Archive and Prepare for rh_case
   ansible.builtin.include_tasks: create_archive.yml
+
+- name: Main | Display Failure Summary Statistics
+  ansible.builtin.debug:
+    msg: >-
+      ================================================================================
+      API ENDPOINT FAILURE SUMMARY
+      ================================================================================
+      Total failed endpoints: {{ aap_api_gather_failures | default([]) | length }}
+
+      {% if aap_api_gather_failures | default([]) | length > 0 %}
+      Failed endpoints by component:
+      {% for component in aap_api_gather_failures | default([]) | map(attribute='component') | unique | list %}
+      - {{ component }}: {{ aap_api_gather_failures | selectattr('component', 'equalto', component) | list | length }} failures
+      {% endfor %}
+
+      Failed endpoints:
+      {% for failure in aap_api_gather_failures | default([]) %}
+      - Component: {{ failure.component }}
+        Endpoint: {{ failure.endpoint }}
+        URL: {{ failure.url }}
+        Status: {{ failure.status_code }}
+        Error: {{ failure.error_message | truncate(200) }}
+      {% endfor %}
+      {% else %}
+      ✓ All endpoints queried successfully!
+      {% endif %}
+      ================================================================================
+  when: aap_api_gather_failures is defined
+  run_once: true
 ...

@@ -9,14 +9,36 @@
 - name: "{{ __task_name }}"
   vars:
     __task_name: "Gather APIs | Component Loop | Loop through {{ component_name }} API endpoints"
-    _full_url: "{{ _base_url }}{{ endpoint_path }}"
-    # Create a safe filename from the endpoint path
+    # Handle both string and dict endpoint formats
+    # If endpoint is a dict, extract path and config; if string, use as-is
+    _endpoint_config: "{{ endpoint_path if endpoint_path is mapping else {'path': endpoint_path} }}"
+    _endpoint_path: "{{ _endpoint_config.path }}"
+    # Get max_pages from endpoint config, or fall back to defaults
+    _max_pages: >-
+      {{
+        _endpoint_config.max_pages | default(
+          (aap_api_gather_max_pages | default({}))['default'] | default(20)
+        ) if aap_api_gather_enforce_max_pages | default(true) | bool
+        else 0
+      }}
+    # Get query_params from endpoint config, or from global query_params dict, or empty
+    _endpoint_query_params: >-
+      {{
+        _endpoint_config.query_params | default(
+          (aap_api_gather_query_params | default({}))[_endpoint_path] | default('')
+        ) if aap_api_gather_use_query_params | default(true) | bool
+        else ''
+      }}
+    # Build URL with query parameters
+    _endpoint_with_params: "{{ _endpoint_path + ('?' + _endpoint_query_params if _endpoint_query_params != '' else '') }}"
+    _full_url: "{{ _base_url }}{{ _endpoint_with_params }}"
+    # Create a safe filename from the endpoint path (use original path, not with params)
     # Replace "/" with "_" and remove leading "/" if present
-    _safe_filename: "{{ (endpoint_path | regex_replace('^/', '') | replace('/', '_') | replace('?', '_') | replace('&', '_') | replace('=', '_')) | default('index') }}.json"
+    _safe_filename: "{{ (_endpoint_path | regex_replace('^/', '') | replace('/', '_') | replace('?', '_') | replace('&', '_') | replace('=', '_')) | default('index') }}.json"
     _output_file_path: "{{ _component_dest_dir }}/{{ _safe_filename }}"
   loop: "{{ _endpoints }}"
   loop_control:
     loop_var: endpoint_path
-    label: "{{ _base_url }}{{ endpoint_path }}"
+    label: "{{ _base_url }}{{ endpoint_path if endpoint_path is string else endpoint_path.path }}"
   ansible.builtin.include_tasks: gather_apis_endpoint_loop.yml
 ...

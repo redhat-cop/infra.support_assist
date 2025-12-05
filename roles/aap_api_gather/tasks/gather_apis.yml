@@ -10,6 +10,11 @@
     quiet: true
   run_once: true
 
+- name: Gather APIs | Initialize failure tracking list
+  ansible.builtin.set_fact:
+    aap_api_gather_failures: []
+  run_once: true
+
 - name: Gather APIs | Loop through selected components
   loop: "{{ aap_api_gather_components }}"
   loop_control:

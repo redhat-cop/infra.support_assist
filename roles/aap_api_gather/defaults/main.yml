@@ -91,4 +91,24 @@ aap_api_gather_aap_validate_certs: >-
       )
     ) | bool
   }}
+
+# Pagination and query parameter configuration
+# Endpoint-specific configuration is defined in vars/main.yml
+# These are default values used when endpoints don't have specific configuration
+
+# Default maximum number of pages to fetch per endpoint (prevents excessive pagination)
+# Set to 0 or null to disable limits (fetch all pages)
+# Individual endpoints can override this in vars/main.yml
+aap_api_gather_max_pages:
+  default: 10
+
+# Enable/disable automatic query parameter injection
+# If true, query parameters from endpoint config in vars/main.yml will be automatically added
+# If false, endpoints are queried as-is
+aap_api_gather_use_query_params: true
+
+# Enable/disable pagination limits
+# If true, max_pages limits (from endpoint config or defaults) will be enforced
+# If false, all pages will be fetched (may be very slow for high-volume endpoints)
+aap_api_gather_enforce_max_pages: true
 ...
