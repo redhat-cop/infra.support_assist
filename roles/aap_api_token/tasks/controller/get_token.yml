@@ -14,18 +14,20 @@
     controller_username: "{{ aap_api_token_aap_username }}"
     controller_password: "{{ aap_api_token_aap_password }}"
     validate_certs: "{{ aap_api_token_aap_validate_certs }}"
+  no_log: "{{ aap_api_token_no_log | default(true) | bool }}"
   register: authtoken_res
   changed_when: false
   tags:
     - always
 
-- name: Debug authtoken_res
-  ansible.builtin.debug:
-    var: authtoken_res
+# - name: Debug authtoken_res
+#   ansible.builtin.debug:
+#     var: authtoken_res
 
 - name: Set facts
+  no_log: "{{ aap_api_token_no_log | default(true) | bool }}"
   ansible.builtin.set_fact:
-    aap_api_token_aap_token: "{{ authtoken_res.token }}"
-    aap_token: "{{ authtoken_res.token }}"
-    controller_oauthtoken: "{{ authtoken_res.token }}"
+    aap_api_token_aap_token: "{{ controller_token.token }}"
+    aap_token: "{{ controller_token.token }}"
+    controller_oauthtoken: "{{ controller_token.token }}"
 ...
