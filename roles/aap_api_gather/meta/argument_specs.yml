@@ -34,35 +34,30 @@ argument_specs:
             - /pulp/api/v3/tasks/
           eda: []
         version_added: 0.1.0-devel
-      aap_controller_url:
-        description: URL or web address (configured with default value)
+      aap_hostname:
+        description: Hostname or IP address for AAP Controller/Gateway (configured with default value)
         type: str
-        default: '{{ controller_url | default(lookup(''env'', ''AAP_CONTROLLER_URL'')) | default('''') }}'
-        version_added: 0.1.0-devel
-      aap_eda_url:
-        description: URL or web address (configured with default value)
-        type: str
-        default: '{{ eda_url | default(lookup(''env'', ''AAP_EDA_URL'')) | default('''') }}'
-        version_added: 0.1.0-devel
-      aap_gateway_url:
-        description: URL or web address (configured with default value)
-        type: str
-        default: '{{ gateway_url | default(lookup(''env'', ''AAP_GATEWAY_URL'')) | default('''') }}'
+        default: "{{ lookup('env', 'AAP_HOSTNAME') | default(lookup('env', 'CONTROLLER_HOST') | default(lookup('env', 'TOWER_HOST') | default(''))) }}"
         version_added: 0.1.0-devel
       aap_hub_url:
-        description: URL or web address (configured with default value)
+        description: URL for AAP Hub (configured with default value)
         type: str
-        default: '{{ hub_url | default(lookup(''env'', ''AAP_HUB_URL'')) | default('''') }}'
+        default: "{{ lookup('env', 'AAP_HUB_URL') | default('') }}"
+        version_added: 0.1.0-devel
+      aap_eda_url:
+        description: URL for AAP EDA (configured with default value)
+        type: str
+        default: "{{ lookup('env', 'AAP_EDA_URL') | default('') }}"
         version_added: 0.1.0-devel
       aap_token:
         description: Authentication token (configured with default value)
         type: str
-        default: '{{ api_token | default(lookup(''env'', ''aap_token'')) | default('''') }}'
+        default: "{{ lookup('env', 'AAP_TOKEN') | default(lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(lookup('env', 'TOWER_OAUTH_TOKEN') | default(''))) }}"
         version_added: 0.1.0-devel
       aap_validate_certs:
         description: SSL/TLS certificate (enabled by default)
         type: bool
-        default: true
+        default: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(lookup('env', 'CONTROLLER_VERIFY_SSL') | default(lookup('env', 'TOWER_VERIFY_SSL') | default('true'))) | bool }}"
         version_added: 0.1.0-devel
       component_name:
         description: 'Variable used in included task file: gather_apis.yml'

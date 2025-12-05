@@ -10,10 +10,10 @@
     description: 'Temporary token for infra.support_assist operations'
     scope: "write"
     state: present
-    controller_host: "{{ aap_hostname }}"
-    controller_username: "{{ aap_username }}"
-    controller_password: "{{ aap_password }}"
-    validate_certs: "{{ aap_validate_certs }}"
+    controller_host: "{{ aap_api_token_aap_hostname }}"
+    controller_username: "{{ aap_api_token_aap_username }}"
+    controller_password: "{{ aap_api_token_aap_password }}"
+    validate_certs: "{{ aap_api_token_aap_validate_certs }}"
   register: authtoken_res
   changed_when: false
   tags:
@@ -25,6 +25,7 @@
 
 - name: Set facts
   ansible.builtin.set_fact:
-    aap_token: "{{ controller_token.token }}"
-    controller_oauthtoken: "{{ controller_token.token }}"
+    aap_api_token_aap_token: "{{ authtoken_res.token }}"
+    aap_token: "{{ authtoken_res.token }}"
+    controller_oauthtoken: "{{ authtoken_res.token }}"
 ...

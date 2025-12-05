@@ -1,7 +1,4 @@
 ---
-# - name: Set facts
-#   ansible.builtin.include_tasks: set_facts.yml
-
 - name: Pre-Validation
   ansible.builtin.include_tasks: pre_val.yml
 
@@ -12,7 +9,7 @@
 - name: Get Token Block
   when:
     - __get_token | default(true)
-    - aap_token is not defined or aap_token | length == 0
+    - aap_api_token_aap_token is not defined or aap_api_token_aap_token | length == 0
   block:
     - name: Get Token Block | Determine which collection is needed based on Controller version
       ansible.builtin.set_fact:

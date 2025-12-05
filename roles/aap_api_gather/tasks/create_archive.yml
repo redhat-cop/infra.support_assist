@@ -46,6 +46,8 @@
   register: _archive_result
 
 - name: Archive | Add API gather archive path to case_updates_needed
+  # Note: Only the current archive (just created) is added to case_updates_needed.
+  # Old archives from previous runs are NOT automatically included.
   when:
     - _aap_api_gather_source_stat.stat.exists
     - _aap_api_gather_source_stat.stat.isdir

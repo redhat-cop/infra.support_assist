@@ -1,47 +1,39 @@
 ---
 # Pre-validation tasks for aap_api_gather role
+# All variables are now role-prefixed to avoid precedence conflicts
+
+- name: Pre-Validation | Ensure hostname is provided for controller/gateway components
+  when: "'controller' in aap_api_gather_components or 'gateway' in aap_api_gather_components"
+  ansible.builtin.assert:
+    that:
+      - aap_api_gather_aap_hostname is defined
+      - aap_api_gather_aap_hostname | length > 0
+    fail_msg: "AAP hostname is required for controller/gateway components. Please provide 'aap_hostname' as an extra-var or set the 'AAP_HOSTNAME', 'CONTROLLER_HOST', or 'TOWER_HOST' environment variable."
+    quiet: true
+
+- name: Pre-Validation | Ensure hub URL or hostname is provided if hub component is selected
+  when: "'hub' in aap_api_gather_components"
+  ansible.builtin.assert:
+    that:
+      - (aap_api_gather_aap_hub_url | length > 0) or (aap_api_gather_aap_hostname | length > 0)
+    fail_msg: "AAP Hub URL or hostname is required when hub component is selected. Please provide 'aap_hub_url' as an extra-var, set the 'AAP_HUB_URL' environment variable, or provide 'aap_hostname' for fallback."
+    quiet: true
+
+- name: Pre-Validation | Ensure EDA URL or hostname is provided if eda component is selected
+  when: "'eda' in aap_api_gather_components"
+  ansible.builtin.assert:
+    that:
+      - (aap_api_gather_aap_eda_url | length > 0) or (aap_api_gather_aap_hostname | length > 0)
+    fail_msg: "AAP EDA URL or hostname is required when eda component is selected. Please provide 'aap_eda_url' as an extra-var, set the 'AAP_EDA_URL' environment variable, or provide 'aap_hostname' for fallback."
+    quiet: true
 
 - name: Pre-Validation | Ensure API Token is provided
   ansible.builtin.assert:
     that:
-      - aap_token | length > 0
+      - aap_api_gather_aap_token is defined
+      - aap_api_gather_aap_token | length > 0
     fail_msg: "AAP API Token is required. Please provide 'aap_token' as an extra-var or set the 'aap_token' environment variable."
     quiet: true
-
-- name: Pre-Validation | Set aap_controller_url to aap_gateway_url if not defined
-  when:
-    - aap_gateway_url | default('') | length > 0
-    - aap_controller_url | default('') | length == 0
-  ansible.builtin.set_fact:
-    aap_controller_url: "{{ aap_gateway_url }}"
-
-- name: Pre-Validation | Set aap_hub_url to aap_gateway_url if not defined
-  when:
-    - aap_gateway_url | default('') | length > 0
-    - aap_hub_url | default('') | length == 0
-  ansible.builtin.set_fact:
-    aap_hub_url: "{{ aap_gateway_url }}"
-
-- name: Pre-Validation | Set aap_eda_url to aap_gateway_url if not defined
-  when:
-    - aap_gateway_url | default('') | length > 0
-    - aap_eda_url | default('') | length == 0
-  ansible.builtin.set_fact:
-    aap_eda_url: "{{ aap_gateway_url }}"
-
-
-- name: Pre-Validation | Ensure URLs are provided for selected components
-  ansible.builtin.assert:
-    that:
-      - (item == 'controller' and aap_controller_url | length > 0) or
-        (item == 'hub' and aap_hub_url | length > 0) or
-        (item == 'gateway' and aap_gateway_url | length > 0) or
-        (item == 'eda' and aap_eda_url | length > 0)
-    fail_msg: "The URL for the '{{ item }}' component is required but not defined. Please provide 'aap_{{ item }}_url' as an extra-var or set the 'AAP_{{ item | upper }}_URL' environment variable."
-    # quiet: true
-  loop: "{{ aap_api_gather_components }}"
-  loop_control:
-    label: "Checking URL for {{ item }}"
 
 - name: Pre-Validation | Ensure destination base directory exists on control node
   ansible.builtin.file:

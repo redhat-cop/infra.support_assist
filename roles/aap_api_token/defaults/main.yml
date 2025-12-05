@@ -1,10 +1,49 @@
 ---
-aap_gateway_url: "{{ lookup('env', 'AAP_GATEWAY_URL') | default('', true) }}"
-aap_controller_url: "{{ lookup('env', 'AAP_CONTROLLER_URL') | default('', true) }}"
-aap_username: "{{ lookup('env', 'AAP_USERNAME') | default('', true) }}"
-aap_password: "{{ lookup('env', 'AAP_PASSWORD') | default('', true) }}"
-aap_token: "{{ lookup('env', 'AAP_TOKEN') | default('', true) }}"
-aap_validate_certs: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(true, true) | bool }}"
-aap_hostname: "{{ aap_gateway_url | default(aap_controller_url, true) | urlsplit('hostname') }}"
+# Role-specific variables (prefixed with role name to avoid precedence conflicts)
+# These variables read from extra_vars first, then environment variables, with normalization applied
+
+# Hostname for AAP (Required - must be provided via extra-vars or ENV)
+# Priority: extra_vars (aap_hostname) > AAP_HOSTNAME > CONTROLLER_HOST > TOWER_HOST
+# Protocol stripping is applied automatically
+aap_api_token_aap_hostname: >-
+  {{
+    (
+      aap_hostname | default(
+        lookup('env', 'AAP_HOSTNAME') | default(
+          lookup('env', 'CONTROLLER_HOST') | default(
+            lookup('env', 'TOWER_HOST') | default('')
+          )
+        )
+      )
+    ) |
+    trim |
+    replace('https://', '') |
+    replace('http://', '') |
+    regex_replace('/.*$', '')
+  }}
+
+# Username - priority: extra_vars (aap_username) > AAP_USERNAME > CONTROLLER_USERNAME > TOWER_USERNAME
+aap_api_token_aap_username: "{{ aap_username | default(lookup('env', 'AAP_USERNAME') | default(lookup('env', 'CONTROLLER_USERNAME') | default(lookup('env', 'TOWER_USERNAME') | default('')))) }}"
+
+# Password - priority: extra_vars (aap_password) > AAP_PASSWORD > CONTROLLER_PASSWORD > TOWER_PASSWORD
+aap_api_token_aap_password: "{{ aap_password | default(lookup('env', 'AAP_PASSWORD') | default(lookup('env', 'CONTROLLER_PASSWORD') | default(lookup('env', 'TOWER_PASSWORD') | default('')))) }}"
+
+# Token - priority: extra_vars (aap_token) > AAP_TOKEN > CONTROLLER_OAUTH_TOKEN > TOWER_OAUTH_TOKEN
+aap_api_token_aap_token: "{{ aap_token | default(lookup('env', 'AAP_TOKEN') | default(lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(lookup('env', 'TOWER_OAUTH_TOKEN') | default('')))) }}"
+
+# Validate Certs - priority: extra_vars (aap_validate_certs) > AAP_VALIDATE_CERTS > CONTROLLER_VERIFY_SSL > TOWER_VERIFY_SSL
+aap_api_token_aap_validate_certs: >-
+  {{
+    (
+      aap_validate_certs | default(
+        lookup('env', 'AAP_VALIDATE_CERTS') | default(
+          lookup('env', 'CONTROLLER_VERIFY_SSL') | default(
+            lookup('env', 'TOWER_VERIFY_SSL') | default('true')
+          )
+        )
+      )
+    ) | bool
+  }}
+
 aap_api_token_no_log: "{{ var_no_log | default(true) | bool }}"
 ...

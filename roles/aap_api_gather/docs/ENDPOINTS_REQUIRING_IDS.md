@@ -168,13 +168,13 @@ These endpoints were extracted from 200+ Ansible support cases. To add these end
 # Pseudo-code for future implementation
 - name: Get list of job IDs
   uri:
-    url: "{{ aap_controller_url }}/api/v2/jobs/?page_size=100"
+    url: "https://{{ aap_hostname }}/api/v2/jobs/?page_size=100"
   register: jobs_list
 
 - name: Dump individual job details
   loop: "{{ jobs_list.json.results | map(attribute='id') | list }}"
   uri:
-    url: "{{ aap_controller_url }}/api/v2/jobs/{{ item }}/"
+    url: "https://{{ aap_hostname }}/api/v2/jobs/{{ item }}/"
   register: job_detail
 ```
 

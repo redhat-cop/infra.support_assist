@@ -1,16 +1,64 @@
 ---
 # Default variables for the aap_api_gather role
+# Role-specific variables (prefixed with role name to avoid precedence conflicts)
+# These variables read from extra_vars first, then environment variables, with normalization applied
+
+# Hostname for AAP Controller/Gateway (Required for controller/gateway components - must be provided via extra-vars or ENV)
+# Priority: extra_vars (aap_hostname) > AAP_HOSTNAME > CONTROLLER_HOST > TOWER_HOST
+# Protocol stripping is applied automatically
+aap_api_gather_aap_hostname: >-
+  {{
+    (
+      aap_hostname | default(
+        lookup('env', 'AAP_HOSTNAME') | default(
+          lookup('env', 'CONTROLLER_HOST') | default(
+            lookup('env', 'TOWER_HOST') | default('')
+          )
+        )
+      )
+    ) |
+    trim |
+    replace('https://', '') |
+    replace('http://', '') |
+    regex_replace('/.*$', '')
+  }}
+
+# Hub URL (Required if hub component is selected - must be provided via extra-vars or ENV)
+# Priority: extra_vars (aap_hub_url) > AAP_HUB_URL
+# Protocol stripping is applied automatically
+# Fallback to aap_hostname is handled in gather_apis.yml task
+aap_api_gather_aap_hub_url: >-
+  {{
+    (
+      aap_hub_url | default(
+        lookup('env', 'AAP_HUB_URL') | default('')
+      )
+    ) |
+    trim |
+    replace('https://', '') |
+    replace('http://', '')
+  }}
+
+# EDA URL (Required if eda component is selected - must be provided via extra-vars or ENV)
+# Priority: extra_vars (aap_eda_url) > AAP_EDA_URL
+# Protocol stripping is applied automatically
+# Fallback to aap_hostname is handled in gather_apis.yml task
+aap_api_gather_aap_eda_url: >-
+  {{
+    (
+      aap_eda_url | default(
+        lookup('env', 'AAP_EDA_URL') | default('')
+      )
+    ) |
+    trim |
+    replace('https://', '') |
+    replace('http://', '')
+  }}
 
 # API Token (Required - must be provided via extra-vars, ENV, or set by aap_api_token role)
-# Note: aap_api_token role sets this as a fact, so it should be available when that role runs first
-# This default will only be used if aap_token is not already set as a fact or variable
-aap_token: "{{ aap_api_token | default(lookup('env', 'AAP_TOKEN') | default(lookup('env', 'aap_token'))) | default('') }}"
-
-# Base URLs for components (Required if component is selected - must be provided via extra-vars or ENV)
-aap_gateway_url: "{{ gateway_url | default(lookup('env', 'AAP_GATEWAY_URL')) | default('') }}"
-aap_controller_url: "{{ controller_url | default(lookup('env', 'AAP_CONTROLLER_URL')) | default('') }}"
-aap_hub_url: "{{ hub_url | default(lookup('env', 'AAP_HUB_URL')) | default('') }}"
-aap_eda_url: "{{ eda_url | default(lookup('env', 'AAP_EDA_URL')) | default('') }}"
+# Note: aap_api_token role sets aap_token as a fact, so it should be available when that role runs first
+# Priority: aap_token fact > extra_vars (aap_token) > AAP_TOKEN > CONTROLLER_OAUTH_TOKEN > TOWER_OAUTH_TOKEN
+aap_api_gather_aap_token: "{{ aap_token | default(lookup('env', 'AAP_TOKEN') | default(lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(lookup('env', 'TOWER_OAUTH_TOKEN') | default('')))) }}"
 
 # List of components to query by default
 aap_api_gather_components:
@@ -22,6 +70,25 @@ aap_api_gather_components:
 # Destination directory on the control node for saved API outputs
 aap_api_gather_dest: "/tmp/aap_api_gathers"
 
+# Cleanup options
+# Clean up old JSON files from previous runs before gathering new data
+aap_api_gather_cleanup_json: true
+# Clean up old archive files (tarballs) from previous runs
+# Note: This is disabled by default to preserve archives for case uploads
+aap_api_gather_cleanup_archives: false
+
 # Validate SSL/TLS certificates
-aap_validate_certs: true
+# Priority: extra_vars (aap_validate_certs) > AAP_VALIDATE_CERTS > CONTROLLER_VERIFY_SSL > TOWER_VERIFY_SSL
+aap_api_gather_aap_validate_certs: >-
+  {{
+    (
+      aap_validate_certs | default(
+        lookup('env', 'AAP_VALIDATE_CERTS') | default(
+          lookup('env', 'CONTROLLER_VERIFY_SSL') | default(
+            lookup('env', 'TOWER_VERIFY_SSL') | default('true')
+          )
+        )
+      )
+    ) | bool
+  }}
 ...

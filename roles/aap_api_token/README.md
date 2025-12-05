@@ -23,24 +23,22 @@ This role automates the process of authenticating with Ansible Automation Platfo
 
 ## Role Variables
 
+> **Note on Variable Handling:** This role uses role-prefixed variables internally (e.g., `aap_api_token_aap_hostname`) to avoid precedence conflicts. Users should provide variables via `extra_vars` or environment variables using the standard names (e.g., `aap_hostname`, `aap_username`). The role automatically normalizes these values (strips `http://` and `https://` prefixes) and converts them to role-specific variables internally.
+
 ### Connection Variables
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `aap_gateway_url` | Full URL to the AAP Gateway (e.g., `https://gateway.example.com`) | `$AAP_GATEWAY_URL` | One of gateway/controller URL |
-| `aap_controller_url` | Full URL to the AAP Controller (e.g., `https://controller.example.com`) | `$AAP_CONTROLLER_URL` | One of gateway/controller URL |
-| `aap_hostname` | Hostname extracted from the provided URL | Auto-derived | No |
-| `aap_validate_certs` | Whether to validate SSL/TLS certificates | `true` (or `$AAP_VALIDATE_CERTS`) | No |
-
-> **Note:** Provide either `aap_gateway_url` OR `aap_controller_url`, but not both.
+| `aap_hostname` | The hostname for the AAP instance (e.g., `controller.example.com` or `https://controller.example.com`). URLs are constructed as `https://{{ aap_hostname }}`. Priority: extra_vars > `AAP_HOSTNAME` > `CONTROLLER_HOST` > `TOWER_HOST` env vars. **Note:** `http://` and `https://` prefixes are automatically stripped during normalization. | `$AAP_HOSTNAME` or `$CONTROLLER_HOST` or `$TOWER_HOST` | Yes |
+| `aap_validate_certs` | Whether to validate SSL/TLS certificates. Priority: extra_vars > `AAP_VALIDATE_CERTS` > `CONTROLLER_VERIFY_SSL` > `TOWER_VERIFY_SSL` env vars. | `true` (or `$AAP_VALIDATE_CERTS`) | No |
 
 ### Authentication Variables
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `aap_username` | Username for AAP authentication | `$AAP_USERNAME` | Yes (if no token) |
-| `aap_password` | Password for AAP authentication | `$AAP_PASSWORD` | Yes (if no token) |
-| `aap_token` | Existing OAuth2 token (skips token creation if provided) | `$AAP_TOKEN` | No |
+| `aap_username` | Username for AAP authentication. Priority: extra_vars > `AAP_USERNAME` > `CONTROLLER_USERNAME` > `TOWER_USERNAME` env vars. | `$AAP_USERNAME` or `$CONTROLLER_USERNAME` or `$TOWER_USERNAME` | Yes (if no token) |
+| `aap_password` | Password for AAP authentication. Priority: extra_vars > `AAP_PASSWORD` > `CONTROLLER_PASSWORD` > `TOWER_PASSWORD` env vars. | `$AAP_PASSWORD` or `$CONTROLLER_PASSWORD` or `$TOWER_PASSWORD` | Yes (if no token) |
+| `aap_token` | Existing OAuth2 token (skips token creation if provided). Priority: extra_vars > `AAP_TOKEN` > `CONTROLLER_OAUTH_TOKEN` > `TOWER_OAUTH_TOKEN` env vars. | `$AAP_TOKEN` or `$CONTROLLER_OAUTH_TOKEN` or `$TOWER_OAUTH_TOKEN` | No |
 
 > **Note:** Either provide `aap_token` OR both `aap_username` and `aap_password`.
 
@@ -128,7 +126,7 @@ export AAP_PASSWORD="secretpassword"
   gather_facts: false
 
   vars:
-    aap_controller_url: "https://controller.example.com"
+    aap_hostname: "controller.example.com"
     aap_username: "admin"
     aap_password: "{{ vault_aap_password }}"
     aap_validate_certs: true
@@ -140,7 +138,7 @@ export AAP_PASSWORD="secretpassword"
 
     - name: Perform operations with token
       ansible.builtin.uri:
-        url: "{{ aap_controller_url }}/api/v2/job_templates/"
+        url: "https://{{ aap_hostname }}/api/v2/job_templates/"
         method: GET
         headers:
           Authorization: "Bearer {{ aap_token }}"
@@ -163,7 +161,7 @@ export AAP_PASSWORD="secretpassword"
   gather_facts: false
 
   vars:
-    aap_gateway_url: "https://gateway.example.com"
+    aap_hostname: "gateway.example.com"
     aap_username: "admin"
     aap_password: "{{ vault_aap_password }}"
 
@@ -206,7 +204,7 @@ export AAP_PASSWORD="secretpassword"
 
 ### Common Issues
 
-**"Either 'aap_gateway_url' or 'aap_controller_url' must be provided"**
+**"'aap_hostname' must be provided"**
 
 - Ensure you set one (and only one) of these variables
 - Check that your environment variables are exported correctly

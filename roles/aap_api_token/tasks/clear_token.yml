@@ -2,8 +2,8 @@
 - name: Clear Token Block
   when:
     - __clear_token | default(false)
-    - aap_token is defined
-    - aap_token | length > 0
+    - aap_api_token_aap_token is defined
+    - aap_api_token_aap_token | length > 0
   block:
     - name: Clear Token Block | Controller Version Detection
       when: aap_controller_full_version is not defined

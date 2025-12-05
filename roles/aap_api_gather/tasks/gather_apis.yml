@@ -4,8 +4,8 @@
 - name: Gather APIs | Verify API token is available
   ansible.builtin.assert:
     that:
-      - aap_token is defined
-      - aap_token | length > 0
+      - aap_api_gather_aap_token is defined
+      - aap_api_gather_aap_token | length > 0
     fail_msg: "AAP API Token is not available. Ensure aap_api_token role runs before this role and sets aap_token fact."
     quiet: true
   run_once: true
@@ -17,7 +17,18 @@
     label: "Querying {{ component_name }} endpoints"
   vars:
     # Determine the base URL for the current component
-    _base_url: "{{ lookup('vars', 'aap_' + component_name + '_url') }}"
+    # Controller and Gateway: use hostname
+    # Hub: use aap_hub_url if provided, otherwise fallback to hostname
+    # EDA: use aap_eda_url if provided, otherwise fallback to hostname
+    _base_url: >-
+      {{
+        'https://' + aap_api_gather_aap_hostname if component_name in ['controller', 'gateway']
+        else ('https://' + aap_api_gather_aap_hub_url if component_name == 'hub' and (aap_api_gather_aap_hub_url | length > 0)
+        else ('https://' + aap_api_gather_aap_hostname if component_name == 'hub'
+        else ('https://' + aap_api_gather_aap_eda_url if component_name == 'eda' and (aap_api_gather_aap_eda_url | length > 0)
+        else ('https://' + aap_api_gather_aap_hostname if component_name == 'eda'
+        else ''))))
+      }}
     # Define the list of endpoints for the current component
     _endpoints: "{{ aap_api_endpoints[component_name] | default([]) }}"
     # Define the destination directory for this host and component

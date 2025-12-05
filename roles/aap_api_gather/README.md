@@ -25,18 +25,21 @@ This role gathers diagnostic output from Ansible Automation Platform (AAP) compo
 
 ## Role Variables
 
+> **Note on Variable Handling:** This role uses role-prefixed variables internally (e.g., `aap_api_gather_aap_hostname`) to avoid precedence conflicts. Users should provide variables via `extra_vars` or environment variables using the standard names (e.g., `aap_hostname`, `aap_token`). The role automatically normalizes these values (strips `http://` and `https://` prefixes) and converts them to role-specific variables internally.
+
 ### Input Variables
 
 | Variable | Description | Type | Required | Default |
 |----------|-------------|------|----------|---------|
-| `aap_token` | A valid AAP API access token. This is typically provided by running the `infra.support_assist.aap_api_token` role first. Can also be provided via extra-var or environment variable (`AAP_TOKEN` or `aap_token`). | `string` | Yes | — |
-| `aap_gateway_url` | The base URL for the AAP Gateway. If provided, this will be used as a fallback for component URLs that are not explicitly set. Can be provided via extra-var or environment variable (`AAP_GATEWAY_URL`). | `string` | No | — |
-| `aap_controller_url` | The base URL for the AAP Controller API. If not provided, will default to `aap_gateway_url` if available. Can be provided via extra-var or environment variable (`AAP_CONTROLLER_URL`). | `string` | Conditional* | — |
-| `aap_hub_url` | The base URL for the AAP Hub API. If not provided, will default to `aap_gateway_url` if available. Can be provided via extra-var or environment variable (`AAP_HUB_URL`). | `string` | Conditional* | — |
-| `aap_eda_url` | The base URL for the AAP EDA API. If not provided, will default to `aap_gateway_url` if available. Can be provided via extra-var or environment variable (`AAP_EDA_URL`). | `string` | Conditional* | — |
+| `aap_hostname` | The hostname for the AAP Controller/Gateway (e.g., `controller.example.com` or `https://controller.example.com`). URLs are constructed as `https://{{ aap_hostname }}`. Required for `controller` and `gateway` components. Priority: extra_vars > `AAP_HOSTNAME` > `CONTROLLER_HOST` > `TOWER_HOST` env vars. **Note:** `http://` and `https://` prefixes are automatically stripped during normalization. | `string` | Conditional* | — |
+| `aap_hub_url` | The full URL for the AAP Hub API (e.g., `https://hub.example.com` or `hub.example.com`). Required if `hub` component is selected. If not provided, falls back to `https://{{ aap_hostname }}`. Priority: extra_vars > `AAP_HUB_URL` env var > `aap_hostname` fallback. **Note:** `http://` and `https://` prefixes are automatically stripped during normalization. | `string` | Conditional* | — |
+| `aap_eda_url` | The full URL for the AAP EDA API (e.g., `https://eda.example.com` or `eda.example.com`). Required if `eda` component is selected. If not provided, falls back to `https://{{ aap_hostname }}`. Priority: extra_vars > `AAP_EDA_URL` env var > `aap_hostname` fallback. **Note:** `http://` and `https://` prefixes are automatically stripped during normalization. | `string` | Conditional* | — |
+| `aap_token` | A valid AAP API access token. This is typically provided by running the `infra.support_assist.aap_api_token` role first, which sets `aap_token` as a fact. Priority: `aap_token` fact (from `aap_api_token` role) > extra_vars > `AAP_TOKEN` > `CONTROLLER_OAUTH_TOKEN` > `TOWER_OAUTH_TOKEN` env vars. | `string` | Yes | — |
 | `aap_api_gather_components` | List of AAP components to query. Valid options: `controller`, `hub`, `gateway`, `eda`. | `list` | No | `['controller', 'hub', 'gateway', 'eda']` |
 | `aap_api_gather_dest` | Destination directory on the control node where API outputs will be saved. | `string` | No | `/tmp/aap_api_gathers` |
-| `aap_validate_certs` | Whether to validate SSL/TLS certificates when making API requests. | `bool` | No | `true` |
+| `aap_validate_certs` | Whether to validate SSL/TLS certificates when making API requests. Priority: extra_vars > `AAP_VALIDATE_CERTS` > `CONTROLLER_VERIFY_SSL` > `TOWER_VERIFY_SSL` env vars. | `bool` | No | `true` |
+| `aap_api_gather_cleanup_json` | Whether to clean up old JSON files from previous runs before gathering new data. | `bool` | No | `true` |
+| `aap_api_gather_cleanup_archives` | Whether to clean up old archive files (tarballs) from previous runs. **Note:** Disabled by default to preserve archives for case uploads. Only the current archive (created in this run) is added to `case_updates_needed`; old archives are not automatically included. | `bool` | No | `false` |
 
 \* Required if the corresponding component is in `aap_api_gather_components`
 
@@ -71,7 +74,7 @@ This role gathers diagnostic output from Ansible Automation Platform (AAP) compo
       ansible.builtin.include_role:
         name: infra.support_assist.aap_api_gather
       vars:
-        aap_controller_url: "https://aap-controller.example.com"
+        aap_hostname: "aap-controller.example.com"
         aap_hub_url: "https://aap-hub.example.com"
         aap_api_gather_components:
           - controller
@@ -98,7 +101,7 @@ This role gathers diagnostic output from Ansible Automation Platform (AAP) compo
           ansible.builtin.include_role:
             name: infra.support_assist.aap_api_gather
           vars:
-            aap_controller_url: "https://aap-controller.example.com"
+            aap_hostname: "aap-controller.example.com"
             aap_hub_url: "https://aap-hub.example.com"
 
       always:
@@ -127,7 +130,7 @@ This role gathers diagnostic output from Ansible Automation Platform (AAP) compo
 ### Example 3: Using Environment Variables
 
 ```bash
-export AAP_CONTROLLER_URL="https://aap-controller.example.com"
+export AAP_HOSTNAME="aap-controller.example.com"
 export AAP_HUB_URL="https://aap-hub.example.com"
 export AAP_TOKEN="your-token-here"
 
@@ -141,8 +144,7 @@ The recommended way to use this role is via the main playbook, which handles tok
 ```shell
 # Set your tokens as environment variables
 export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
-export AAP_CONTROLLER_URL="https://aap-controller.example.com"
-export AAP_HUB_URL="https://aap-hub.example.com"
+export AAP_HOSTNAME="aap-controller.example.com"
 
 # Run the full pipeline
 ansible-playbook playbooks/aap_api_gather.yml \
@@ -192,11 +194,15 @@ The role queries predefined API endpoints for each component. These are defined 
 │     ├── Verify API token is available                           │
 │     └── Verify component URLs are provided                      │
 │                                                                 │
-│  2. Gather API Data                                             │
+│  2. Cleanup Past Files                                          │
+│     ├── Remove old JSON files from previous runs                │
+│     └── Optionally remove old archive files                     │
+│                                                                 │
+│  3. Gather API Data                                             │
 │     └── Loop through selected components                        │
 │         └── Query each endpoint and save as JSON                │
 │                                                                 │
-│  3. Create Archive                                              │
+│  4. Create Archive                                              │
 │     ├── Compress all collected JSON files                       │
 │     └── Set case_updates_needed fact                            │
 └─────────────────────────────────────────────────────────────────┘

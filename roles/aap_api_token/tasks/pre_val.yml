@@ -1,23 +1,17 @@
 ---
-- name: Debug aap_token
-  ansible.builtin.debug:
-    var: aap_token
+# Pre-validation tasks - all variables are now role-prefixed to avoid precedence conflicts
 
-- name: Debug aap_username
-  ansible.builtin.debug:
-    var: aap_username
-
-- name: Pre-Validation | Ensure either aap_gateway_url or aap_controller_url is provided (but not both)
+- name: Pre-Validation | Ensure hostname is provided
   ansible.builtin.assert:
     that:
-      - (aap_gateway_url is defined and aap_gateway_url | length > 0 and (aap_controller_url is not defined or aap_controller_url | length == 0)) or
-        (aap_controller_url is defined and aap_controller_url | length > 0 and (aap_gateway_url is not defined or aap_gateway_url | length == 0))
-    fail_msg: "Either 'aap_gateway_url' or 'aap_controller_url' must be provided, but not both. Please provide one of these as an extra-var or set the corresponding environment variable."
+      - aap_api_token_aap_hostname is defined
+      - aap_api_token_aap_hostname | length > 0
+    fail_msg: "AAP hostname is required. Please provide 'aap_hostname' as an extra-var or set the 'AAP_HOSTNAME', 'CONTROLLER_HOST', or 'TOWER_HOST' environment variable."
 
 - name: Pre-Validation | Ensure either aap_username and aap_password are provided, or aap_token is provided
   ansible.builtin.assert:
     that:
-      - (aap_token is defined and aap_token | length > 0) or
-        ((aap_username is defined and aap_username | length > 0) and (aap_password is defined and aap_password | length > 0))
+      - (aap_api_token_aap_token is defined and aap_api_token_aap_token | length > 0) or
+        ((aap_api_token_aap_username is defined and aap_api_token_aap_username | length > 0) and (aap_api_token_aap_password is defined and aap_api_token_aap_password | length > 0))
     fail_msg: "Either 'aap_token' must be provided, or both 'aap_username' and 'aap_password' must be provided. Please provide these as extra-vars or set the corresponding environment variables."
 ...

@@ -1,11 +1,11 @@
 ---
 - name: Clear Token | Delete this token
   ansible.platform.token:
-    aap_hostname: "{{ aap_hostname }}"
-    aap_token: "{{ aap_token }}"
-    existing_token: "{{ aap_token }}"
+    aap_hostname: "{{ aap_api_token_aap_hostname }}"
+    aap_token: "{{ aap_api_token_aap_token }}"
+    existing_token: "{{ aap_api_token_aap_token }}"
     state: absent
-    aap_validate_certs: "{{ aap_validate_certs }}"
+    aap_validate_certs: "{{ aap_api_token_aap_validate_certs }}"
   when: __clear_token | default(false)
   tags:
     - always
