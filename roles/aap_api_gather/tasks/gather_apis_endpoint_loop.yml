@@ -1,14 +1,11 @@
 ---
-- name: Gather APIs | Endpoint Loop | Ensure required variables are set as facts
+- name: Gather APIs | Endpoint Loop | Set facts and initialize pagination
   ansible.builtin.set_fact:
     _safe_filename: "{{ _safe_filename }}"
     _component_dest_dir: "{{ _component_dest_dir }}"
     _base_url: "{{ _base_url }}"
     component_name: "{{ component_name }}"
     endpoint_path: "{{ _endpoint_path }}"
-
-- name: Gather APIs | Endpoint Loop | Initialize pagination tracking
-  ansible.builtin.set_fact:
     _current_page: 1
     _next_url: "{{ _full_url }}"
     _max_pages: "{{ _max_pages | default(0) | int }}"
