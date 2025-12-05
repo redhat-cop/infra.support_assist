@@ -58,7 +58,7 @@ aap_api_gather_aap_eda_url: >-
 # API Token (Required - must be provided via extra-vars, ENV, or set by aap_api_token role)
 # Note: aap_api_token role sets aap_token as a fact, so it should be available when that role runs first
 # Priority: aap_token fact > extra_vars (aap_token) > AAP_TOKEN > CONTROLLER_OAUTH_TOKEN > TOWER_OAUTH_TOKEN
-aap_api_gather_aap_token: "{{ aap_token | default(lookup('env', 'AAP_TOKEN') | default(lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(lookup('env', 'TOWER_OAUTH_TOKEN') | default('')))) }}"
+aap_api_gather_aap_token: "{{ aap_token | default(aap_api_token_aap_token) | default(lookup('env', 'AAP_TOKEN') | default(lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(lookup('env', 'TOWER_OAUTH_TOKEN') | default('')))) }}"
 
 # List of components to query by default
 aap_api_gather_components:
