@@ -19,6 +19,17 @@ jobs:
     if: github.event_name == 'pull_request'
   build-import:
     uses: ansible/ansible-content-actions/.github/workflows/build_import.yaml@main
+  markdown-link-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: tcort/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: 'yes'
+          use-verbose-mode: 'yes'
+          # check-modified-files-only: 'yes'
+          config-file: '.mlc_config.json'
+          base-branch: ${{ github.event.repository.default_branch || 'main' }}
   ansible-lint:
     uses: ansible/ansible-content-actions/.github/workflows/ansible_lint.yaml@main
   sanity:
