@@ -130,6 +130,7 @@ jobs:
           '${{ needs.sanity.result }}',
           '${{ needs.unit-galaxy.result }}',
           '${{ needs.ansible-lint.result }}',
+          '${{ needs.markdown-link-check.result }}',
           '${{ needs.molecule.result }}'
           ])"
 ...
