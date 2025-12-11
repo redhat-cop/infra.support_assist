@@ -27,7 +27,7 @@ jobs:
         with:
           use-quiet-mode: 'yes'
           use-verbose-mode: 'yes'
-          # check-modified-files-only: 'yes'
+          check-modified-files-only: 'yes'
           config-file: '.mlc_config.json'
           base-branch: ${{ github.event.repository.default_branch || 'main' }}
   ansible-lint:
@@ -120,6 +120,7 @@ jobs:
       - unit-galaxy
       - ansible-lint
       - molecule
+      - markdown-link-check
     runs-on: ubuntu-latest
     steps:
       - run: >-
