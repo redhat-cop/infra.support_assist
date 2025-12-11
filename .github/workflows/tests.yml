@@ -49,7 +49,7 @@ jobs:
         role:
           - sos_report
           - aap_api_token
-          - aap_api_dump
+          - aap_api_gather
           - rh_token_refresh
           - rh_case
           - ocp_must_gather
