@@ -73,11 +73,11 @@ All playbooks that access the Red Hat API will look for the token in this order:
 
 ---
 
-# 📚 AAP Lessons Learned for Must-Gather Pipeline
+## 📚 AAP Lessons Learned for Must-Gather Pipeline
 
 This document summarizes critical configuration settings and resource warnings necessary for the **`ocp_must_gather`** pipeline to run successfully on the Red Hat Ansible Automation Platform (AAP).
 
-## 1. ⚙️ Project Synchronization and Collection Download
+### 1. ⚙️ Project Synchronization and Collection Download
 
 To ensure your Project Synchronization successfully downloads the necessary Ansible Collections (e.g., `infra.support_assist`), the correct settings must be enabled, and credentials must be configured at the Organizational level.
 
@@ -94,9 +94,7 @@ Under **Access Management** > **Organizations** > **[Your Organization Name]**:
 
 * Ensure that the **Galaxy Credentials** field has an **Ansible Galaxy Credential** (or a similar credential pointing to a collection source) properly set. If this is missing, the **Project Sync** will fail to download the required collections, causing the Job Template to fail with "Collection not found" errors.
 
----
-
-## 2. ⚠️ Must-Gather Resource Warning: Ephemeral Storage (Disk Space)
+### 2. ⚠️ Must-Gather Resource Warning: Ephemeral Storage (Disk Space)
 
 When running the **`ocp_must_gather`** pipeline on an AAP instance hosted on OpenShift, the default Execution Environment (EE) Pod resource limits are often insufficient. Uncompressed Must-Gather output can easily exceed **10–20 GiB**, leading to an **"`No space left on device`"** error.
 
@@ -296,8 +294,8 @@ Releasing the current major version happens from the `devel` branch.
   - [x] Add documentation for valid Case Input Options (Product, Type, Severity) - [**Full Case Option Lists:** `roles/rh_case/docs/CASE_OPTIONS.md`](roles/rh_case/docs/CASE_OPTIONS.md)
   - [x] Add Cluster Name Extraction - The role now automatically extracts the OpenShift cluster name from the provided API server URL, ensuring accurate identification in case comments and uploads, to avoid user needs to be inserted manually.
   - [ ] Add options to the `sos_report` role to gather data from an OCP nodes using the official method as guidance from Red Hat KCS: [Method 1 - Using SSH](https://access.redhat.com/solutions/3820762) or [Method 2 - Using oc debug](https://access.redhat.com/solutions/4387261) - keep in mind the SOS Report from an OCP node is different from a standard Linux host sosreport.
-  - [ ] Add an option to the `ocp_must_gather` or create a new role to gather data for one or more namespace using `oc adm inspect`
-  - [ ] Add some lessons learn and tips how to use this automation on Ansible Automation Platform (Implemented above some useful tips/guidance: **[AAP Lessons Learned for Must-Gather Pipeline](#-aap-lessons-learned-for-must-gather-pipeline))**
+  - [ ] Add an option to the `ocp_must_gather` or create a new role to gather data for one or more namespace using `oc adm inspect ns/<namespace>` as guidance from Red Hat KCS: [What are inspect logs, and how can we collect inspect logs from projects/namespaces?](https://access.redhat.com/solutions/7117361)
+  - [x] Add some lessons learned and tips how to use this automation on Ansible Automation Platform (Implemented above some useful tips/guidance: **[AAP Lessons Learned for Must-Gather Pipeline](#-aap-lessons-learned-for-must-gather-pipeline))**
 
 ## Getting Help
 
