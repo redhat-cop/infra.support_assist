@@ -60,14 +60,7 @@
   block:
     - name: Gather APIs | Pagination | Register failure and log warning
       ansible.builtin.set_fact:
-        aap_api_gather_failures: "{{ aap_api_gather_failures | default([]) + [{
-          'component': component_name,
-          'endpoint': endpoint_path,
-          'url': _next_url,
-          'status_code': api_result.status | default('N/A') if api_result is defined else 'N/A',
-          'error_message': (api_result.msg | default(api_result.body | default(api_result.json | default({}) | to_json | default('Unknown error')))) if api_result is defined else 'Request failed - no response received',
-          'page': _current_page
-        }] }}"
+        aap_api_gather_failures: "{{ aap_api_gather_failures | default([]) + [{'component': component_name, 'endpoint': endpoint_path, 'url': _next_url, 'status_code': api_result.status | default('N/A') if api_result is defined else 'N/A', 'error_message': (api_result.msg | default(api_result.body | default(api_result.json | default({}) | to_json | default('Unknown error')))) if api_result is defined else 'Request failed - no response received', 'page': _current_page}] }}"
       run_once: true
 
     - name: Gather APIs | Pagination | Log warning
@@ -76,3 +69,4 @@
           Warning: Failed to query {{ _next_url }} (page {{ _current_page }}).
           Status: {{ api_result.status | default('N/A') if api_result is defined else 'N/A' }}.
           Error: {{ (api_result.msg | default(api_result.body | default(api_result.json | default({}) | to_json | default('Unknown error')))) if api_result is defined else 'Request failed - no response received' }}
+...
