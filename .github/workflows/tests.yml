@@ -29,7 +29,7 @@ jobs:
           use-verbose-mode: 'yes'
           check-modified-files-only: 'yes'
           config-file: '.mlc_config.json'
-          base-branch: ${{ github.head_ref || github.ref_name || 'main' }}
+          base-branch: ${{ github.base_ref || github.ref_name || 'main' }}
   ansible-lint:
     uses: ansible/ansible-content-actions/.github/workflows/ansible_lint.yaml@main
   sanity:
