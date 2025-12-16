@@ -1,0 +1,30 @@
+---
+- name: Ansible Automation Platform Dispatch - Setup Projects and Job Templates
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: AAP Dispatch Block
+      block:
+        - name: Call aap_api_token role | Get Token (if username/password provided)
+          when:
+            - aap_token is not defined or aap_token | length == 0
+            - aap_username is defined and aap_username | length > 0
+            - aap_password is defined and aap_password | length > 0
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_token
+
+        - name: Call aap_dispatch role
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_dispatch
+
+      always:
+        - name: Call aap_api_token role | Clear Token (if token was created)
+          when:
+            - aap_token is not defined or aap_token | length == 0
+            - aap_username is defined and aap_username | length > 0
+            - aap_password is defined and aap_password | length > 0
+          ansible.builtin.include_role:
+            name: infra.support_assist.aap_api_token
+            tasks_from: clear_token.yml
+...

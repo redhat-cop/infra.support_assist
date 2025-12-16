@@ -1,4 +1,9 @@
 ---
 collections:
+  - name: infra.support_assist
+    source: https://github.com/redhat-cop/infra.support_assist.git
+    type: git
+    version: devel
   - name: community.general
+  - name: ansible.controller
 ...
