@@ -5,5 +5,5 @@ collections:
     type: git
     version: devel
   - name: community.general
-  - name: ansible.controller
+  # - name: ansible.controller
 ...
