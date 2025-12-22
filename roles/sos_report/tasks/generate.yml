@@ -12,8 +12,13 @@
   async: 1800 # Allow up to 30 minutes for sos to run
   poll: 10 # Check every 10 seconds
   ansible.builtin.command: >
-    sos report --clean --batch
+    sos report --batch
       {% if sos_report_aap_containerized | bool %} -k aap_containerized.username={{ ansible_user_id }}{% endif %}
+      {% if sos_report_mask | bool %} --mask{% endif %}
+      {% if sos_report_all_logs | bool %} --all-logs{% endif %}
+      {% if sos_report_dry_run | bool %} --dry-run{% endif %}
+      {% if sos_report_estimate_only | bool %} --estimate-only{% endif %}
+      {% if sos_report_threads | bool and sos_report_threads_number | bool %} --threads "{{ sos_report_threads_number }}"{% endif %}
       --label={{ inventory_hostname | lower }}
 
 - name: Generate | Set SOS Report location variable
