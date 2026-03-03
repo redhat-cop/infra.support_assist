@@ -3,29 +3,29 @@
 
 - name: Browser | Set fact for the source directory path
   ansible.builtin.set_fact:
-    _aap_api_gather_source_path: "{{ aap_api_gather_dest }}/{{ _browser_hostname_override | default(inventory_hostname) }}"
+    __aap_api_gather_source_path: "{{ aap_api_gather_dest }}/{{ __browser_hostname_override | default(inventory_hostname) }}"
   delegate_to: localhost
   run_once: true
 
 - name: Browser | Verify source directory exists
   ansible.builtin.stat:
-    path: "{{ _aap_api_gather_source_path }}"
-  register: _browser_source_stat
+    path: "{{ __aap_api_gather_source_path }}"
+  register: __browser_source_stat
   delegate_to: localhost
   run_once: true
 
 - name: Browser | Find all JSON files in the source directory
   ansible.builtin.find:
-    paths: "{{ _aap_api_gather_source_path }}"
+    paths: "{{ __aap_api_gather_source_path }}"
     patterns: "*.json"
     recurse: true
-  register: _browser_json_files
+  register: __browser_json_files
   delegate_to: localhost
   run_once: true
-  when: _browser_source_stat.stat.exists
+  when: __browser_source_stat.stat.exists
 
 - name: Browser | Build API structure and load JSON data using Python script
-  when: _browser_source_stat.stat.exists and _browser_json_files.files | length > 0
+  when: __browser_source_stat.stat.exists and __browser_json_files.files | length > 0
   ansible.builtin.shell: |
     python3 << 'PYTHON_EOF'
     import json
@@ -34,8 +34,8 @@
     import sys
     from collections import defaultdict
 
-    source_path = "{{ _aap_api_gather_source_path }}"
-    json_files = {{ _browser_json_files.files | map(attribute='path') | list | to_json }}
+    source_path = "{{ __aap_api_gather_source_path }}"
+    json_files = {{ __browser_json_files.files | map(attribute='path') | list | to_json }}
 
     # Build structure
     api_structure = defaultdict(lambda: defaultdict(lambda: {
@@ -125,77 +125,77 @@
     }
     print(json.dumps(output, indent=2))
     PYTHON_EOF
-  register: _browser_consolidated
+  register: __browser_consolidated
   delegate_to: localhost
   run_once: true
   changed_when: false
 
 - name: Browser | Parse consolidated structure
-  when: _browser_source_stat.stat.exists and _browser_json_files.files | length > 0
+  when: __browser_source_stat.stat.exists and __browser_json_files.files | length > 0
   ansible.builtin.set_fact:
-    _browser_parsed_json: "{{ _browser_consolidated.stdout | from_json }}"
+    __browser_parsed_json: "{{ __browser_consolidated.stdout | from_json }}"
   delegate_to: localhost
   run_once: true
 
 - name: Browser | Extract structure and data
-  when: _browser_source_stat.stat.exists and _browser_json_files.files | length > 0
+  when: __browser_source_stat.stat.exists and __browser_json_files.files | length > 0
   ansible.builtin.set_fact:
-    _api_structure: "{{ _browser_parsed_json.structure }}"
-    _api_data: "{{ _browser_parsed_json.data }}"
+    __api_structure: "{{ __browser_parsed_json.structure }}"
+    __api_data: "{{ __browser_parsed_json.data }}"
   delegate_to: localhost
   run_once: true
 
 - name: Browser | Generate HTML browser file (JavaScript version)
-  when: _browser_source_stat.stat.exists and _browser_json_files.files | length > 0
+  when: __browser_source_stat.stat.exists and __browser_json_files.files | length > 0
   ansible.builtin.template:
     src: api_browser.html.j2
-    dest: "{{ _aap_api_gather_source_path }}/api_browser.html"
+    dest: "{{ __aap_api_gather_source_path }}/api_browser.html"
     mode: '0644'
   vars:
-    api_structure: "{{ _api_structure }}"
-    api_data: "{{ _api_data }}"
+    api_structure: "{{ __api_structure }}"
+    api_data: "{{ __api_data }}"
   delegate_to: localhost
   run_once: true
 
 - name: Browser | Generate HTML browser file (Static/No-JS version)
   when:
-    - _browser_source_stat.stat.exists
-    - _browser_json_files.files | length > 0
+    - __browser_source_stat.stat.exists
+    - __browser_json_files.files | length > 0
     - upload | default(true) | bool
     - aap_api_gather_generate_static_browser | default(true) | bool
   ansible.builtin.template:
     src: api_browser_static.html.j2
-    dest: "{{ _aap_api_gather_source_path }}/api_browser_static.html"
+    dest: "{{ __aap_api_gather_source_path }}/api_browser_static.html"
     mode: '0644'
   vars:
-    api_structure: "{{ _api_structure }}"
-    api_data: "{{ _api_data }}"
-    api_data_formatted: "{{ _browser_parsed_json.data_formatted | default({}) }}"
+    api_structure: "{{ __api_structure }}"
+    api_data: "{{ __api_data }}"
+    api_data_formatted: "{{ __browser_parsed_json.data_formatted | default({}) }}"
   delegate_to: localhost
   run_once: true
 
 - name: Browser | Display browser file locations
   when:
-    - _browser_source_stat.stat.exists
-    - _browser_json_files.files | length > 0
+    - __browser_source_stat.stat.exists
+    - __browser_json_files.files | length > 0
     - upload | default(true) | bool
     - aap_api_gather_generate_static_browser | default(true) | bool
   ansible.builtin.debug:
     msg:
       - "HTML browsers generated:"
-      - "  - JavaScript version: {{ _aap_api_gather_source_path }}/api_browser.html"
-      - "  - Static/No-JS version: {{ _aap_api_gather_source_path }}/api_browser_static.html (for viewers that strip JavaScript)"
+      - "  - JavaScript version: {{ __aap_api_gather_source_path }}/api_browser.html"
+      - "  - Static/No-JS version: {{ __aap_api_gather_source_path }}/api_browser_static.html (for viewers that strip JavaScript)"
   delegate_to: localhost
   run_once: true
 
 - name: Browser | Display browser file location (no static version)
   when:
-    - _browser_source_stat.stat.exists
-    - _browser_json_files.files | length > 0
+    - __browser_source_stat.stat.exists
+    - __browser_json_files.files | length > 0
     - not (upload | default(true) | bool) or not (aap_api_gather_generate_static_browser | default(true) | bool)
   ansible.builtin.debug:
     msg: >-
-      HTML browser generated: {{ _aap_api_gather_source_path }}/api_browser.html
+      HTML browser generated: {{ __aap_api_gather_source_path }}/api_browser.html
       (Static version skipped - upload={{ upload | default(true) | bool }}, generate_static_browser={{ aap_api_gather_generate_static_browser | default(true) | bool }})
   delegate_to: localhost
   run_once: true

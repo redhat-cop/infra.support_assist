@@ -3,13 +3,13 @@
 
 - name: Cleanup | Set fact for the source directory path
   ansible.builtin.set_fact:
-    _aap_api_gather_source_path: "{{ aap_api_gather_dest }}/{{ inventory_hostname }}"
+    __aap_api_gather_source_path: "{{ aap_api_gather_dest }}/{{ inventory_hostname }}"
   delegate_to: localhost
   run_once: true
 
 - name: Cleanup | Remove entire source directory with all JSON files
   ansible.builtin.file:
-    path: "{{ _aap_api_gather_source_path }}"
+    path: "{{ __aap_api_gather_source_path }}"
     state: absent
   delegate_to: localhost
   run_once: true
@@ -21,7 +21,7 @@
     patterns:
       - "aap-api-gather-*.tar.gz"
     recurse: false
-  register: _old_archive_files
+  register: __old_archive_files
   delegate_to: localhost
   run_once: true
   failed_when: false
@@ -31,11 +31,11 @@
   ansible.builtin.file:
     path: "{{ item.path }}"
     state: absent
-  loop: "{{ _old_archive_files.files | default([]) }}"
+  loop: "{{ __old_archive_files.files | default([]) }}"
   delegate_to: localhost
   run_once: true
   when:
     - aap_api_gather_cleanup_archives | default(false) | bool
-    - _old_archive_files.files is defined
-    - _old_archive_files.files | length > 0
+    - __old_archive_files.files is defined
+    - __old_archive_files.files | length > 0
 ...

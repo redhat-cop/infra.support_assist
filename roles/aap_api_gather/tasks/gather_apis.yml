@@ -25,7 +25,7 @@
     # Controller and Gateway: use hostname
     # Hub: use aap_hub_url if provided, otherwise fallback to hostname
     # EDA: use aap_eda_url if provided, otherwise fallback to hostname
-    _base_url: >-
+    __base_url: >-
       {{
         'https://' + aap_api_gather_aap_hostname if component_name in ['controller', 'gateway']
         else ('https://' + aap_api_gather_aap_hub_url if component_name == 'hub' and (aap_api_gather_aap_hub_url | length > 0)
@@ -35,8 +35,8 @@
         else ''))))
       }}
     # Define the list of endpoints for the current component
-    _endpoints: "{{ aap_api_endpoints[component_name] | default([]) }}"
+    __endpoints: "{{ aap_api__endpoints[component_name] | default([]) }}"
     # Define the destination directory for this host and component
-    _component_dest_dir: "{{ aap_api_gather_dest }}/{{ inventory_hostname }}/{{ component_name }}"
+    __component_dest_dir: "{{ aap_api_gather_dest }}/{{ inventory_hostname }}/{{ component_name }}"
   ansible.builtin.include_tasks: gather_apis_component_loop.yml
 ...
