@@ -31,22 +31,22 @@
     - name: Gather APIs | Pagination | Check for next page and prepare variables
       when: __api_result.json is defined
       vars:
-        ___next_url_raw: "{{ __api_result.json.next | default('') }}"
+        __next_url_raw: "{{ __api_result.json.next | default('') }}"
         __has_next_page: "{{ __api_result.json.next is defined and __api_result.json.next is not none and __api_result.json.next != '' }}"
-        ___max_pages_reached: "{{ ((__max_pages | int) > 0) and ((__current_page | int) >= (__max_pages | int)) }}"
-        __next_url: "{{ (__base_url + ___next_url_raw) if (__has_next_page | bool) and not (___next_url_raw | regex_search('^https?://')) else (___next_url_raw if (__has_next_page | bool) else '') }}"
+        __max_pages_reached: "{{ ((__max_pages | int) > 0) and ((__current_page | int) >= (__max_pages | int)) }}"
+        __next_url: "{{ (__base_url + __next_url_raw) if __has_next_page and not (__next_url_raw | regex_search('^https?://')) else (__next_url_raw if (__has_next_page | bool) else '') }}"
       ansible.builtin.set_fact:
         __has_next_page: "{{ __has_next_page }}"
-        ___max_pages_reached: "{{ ___max_pages_reached }}"
+        __max_pages_reached: "{{ __max_pages_reached }}"
         __next_url: "{{ __next_url }}"
 
     - name: Gather APIs | Pagination | Log max pages limit reached
       ansible.builtin.debug:
         msg: "Reached maximum page limit ({{ __max_pages }}) for this endpoint. Stopping pagination."
-      when: ___max_pages_reached | bool
+      when: __max_pages_reached | bool
 
     - name: Gather APIs | Pagination | Fetch next page if available and within limits
-      when: __has_next_page | bool and not (___max_pages_reached | bool)
+      when: __has_next_page | bool and not (__max_pages_reached | bool)
       block:
         - name: Gather APIs | Pagination | Increment page number
           ansible.builtin.set_fact:
