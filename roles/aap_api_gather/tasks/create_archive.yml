@@ -21,38 +21,38 @@
 
 - name: Archive | Set fact for the source directory path
   ansible.builtin.set_fact:
-    _aap_api_gather_source_path: "{{ aap_api_gather_dest }}/{{ inventory_hostname }}"
+    __aap_api_gather_source_path: "{{ aap_api_gather_dest }}/{{ inventory_hostname }}"
   delegate_to: localhost
   run_once: true
 
 - name: Archive | Verify source directory exists and has content
   ansible.builtin.stat:
-    path: "{{ _aap_api_gather_source_path }}"
-  register: _aap_api_gather_source_stat
+    path: "{{ __aap_api_gather_source_path }}"
+  register: __aap_api_gather_source_stat
   delegate_to: localhost
   run_once: true
 
 - name: Archive | Create a compressed archive of the API gather directory
   community.general.archive:
-    path: "{{ _aap_api_gather_source_path }}"
+    path: "{{ __aap_api_gather_source_path }}"
     dest: "{{ aap_api_gather_dest }}/{{ __aap_api_gather_archive_name }}"
     format: gz
     mode: "0644"
   when:
-    - _aap_api_gather_source_stat.stat.exists
-    - _aap_api_gather_source_stat.stat.isdir
+    - __aap_api_gather_source_stat.stat.exists
+    - __aap_api_gather_source_stat.stat.isdir
   delegate_to: localhost
   run_once: true
-  register: _archive_result
+  register: __archive_result
 
 - name: Archive | Add API gather archive path to case_updates_needed
   # Note: Only the current archive (just created) is added to case_updates_needed.
   # Old archives from previous runs are NOT automatically included.
   when:
-    - _aap_api_gather_source_stat.stat.exists
-    - _aap_api_gather_source_stat.stat.isdir
-    - _archive_result is defined
-    - _archive_result.changed | default(false) or _archive_result.archived is defined
+    - __aap_api_gather_source_stat.stat.exists
+    - __aap_api_gather_source_stat.stat.isdir
+    - __archive_result is defined
+    - __archive_result.changed | default(false) or __archive_result.archived is defined
   ansible.builtin.set_fact:
     case_updates_needed: >-
       {{ case_updates_needed | default([]) +

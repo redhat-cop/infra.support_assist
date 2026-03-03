@@ -2,9 +2,9 @@
 # Recursive task file for handling pagination
 # This file is included recursively until all pages are fetched
 
-- name: Gather APIs | Pagination | Query endpoint page {{ _current_page }}
+- name: Gather APIs | Pagination | Query endpoint page {{ __current_page }}
   ansible.builtin.uri:
-    url: "{{ _next_url }}"
+    url: "{{ __next_url }}"
     method: GET
     headers:
       Authorization: "Bearer {{ aap_api_gather_aap_token.token | default(aap_api_gather_aap_token) }}"
@@ -21,36 +21,36 @@
 - name: Gather APIs | Pagination | Handle successful response
   when: api_result is defined and api_result.status is defined and api_result.status == 200 and api_result.content is defined
   block:
-    - name: Gather APIs | Pagination | Save output for page {{ _current_page }}
+    - name: Gather APIs | Pagination | Save output for page {{ __current_page }}
       ansible.builtin.copy:
         content: "{{ api_result.json | to_nice_json }}"
-        dest: "{{ _component_dest_dir }}/{{ _safe_filename | default('unknown') | regex_replace('\\.json$', '') }}_page{{ _current_page }}.json"
+        dest: "{{ __component_dest_dir }}/{{ __safe_filename | default('unknown') | regex_replace('\\.json$', '') }}_page{{ __current_page }}.json"
         mode: '0644'
       delegate_to: localhost # Save on control node
 
     - name: Gather APIs | Pagination | Check for next page and prepare variables
       when: api_result.json is defined
       vars:
-        _next_url_raw: "{{ api_result.json.next | default('') }}"
-        _has_next_page: "{{ api_result.json.next is defined and api_result.json.next is not none and api_result.json.next != '' }}"
-        _max_pages_reached: "{{ ((_max_pages | int) > 0) and ((_current_page | int) >= (_max_pages | int)) }}"
-        _next_url: "{{ (_base_url + _next_url_raw) if (_has_next_page | bool) and not (_next_url_raw | regex_search('^https?://')) else (_next_url_raw if (_has_next_page | bool) else '') }}"
+        ___next_url_raw: "{{ api_result.json.next | default('') }}"
+        __has_next_page: "{{ api_result.json.next is defined and api_result.json.next is not none and api_result.json.next != '' }}"
+        ___max_pages_reached: "{{ ((__max_pages | int) > 0) and ((__current_page | int) >= (__max_pages | int)) }}"
+        __next_url: "{{ (__base_url + ___next_url_raw) if (__has_next_page | bool) and not (___next_url_raw | regex_search('^https?://')) else (___next_url_raw if (__has_next_page | bool) else '') }}"
       ansible.builtin.set_fact:
-        _has_next_page: "{{ _has_next_page }}"
-        _max_pages_reached: "{{ _max_pages_reached }}"
-        _next_url: "{{ _next_url }}"
+        __has_next_page: "{{ __has_next_page }}"
+        ___max_pages_reached: "{{ ___max_pages_reached }}"
+        __next_url: "{{ __next_url }}"
 
     - name: Gather APIs | Pagination | Log max pages limit reached
       ansible.builtin.debug:
-        msg: "Reached maximum page limit ({{ _max_pages }}) for this endpoint. Stopping pagination."
-      when: _max_pages_reached | bool
+        msg: "Reached maximum page limit ({{ __max_pages }}) for this endpoint. Stopping pagination."
+      when: ___max_pages_reached | bool
 
     - name: Gather APIs | Pagination | Fetch next page if available and within limits
-      when: _has_next_page | bool and not (_max_pages_reached | bool)
+      when: __has_next_page | bool and not (___max_pages_reached | bool)
       block:
         - name: Gather APIs | Pagination | Increment page number
           ansible.builtin.set_fact:
-            _current_page: "{{ _current_page | int + 1 }}"
+            __current_page: "{{ __current_page | int + 1 }}"
 
         - name: Gather APIs | Pagination | Recursively fetch next page
           ansible.builtin.include_tasks: gather_apis_pagination.yml
@@ -60,13 +60,13 @@
   block:
     - name: Gather APIs | Pagination | Register failure and log warning
       ansible.builtin.set_fact:
-        aap_api_gather_failures: "{{ aap_api_gather_failures | default([]) + [{'component': component_name, 'endpoint': endpoint_path, 'url': _next_url, 'status_code': api_result.status | default('N/A') if api_result is defined else 'N/A', 'error_message': (api_result.msg | default(api_result.body | default(api_result.json | default({}) | to_json | default('Unknown error')))) if api_result is defined else 'Request failed - no response received', 'page': _current_page}] }}"
+        aap_api_gather_failures: "{{ aap_api_gather_failures | default([]) + [{'component': component_name, 'endpoint': endpoint_path, 'url': __next_url, 'status_code': api_result.status | default('N/A') if api_result is defined else 'N/A', 'error_message': (api_result.msg | default(api_result.body | default(api_result.json | default({}) | to_json | default('Unknown error')))) if api_result is defined else 'Request failed - no response received', 'page': __current_page}] }}"
       run_once: true
 
     - name: Gather APIs | Pagination | Log warning
       ansible.builtin.debug:
         msg: >-
-          Warning: Failed to query {{ _next_url }} (page {{ _current_page }}).
+          Warning: Failed to query {{ __next_url }} (page {{ __current_page }}).
           Status: {{ api_result.status | default('N/A') if api_result is defined else 'N/A' }}.
           Error: {{ (api_result.msg | default(api_result.body | default(api_result.json | default({}) | to_json | default('Unknown error')))) if api_result is defined else 'Request failed - no response received' }}
 ...

@@ -21,7 +21,7 @@
         aap_controller_full_version: "{{ ping_result_new.json.version }}"
         # aap_controller_needs_legacy_paths: "{{ ping_result_new.json.version is version('4.6.0', '<') }}"
         aap_controller_needs_legacy_paths: false
-        _ping_successful: true
+        __ping_successful: true
       when: ping_result_new.status == 200 and ping_result_new.json.version is defined
 
   rescue:
@@ -43,7 +43,7 @@
         aap_controller_full_version: "{{ ping_result_old.json.version }}"
         # aap_controller_needs_legacy_paths: "{{ ping_result_old.json.version is version('4.6.0', '<') }}"
         aap_controller_needs_legacy_paths: true
-        _ping_successful: true
+        __ping_successful: true
       when: ping_result_old.status == 200 and ping_result_old.json.version is defined
 
 - name: Controller Version Detection | Fail if Controller version could not be determined
@@ -53,7 +53,7 @@
       1. https://{{ aap_api_token_aap_hostname }}/api/controller/v2/ping/ (Status: {{ ping_result_new.status | default('N/A') }})
       2. https://{{ aap_api_token_aap_hostname }}/api/v2/ping/ (Status: {{ ping_result_old.status | default('N/A') }})
       Ensure the aap_hostname is correct, the API token is valid, and the Controller is reachable.
-  when: not _ping_successful | default(false)
+  when: not __ping_successful | default(false)
 
 - name: Controller Version Detection | Display determined Controller version info (optional debug)
   ansible.builtin.debug:
