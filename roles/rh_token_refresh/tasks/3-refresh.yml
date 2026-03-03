@@ -2,14 +2,14 @@
 - name: Refresh Token | Print on screen role execution status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
   vars:
     message_text: "Refreshing Red Hat Access Token via Offline Token"
   run_once: true
 
-- name: "Refresh Token | Acquire New Red Hat SSO Access Token"
+- name: "Refresh Token | Acquire New Red Hat SSO Access Token" # noqa: var-naming[no-role-prefix]
   ansible.builtin.uri:
     url: "{{ rh_api_token_url | default(rh_token_refresh_api_token_url) }}"
     method: POST
@@ -22,7 +22,7 @@
     validate_certs: false
     status_code: 200
     use_proxy: "{{ rh_token_refresh_use_proxy | default(false) }}"
-  register: token_response
+  register: __token_response
   no_log: "{{ rh_token_refresh_no_log }}" # <--- To keep sensitive values out of Ansible output logs
   environment:
     https_proxy: "{{ rh_token_refresh_http_proxy }}"
@@ -30,7 +30,7 @@
 
 - name: Refresh Token | Set access token fact
   ansible.builtin.set_fact:
-    rh_token_refresh_api_access_token: "{{ token_response.json.access_token }}"
+    rh_token_refresh_api_access_token: "{{ __token_response.json.access_token }}"
   no_log: "{{ rh_token_refresh_no_log }}" # <--- To keep sensitive values out of Ansible output logs
 
 - name: Refresh Token | Cache the new token and timestamp locally
@@ -47,9 +47,9 @@
 - name: Refresh Token | Print on screen role completion status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
   vars:
     message_text: "Red Hat Access Token Refresh Completed Successfully"
   run_once: true

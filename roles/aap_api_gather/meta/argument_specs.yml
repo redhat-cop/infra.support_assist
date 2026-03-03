@@ -21,7 +21,7 @@ argument_specs:
         type: str
         default: /tmp/aap_api_gathers
         version_added: 0.1.0-devel
-      aap_api_endpoints:
+      aap_api_gather_endpoints:
         description: API endpoint URL (dictionary with default configuration) (defined in vars)
         type: dict
         default:

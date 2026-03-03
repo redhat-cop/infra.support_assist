@@ -88,7 +88,7 @@ argument_specs:
         type: bool
         default: true
         version_added: 0.2.0-devel
-      post_create_comment:
+      rh_case_post_create_comment:
         description: 'Whether to post initial comment after case creation (default: true).'
         type: bool
         default: true

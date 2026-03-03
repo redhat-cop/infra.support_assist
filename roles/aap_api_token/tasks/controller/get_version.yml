@@ -4,7 +4,7 @@
 
 - name: Controller Version Detection | Try to get Controller version from newer API path (/api/controller/v2/ping/)
   block:
-    - name: Controller Version Detection | Attempt newer Controller ping endpoint
+    - name: Controller Version Detection | Attempt newer Controller ping endpoint # noqa: var-naming[no-role-prefix]
       ansible.builtin.uri:
         url: "https://{{ aap_api_token_aap_hostname }}/api/controller/v2/ping/"
         method: GET
@@ -13,19 +13,19 @@
         return_content: true
         validate_certs: "{{ aap_api_token_aap_validate_certs }}"
         status_code: 200
-      register: ping_result_new
+      register: __ping_result_new
       no_log: "{{ aap_api_token_no_log }}" # <--- To keep sensitive values out of Ansible output logs
 
-    - name: Controller Version Detection | Set Controller version facts from newer path
+    - name: Controller Version Detection | Set Controller version facts from newer path # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
-        aap_controller_full_version: "{{ ping_result_new.json.version }}"
+        aap_controller_full_version: "{{ __ping_result_new.json.version }}"
         # aap_controller_needs_legacy_paths: "{{ ping_result_new.json.version is version('4.6.0', '<') }}"
         aap_controller_needs_legacy_paths: false
         __ping_successful: true
-      when: ping_result_new.status == 200 and ping_result_new.json.version is defined
+      when: __ping_result_new.status == 200 and __ping_result_new.json.version is defined
 
   rescue:
-    - name: Controller Version Detection | Attempt older Controller ping endpoint (/api/v2/ping/) after newer failed
+    - name: Controller Version Detection | Attempt older Controller ping endpoint (/api/v2/ping/) after newer failed # noqa: var-naming[no-role-prefix]
       ansible.builtin.uri:
         url: "https://{{ aap_api_token_aap_hostname }}/api/v2/ping/"
         method: GET
@@ -34,24 +34,24 @@
         return_content: true
         validate_certs: "{{ aap_api_token_aap_validate_certs }}"
         status_code: 200
-      register: ping_result_old
+      register: __ping_result_old
       no_log: "{{ aap_api_token_no_log }}" # <--- To keep sensitive values out of Ansible output logs
       ignore_errors: true # Ignore failure here so we can check status below
 
-    - name: Controller Version Detection | Set Controller version facts from older path
+    - name: Controller Version Detection | Set Controller version facts from older path # noqa: var-naming[no-role-prefix]
       ansible.builtin.set_fact:
-        aap_controller_full_version: "{{ ping_result_old.json.version }}"
+        aap_controller_full_version: "{{ __ping_result_old.json.version }}"
         # aap_controller_needs_legacy_paths: "{{ ping_result_old.json.version is version('4.6.0', '<') }}"
         aap_controller_needs_legacy_paths: true
         __ping_successful: true
-      when: ping_result_old.status == 200 and ping_result_old.json.version is defined
+      when: __ping_result_old.status == 200 and __ping_result_old.json.version is defined
 
 - name: Controller Version Detection | Fail if Controller version could not be determined
   ansible.builtin.fail:
     msg: |
       Could not determine AAP Controller version. Failed to query both:
-      1. https://{{ aap_api_token_aap_hostname }}/api/controller/v2/ping/ (Status: {{ ping_result_new.status | default('N/A') }})
-      2. https://{{ aap_api_token_aap_hostname }}/api/v2/ping/ (Status: {{ ping_result_old.status | default('N/A') }})
+      1. https://{{ aap_api_token_aap_hostname }}/api/controller/v2/ping/ (Status: {{ __ping_result_new.status | default('N/A') }})
+      2. https://{{ aap_api_token_aap_hostname }}/api/v2/ping/ (Status: {{ __ping_result_old.status | default('N/A') }})
       Ensure the aap_hostname is correct, the API token is valid, and the Controller is reachable.
   when: not __ping_successful | default(false)
 

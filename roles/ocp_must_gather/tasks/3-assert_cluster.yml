@@ -3,25 +3,25 @@
 - name: Assert Cluster | Print on screen post-login execution status - (Cluster Validation).
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
   vars:
     message_text: "Executing Post-Login Cluster Validation Checks"
   run_once: true
 
-- name: Assert Cluster | Set fact for authenticated SA name
+- name: Assert Cluster | Set fact for authenticated SA name # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     sa_name: "{{ oc_whoami.stdout | trim | split(':') | last }}"
   when: oc_whoami.rc == 0
 
-- name: Assert Cluster | Check if authenticated account has cluster-admin privileges
+- name: Assert Cluster | Check if authenticated account has cluster-admin privileges # noqa: var-naming[no-role-prefix]
   ansible.builtin.shell: |
     set -o pipefail
     oc get clusterrolebindings -o jsonpath='{.items[*].subjects[*].name}' \
       | tr ' ' '\n' \
       | grep -w {{ sa_name }}
-  register: cluster_admin_check
+  register: __cluster_admin_check
   changed_when: false
   failed_when: false
 
@@ -29,7 +29,7 @@
   ansible.builtin.assert:
     that:
       # Check if the stripped stdout equals the SA name (meaning the SA was found with the role) or the system:admin role
-      - (cluster_admin_check.stdout | trim == sa_name) or (cluster_admin_check.stdout | trim == 'system:admin')
+      - (__cluster_admin_check.stdout | trim == sa_name) or (__cluster_admin_check.stdout | trim == 'system:admin')
     fail_msg: >-
       FAILED! Oh, No! => The authenticated user/service account '{{ sa_name }}' does NOT have 'cluster-admin' or 'system:admin' privileges.
       This permission is required to execute 'oc adm must-gather'.
@@ -38,39 +38,39 @@
     success_msg: >-
       PASSED! Oh, Yes! => User/Service account '{{ sa_name }}' has 'cluster-admin' or 'system:admin' privileges, so we are good to go. Proceeding with must-gather execution.
 
-- name: Assert Cluster | Check the Cluster ID
+- name: Assert Cluster | Check the Cluster ID # noqa: var-naming[no-role-prefix]
   ansible.builtin.shell: |
     oc get clusterversion version -o jsonpath='{.spec.clusterID}'
-  register: cluster_id_check
+  register: __cluster_id_check
   changed_when: false
   failed_when: false
 
-- name: Assert Cluster | Set fact for cluster_id
+- name: Assert Cluster | Set fact for cluster_id # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
-    cluster_id: "{{ cluster_id_check.stdout | trim }}"
-  when: cluster_id_check.rc == 0
+    cluster_id: "{{ __cluster_id_check.stdout | trim }}"
+  when: __cluster_id_check.rc == 0
 
-- name: Assert Cluster | Check the Cluster Version
+- name: Assert Cluster | Check the Cluster Version # noqa: var-naming[no-role-prefix]
   ansible.builtin.shell: |
     oc get clusterversion version -o jsonpath='{.status.desired.version}'
   register: cluster_version_check
   changed_when: false
   failed_when: false
 
-- name: Assert Cluster | Set fact for cluster_version
+- name: Assert Cluster | Set fact for cluster_version # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     cluster_version: "{{ cluster_version_check.stdout | trim }}"
   when: cluster_version_check.rc == 0
 
-- name: Assert Cluster | Set fact for cluster_version_check stdout to 'case_product_version'
+- name: Assert Cluster | Set fact for cluster_version_check stdout to 'case_product_version' # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     case_product_version: "{{ cluster_version_check.stdout | default('N/A') }}"
   when: cluster_version_check is defined
 
-- name: Assert Cluster | Discover all operators for selected component (AAP multi-namespace support)
+- name: Assert Cluster | Discover all operators for selected component (AAP multi-namespace support) # noqa: var-naming[no-role-prefix]
   # Use command module to get JSON, then parse with Ansible's json_query filter (no jq required on target host)
   ansible.builtin.command: "{{ selected_component_config.discovery_command }}"
-  register: component_discovery_result
+  register: __component_discovery_result
   changed_when: false
   failed_when: false
   when:
@@ -79,12 +79,12 @@
     - component_key == 'aap'
     - "'discovery_command' in selected_component_config"
 
-- name: Assert Cluster | Parse discovered AAP operators into list using Ansible's json_query filter
+- name: Assert Cluster | Parse discovered AAP operators into list using Ansible's json_query filter # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     discovered_operators: >-
       {%- set operators = [] -%}
-      {%- if component_discovery_result.stdout is defined and component_discovery_result.stdout | trim | length > 0 -%}
-        {%- set csv_data = component_discovery_result.stdout | from_json -%}
+      {%- if __component_discovery_result.stdout is defined and __component_discovery_result.stdout | trim | length > 0 -%}
+        {%- set csv_data = __component_discovery_result.stdout | from_json -%}
         {%- if csv_data['items'] is defined -%}
           {%- for item in csv_data['items'] -%}
             {%- if item.spec.displayName is defined and item.spec.displayName == "Ansible Automation Platform" -%}
@@ -101,10 +101,10 @@
   when:
     - component_key is defined
     - component_key == 'aap'
-    - component_discovery_result is defined
-    - component_discovery_result.rc == 0
+    - __component_discovery_result is defined
+    - __component_discovery_result.rc == 0
 
-- name: Assert Cluster | Execute version command for selected component to retrieve operator version (non-AAP)
+- name: Assert Cluster | Execute version command for selected component to retrieve operator version (non-AAP) # noqa: var-naming[no-role-prefix]
   ansible.builtin.command: >-
     {%- if 'version_command' in selected_component_config -%}
       {{- selected_component_config.version_command -}}
@@ -124,7 +124,7 @@
   ansible.builtin.assert:
     that:
       - component_key is defined
-      - (component_key == 'aap' and component_discovery_result.rc is defined and component_discovery_result.rc == 0) or
+      - (component_key == 'aap' and __component_discovery_result.rc is defined and __component_discovery_result.rc == 0) or
         (component_key != 'aap' and component_version_result.rc is defined and component_version_result.rc == 0)
     fail_msg:
       "FAILED! Oh, No! => The discovery/version command for component {{ component_key | upper }} failed. Please check if the Operator is installed and the authentication is correct."
@@ -146,10 +146,10 @@
   when:
     - component_key is defined
     - component_key == 'aap'
-    - component_discovery_result is defined
-    - component_discovery_result.rc == 0
+    - __component_discovery_result is defined
+    - __component_discovery_result.rc == 0
 
-- name: Assert Cluster | Set raw_version fact for consumption (non-AAP)
+- name: Assert Cluster | Set raw_version fact for consumption (non-AAP) # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     raw_version: "{{ component_version_result.stdout | trim }}"
   when:
@@ -177,7 +177,7 @@
     - component_key is defined
     - component_key != 'aap'
 
-- name: Assert Cluster | Process each discovered AAP operator and construct images
+- name: Assert Cluster | Process each discovered AAP operator and construct images # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     aap_operators_processed: >-
       {%- set processed = [] -%}
@@ -211,7 +211,7 @@
     - discovered_operators is defined
     - discovered_operators | length > 0
 
-- name: Assert Cluster | Construct and set the final versioned image string (non-AAP)
+- name: Assert Cluster | Construct and set the final versioned image string (non-AAP) # noqa: var-naming[no-role-prefix]
   when:
     - raw_version is defined
     - component_key is defined
@@ -368,17 +368,17 @@
     state: directory
     mode: '0755'
 
-- name: Assert Cluster | Get Filesystem Stats using 'df' command
+- name: Assert Cluster | Get Filesystem Stats using 'df' command # noqa: var-naming[no-role-prefix]
   ansible.builtin.shell: |
     set -o pipefail
     df -kP {{ ocp_must_gather_dest_dir }} | awk 'NR==2 {print $4}'
-  register: df_result
+  register: __df_result
   changed_when: false
   run_once: true
 
-- name: Assert Cluster | Set Available Space Fact (in Bytes)
+- name: Assert Cluster | Set Available Space Fact (in Bytes) # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
-    must_gather_space_available: "{{ (df_result.stdout | int) * 1024 }}"
+    must_gather_space_available: "{{ (__df_result.stdout | int) * 1024 }}"
   when: df_result.rc == 0
   run_once: true
 
@@ -408,9 +408,9 @@
 - name: Assert Cluster | Print on screen post-login validation complete
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
   vars:
     message_text: "Post-Login Cluster Validation Checks Completed Successfully"
   run_once: true

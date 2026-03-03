@@ -14,6 +14,8 @@ exclude_paths:
   - changelogs/
   - .ansible/
   - tests/
+  - ignore_*
+  - ignore_*/
 
 # parseable: true
 # quiet: true
@@ -55,7 +57,7 @@ skip_list:
   # - meta-runtime
   - role-name[path]
   - sanity[cannot-ignore] # We're only ignoring sanity rules when we have to
-  - var-naming[no-role-prefix]
+  # - var-naming[no-role-prefix]
   - name[prefix]
   - internal-error
 

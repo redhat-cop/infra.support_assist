@@ -1,11 +1,11 @@
 ---
-- name: Get Token | Set fact to clear token when done
+- name: Get Token | Set fact to clear token when done # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     __clear_token: true
   tags:
     - always
 
-- name: Get Token | Create a new token using gateway username/password
+- name: Get Token | Create a new token using gateway username/password # noqa: var-naming[no-role-prefix]
   ansible.platform.token:
     description: 'Temporary token for infra.support_assist operations'
     scope: "write"
@@ -24,7 +24,7 @@
 #   ansible.builtin.debug:
 #     var: authtoken_res
 
-- name: Set facts
+- name: Set facts # noqa: var-naming[no-role-prefix]
   no_log: "{{ aap_api_token_no_log | default(true) | bool }}"
   ansible.builtin.set_fact:
     aap_api_token_aap_token: "{{ authtoken_res.ansible_facts.aap_token }}"

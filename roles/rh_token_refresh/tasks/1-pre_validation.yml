@@ -10,9 +10,9 @@
 - name: Pre-validation | Print on screen role pre-validation status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
   vars:
     message_text: "Pre-Validation for Red Hat API Offline Token Refresh Started"
   run_once: true

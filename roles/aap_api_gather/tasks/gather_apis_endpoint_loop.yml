@@ -1,5 +1,5 @@
 ---
-- name: Gather APIs | Endpoint Loop | Set facts and initialize pagination
+- name: Gather APIs | Endpoint Loop | Set facts and initialize pagination # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     __safe_filename: "{{ __safe_filename }}"
     __component_dest_dir: "{{ __component_dest_dir }}"

@@ -3,9 +3,9 @@
 - name: Post Validation | Print on screen role execution status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
   vars:
     message_text: "Executing Post-Case Creation Validation Steps and Fact Setting"
   run_once: true
@@ -26,7 +26,7 @@
       HTTP {{ case_creation_result.status }} | Case ID: {{ case_creation_result.json.location[0].split('/')[-1] }}, Proceeding to next step...
   run_once: true
 
-- name: Post Validation | Extract Case ID from URL and set as global fact
+- name: Post Validation | Extract Case ID from URL and set as global fact # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     new_case_id: "{{ case_creation_result.json.location[0].split('/')[-1] }}"
   run_once: true
@@ -34,9 +34,9 @@
 - name: Post Validation | Print on screen role completion status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
   vars:
     message_text: "Completed Post-Validation for Red Hat Support Case Creation"
   run_once: true

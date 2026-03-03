@@ -3,9 +3,9 @@
 - name: Main | Print on screen role initiation status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
   vars:
     message_text: "Starting OCP Must Gather Collection Role Execution"
   run_once: true
@@ -28,9 +28,9 @@
 - name: Main | Print on screen role completion status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
   vars:
     message_text: "OCP Must Gather Collection Role Execution Completed Successfully"
   run_once: true

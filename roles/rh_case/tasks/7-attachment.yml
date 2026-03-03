@@ -2,22 +2,22 @@
 - name: Case Updates Loop | Print on screen role execution status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
   vars:
     message_text: "Starting Case Update and Attachment Loop for Case ID {{ case_id }}"
   run_once: true
 
 # --- Proxy Definition Tasks ---
 # (These tasks correctly define the proxy_cmd variable based on rh_case_use_proxy)
-- name: Attachment Upload | Define proxy command (if required)
+- name: Attachment Upload | Define proxy command (if required) # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     proxy_cmd: " --proxy {{ rh_case_http_proxy }} "
   when: rh_case_use_proxy | default(false)
 
 # --- Curl Execution Task ---
-- name: "Attachment Upload | Upload attachment to case {{ case_id ~ ' | ' ~ case_update.attachment | basename }}" # noqa command-instead-of-module
+- name: "Attachment Upload | Upload attachment to case {{ case_id ~ ' | ' ~ case_update.attachment | basename }}" # noqa command-instead-of-module var-naming[no-role-prefix]
   ansible.builtin.shell: |
     curl -s -X POST \
       -w "\nHTTP_STATUS:%{http_code}" \
@@ -39,7 +39,7 @@
     __curl_stderr: "{{ upload_cli_result.stderr | default('N/A') }}"
     __curl_rc: "{{ upload_cli_result.rc | default('N/A') }}"
 
-- name: Attachment Upload | Extract HTTP status and response body
+- name: Attachment Upload | Extract HTTP status and response body # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     upload_status: "{{ (__curl_stdout | regex_search('HTTP_STATUS:(\\d+)', '\\1') | first | default(0)) | int }}"
     upload_body_raw: "{{ __curl_stdout | regex_replace('\\nHTTP_STATUS:.*$', '') }}"
@@ -58,16 +58,16 @@
       Stderr: {{ __curl_stderr }} |
       Response Body: {{ upload_body_raw }}
 
-- name: Attachment Upload | Set final JSON response from successful upload
+- name: Attachment Upload | Set final JSON response from successful upload # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     upload_result_json: "{{ upload_body_raw }}"
 
 - name: Attachment Upload | Print on screen role completion status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
   vars:
     message_text: "Completed Attachment Upload for Case ID {{ case_id }}"
   run_once: true

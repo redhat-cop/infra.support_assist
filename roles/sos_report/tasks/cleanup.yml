@@ -1,12 +1,12 @@
 ---
-- name: Cleanup | Check for old SOS Reports
+- name: Cleanup | Check for old SOS Reports # noqa: var-naming[no-role-prefix]
   ansible.builtin.find:
     paths: /var/tmp
     patterns: sosreport-*.tar.*
-  register: sos_reports
+  register: __sos_reports
 
 - name: Cleanup | Delete old SOS Reports (if any were found)
-  loop: "{{ sos_reports.files }}"
+  loop: "{{ __sos_reports.files }}"
   loop_control:
     label: "{{ item.path | basename }}"
   become: true

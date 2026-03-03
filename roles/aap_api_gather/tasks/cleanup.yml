@@ -15,7 +15,7 @@
   run_once: true
   when: aap_api_gather_cleanup_json | default(true) | bool
 
-- name: Cleanup | Remove old archive files (if cleanup_archives is enabled)
+- name: Cleanup | Remove old archive files (if cleanup_archives is enabled) # noqa: var-naming[no-role-prefix]
   ansible.builtin.find:
     paths: "{{ aap_api_gather_dest }}"
     patterns:
