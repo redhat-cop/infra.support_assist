@@ -48,12 +48,12 @@ jobs:
     strategy:
       matrix:
         role:
-          - sos_report
-          - aap_api_token
           - aap_api_gather
-          - rh_token_refresh
-          - rh_case
+          - aap_api_token
           - ocp_must_gather
+          - rh_case
+          - rh_token_refresh
+          - sos_report
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
