@@ -1,4 +1,5 @@
 ---
+# Converge runs the full role. Fails without real AAP (connection/auth at gather step).
 - name: Converge
   hosts: all
   roles:
@@ -7,6 +8,7 @@
         aap_hostname: "example.com"
         aap_username: "test_user"
         aap_password: "test_password"
+        aap_token: "placeholder_token"
         aap_validate_certs: false
-      # Note: This will fail without actual AAP instance, but tests role structure
+        aap_api_gather_components: [controller]
 ...

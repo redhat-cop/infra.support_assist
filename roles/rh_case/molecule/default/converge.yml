@@ -1,10 +1,16 @@
 ---
+# Converge runs the full role. Operation mode is derived from case_id / case_* vars
+# (role does not use case_mode). With create vars set, role fails at API (no valid token).
 - name: Converge
   hosts: all
   roles:
     - role: ../..
       vars:
-        offline_token: "test_token_placeholder"
-        case_mode: "validate"
-      # Note: This will fail without valid Red Hat API token, but tests role structure
+        offline_token: "placeholder_token"
+        case_summary: "Molecule test case"
+        case_product: "Red Hat Enterprise Linux"
+        case_description: "Validation run"
+        case_product_version: "9"
+        case_type: "Tech Support"
+        case_severity: "4"
 ...

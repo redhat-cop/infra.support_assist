@@ -7,18 +7,35 @@
       ansible.builtin.stat:
         path: "{{ sos_report_dest | default('/tmp/sos_reports_test') }}"
       register: __dest_stat
-      failed_when: false
+
+    - name: Assert destination directory was created
+      ansible.builtin.assert:
+        that: __dest_stat.stat.exists | default(false) | bool
+        fail_msg: "Expected sos_report destination directory '{{ sos_report_dest | default('/tmp/sos_reports_test') }}' to exist."
+        success_msg: "Destination directory exists."
 
     - name: Check if sos package is installed # noqa: var-naming[no-role-prefix]
       ansible.builtin.dnf:
         list: sos
       register: __sos_pkg_check
-      failed_when: false
       changed_when: false
 
-    - name: Display verification results
-      ansible.builtin.debug:
-        msg:
-          - "SOS package installed: {{ __sos_pkg_check.results | default([]) | length > 0 }}"
-          - "Destination directory exists: {{ __dest_stat.stat.exists | default(false) }}"
+    - name: Assert sos package is installed
+      ansible.builtin.assert:
+        that: __sos_pkg_check.results | default([]) | length > 0
+        fail_msg: "Expected 'sos' package to be installed (role install step)."
+        success_msg: "SOS package is installed."
+
+    - name: Verify SOS report was generated on host # noqa: var-naming[no-role-prefix]
+      ansible.builtin.find:
+        paths: /var/tmp
+        patterns: sosreport-*.tar.xz
+        age: -60m
+      register: __sos_report_files
+
+    - name: Assert at least one SOS report archive exists
+      ansible.builtin.assert:
+        that: __sos_report_files.matched | default(0) | int > 0
+        fail_msg: "Expected at least one sosreport-*.tar.xz in /var/tmp (generate step)."
+        success_msg: "SOS report archive(s) found."
 ...

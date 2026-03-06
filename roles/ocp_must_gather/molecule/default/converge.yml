@@ -1,12 +1,14 @@
 ---
+# Converge runs the full role. Required vars use role names (ocp_must_gather_*).
+# Without a real cluster and 'oc' CLI, converge will fail at 2-login or 3-assert_cluster;
+# this at least validates variable contract and 1-assert_vars (when oc is available).
 - name: Converge
   hosts: all
   roles:
     - role: ../..
       vars:
-        ocp_api_url: "https://api.example.com:6443"
-        ocp_username: "test_user"
-        ocp_password: "test_password"
-        ocp_validate_certs: false
-      # Note: This will fail without actual OpenShift cluster, but tests role structure
+        ocp_must_gather_token: "placeholder_token"
+        ocp_must_gather_server_url: "https://api.example.com:6443"
+        case_id: "12345"
+        ocp_must_gather_validate_ssl: false
 ...
