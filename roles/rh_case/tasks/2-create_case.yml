@@ -3,14 +3,14 @@
 - name: "Create Case | Print on screen role execution status."
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
   vars:
     message_text: "Starting Red Hat Support Case Creation Task Execution Process"
   run_once: true
 
-- name: "Create Case | Construct case creation payload"
+- name: "Create Case | Construct case creation payload" # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     case_body: >-
       {{
@@ -73,7 +73,7 @@
   run_once: true
 
 # https://access.redhat.com/management/api/case_management#/case/createCase
-- name: "Create Case | POST '/v1/cases' to create a new RH Support Case"
+- name: "Create Case | POST '/v1/cases' to create a new RH Support Case" # noqa: var-naming[no-role-prefix]
   ansible.builtin.uri:
     url: "{{ rh_token_refresh_api_base_url | default(rh_case_api_base_url) }}/support/v1/cases"
     method: POST
@@ -98,9 +98,9 @@
 - name: "Create Case | Print on screen create case complete."
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
   vars:
     message_text: "Red Hat Support Case Creation Completed Successfully"
   run_once: true

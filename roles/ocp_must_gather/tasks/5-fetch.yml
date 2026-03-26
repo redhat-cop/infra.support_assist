@@ -3,9 +3,9 @@
 - name: Fetch | Print on screen must-gather archive initiation status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
   vars:
     message_text: "Initiating OpenShift Must-Gather Archive Creation Process"
   run_once: true
@@ -14,12 +14,12 @@
   ansible.builtin.set_fact:
     __must_gather_source_path: "{{ ocp_must_gather_dest_dir }}"
 
-- name: Fetch | Get current UTC timestamp
+- name: Fetch | Get current UTC timestamp # noqa: var-naming[no-role-prefix]
   ansible.builtin.command: date -u +%Y-%m-%d-%H%M%S
-  register: utc_timestamp_result
+  register: __utc_timestamp_result
   changed_when: false
 
-- name: Fetch | Clean cluster_name variable
+- name: Fetch | Clean cluster_name variable # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     cluster_name_cleaned: "{{ cluster_name | default('') | lower | regex_replace('[^a-z0-9-]', '-') }}"
 
@@ -51,7 +51,7 @@
     __must_gather_archive_name: >-
       {{
         ('must-gather-' ~ __time_prefix ~ __scope_prefix ~ cluster_name_cleaned ~
-        '_' ~ utc_timestamp_result.stdout ~ '.tar.gz') | trim
+        '_' ~ __utc_timestamp_result.stdout ~ '.tar.gz') | trim
       }}
 
 - name: Fetch | Set fact for the found directory path
@@ -66,25 +66,25 @@
     mode: "0644"
   when: __must_gather_source_path is defined
 
-- name: Fetch | Render support case comment from Jinja template
+- name: Fetch | Render support case comment from Jinja template # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     case_comment: "{{ lookup('template', 'support_case_comment.j2') }}"
 
-- name: Fetch | Calculate conditional image path string
+- name: Fetch | Calculate conditional image path string # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     # Set the variable using a block and apply the trim at the end.
     image_path: "{{ final_path | trim }}"
   vars:
     final_path: >-
-      {% if ocp_disconnected_mode | default(false) | bool and ocp_disconnected_registry | length > 0 %}
-        {{ ocp_disconnected_registry }}
+      {% if ocp_must_gather_disconnected_mode | default(false) | bool and ocp_must_gather_disconnected_registry | length > 0 %}
+        {{ ocp_must_gather_disconnected_registry }}
       {% elif __constructed_image | default('') | length > 0 %}
         {{ __constructed_image }}
       {% else %}
         Default OCP Baseline
       {% endif %}
 
-- name: Fetch | Add must-gather archive path and summary comment to case_updates_needed fact list
+- name: Fetch | Add must-gather archive path and summary comment to case_updates_needed fact list # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     case_updates_needed: >-
       {{
@@ -107,9 +107,9 @@
 - name: Fetch | Print on screen must-gather archive finalization status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
   vars:
     message_text: "OpenShift Must-Gather Archive Creation Process Completed Successfully"
   run_once: true

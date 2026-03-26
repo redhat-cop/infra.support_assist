@@ -2,9 +2,9 @@
 - name: Main | Print on screen role execution status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
   vars:
     message_text: "Starting Red Hat SSO Access Token Manager Role Execution"
   run_once: true
@@ -22,9 +22,9 @@
 - name: Main | Print on screen role completion status.
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ rh_token_refresh_separator_char * (message_text | length + rh_token_refresh_default_message_padding) | int }}"
   vars:
     message_text: "Completed Red Hat SSO Access Token Manager Role Execution"
   run_once: true

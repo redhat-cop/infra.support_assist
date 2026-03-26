@@ -32,7 +32,7 @@
   delegate_to: localhost
   run_once: true
 
-- name: Archive | Create a compressed archive of the API gather directory
+- name: Archive | Create a compressed archive of the API gather directory # noqa: var-naming[no-role-prefix]
   community.general.archive:
     path: "{{ __aap_api_gather_source_path }}"
     dest: "{{ aap_api_gather_dest }}/{{ __aap_api_gather_archive_name }}"
@@ -45,7 +45,7 @@
   run_once: true
   register: __archive_result
 
-- name: Archive | Add API gather archive path to case_updates_needed
+- name: Archive | Add API gather archive path to case_updates_needed  # noqa: var-naming[no-role-prefix]
   # Note: Only the current archive (just created) is added to case_updates_needed.
   # Old archives from previous runs are NOT automatically included.
   when:

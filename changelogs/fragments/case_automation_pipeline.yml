@@ -4,7 +4,7 @@ major_changes:
   - Implement the OCP Support Autopilot Pipeline for end-to-end automated diagnostic submission, handling token refresh, case creation, collection, and upload.
 
 minor_changes:
-  - "'ocp_must_gather': Implemented **Disconnected/Air-Gapped** environment support via `ocp_disconnected_mode` and `ocp_disconnected_registry`."
+  - "'ocp_must_gather': Implemented **Disconnected/Air-Gapped** environment support via `ocp_must_gather_disconnected_mode` and `ocp_must_gather_disconnected_registry`."
   - "'ocp_must_gather': Implemented **Acronym-based Component Selection** (e.g., AAP, ODF) for Must-Gather image lookup, simplifying user input."
   - "'ocp_must_gather': Implemented **Disk Space** and **Cluster-Admin Privilege** safety assertions for pre-flight validation."
   - "'rh_case': Added logic for **Generalized Case Creation** payload (conditionally includes OpenShift fields)."

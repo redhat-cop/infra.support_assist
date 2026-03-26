@@ -14,14 +14,14 @@ ocp_must_gather_options: ""
 ocp_must_gather_validate_ssl: true
 
 # Character used for separating log blocks
-separator_char: "*"
+ocp_must_gather_separator_char: "*"
 
 # Define a standard length for the calculation (must be an integer)
-default_message_padding: 4
+ocp_must_gather_default_message_padding: 4
 
 # NEW: Flag to enable disconnected environment logic
-ocp_disconnected_mode: false
+ocp_must_gather_disconnected_mode: false
 
 # NEW: Custom registry address if disconnected mode is true
-ocp_disconnected_registry: ""
+ocp_must_gather_disconnected_registry: ""
 ...

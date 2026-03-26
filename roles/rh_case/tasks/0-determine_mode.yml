@@ -1,5 +1,5 @@
 ---
-- name: Determine operation mode
+- name: Determine operation mode # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     operation_mode: >-
       {{

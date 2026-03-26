@@ -4,10 +4,10 @@ rh_token_refresh_token_cache_file: "/tmp/redhat_refresh_token.json"
 rh_token_refresh_token_max_age_seconds: 900 # 15 minutes * 60 seconds
 
 # Character used for separating log blocks
-separator_char: "*"
+rh_token_refresh_separator_char: "*"
 
 # Define a standard length for the calculation (must be an integer)
-default_message_padding: 4
+rh_token_refresh_default_message_padding: 4
 
 rh_token_refresh_use_proxy: "{{ use_proxy | default(false) }}"
 rh_token_refresh_http_proxy: "{{ http_proxy | default('') }}"

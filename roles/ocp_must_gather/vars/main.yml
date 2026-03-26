@@ -4,7 +4,7 @@
 # ============================================================================
 # --- MUST GATHER COMPONENT DEFINITIONS ---
 # ============================================================================
-must_gather_components:
+ocp_must_gather_components:
 # 0. Red Hat Ansible Automation Platform (AAP)
 # KCS(Solution) Reference: https://access.redhat.com/solutions/6997224
   aap:

@@ -33,6 +33,7 @@ jobs:
   ansible-lint:
     uses: ansible/ansible-content-actions/.github/workflows/ansible_lint.yaml@main
   sanity:
+    # uses: lennysh/ansible-content-actions/.github/workflows/sanity.yaml@tox-testing
     uses: ansible/ansible-content-actions/.github/workflows/sanity.yaml@main
   unit-galaxy:
     needs:
@@ -47,12 +48,12 @@ jobs:
     strategy:
       matrix:
         role:
-          - sos_report
-          - aap_api_token
           - aap_api_gather
-          - rh_token_refresh
-          - rh_case
+          - aap_api_token
           - ocp_must_gather
+          - rh_case
+          - rh_token_refresh
+          - sos_report
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

@@ -29,13 +29,13 @@ argument_specs:
         default: true
         version_added: 0.1.0-devel
       # --- DISCONNECTED/AIR-GAPPED SETTINGS ---
-      ocp_disconnected_mode:
+      ocp_must_gather_disconnected_mode:
         description: Set to true if running in a disconnected or air-gapped environment.
         type: bool
         default: false
         version_added: 0.2.0-devel
-      ocp_disconnected_registry:
-        description: 'The address of the mirror registry containing the must-gather images (e.g., myregistry.local/ocp/mirror). Required if ocp_disconnected_mode is true.'
+      ocp_must_gather_disconnected_registry:
+        description: 'The address of the mirror registry containing the must-gather images (e.g., myregistry.local/ocp/mirror). Required if ocp_must_gather_disconnected_mode is true.'
         type: str
         default: ''
         version_added: 0.2.0-devel

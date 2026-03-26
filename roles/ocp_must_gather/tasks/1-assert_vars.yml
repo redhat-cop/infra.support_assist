@@ -3,9 +3,9 @@
 - name: Assert Vars | Print on screen pre-flight execution status - (Local Validation).
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
   vars:
     message_text: "Executing Pre-Flight Checks and Dynamic Image Validation - (Local Validation)"
   run_once: true
@@ -24,7 +24,7 @@
     - { name: ocp_must_gather_server_url }
     - { name: case_id }
 
-- name: Assert Vars | Set cluster_name from API URL
+- name: Assert Vars | Set cluster_name from API URL # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     cluster_name: "{{ ocp_must_gather_server_url | regex_replace('^(http[s]?://api\\.)', '') | regex_replace('(\\..*)$', '') }}"
 
@@ -40,36 +40,36 @@
     success_msg: "PASSED! Oh, Yes! => Cluster name '{{ cluster_name }}' extracted successfully from API URL."
   when: ocp_must_gather_server_url is defined and ocp_must_gather_server_url | length > 0
 
-- name: Assert Vars | Check if 'oc' command exists on execution host
+- name: Assert Vars | Check if 'oc' command exists on execution host # noqa: var-naming[no-role-prefix]
   ansible.builtin.command: command -v oc
-  register: oc_check
+  register: __oc_check
   changed_when: false
   failed_when: false
 
 - name: Assert Vars | Assert 'oc' command is available on execution host
   ansible.builtin.assert:
     that:
-      - oc_check.rc == 0
+      - __oc_check.rc == 0
     fail_msg: >
       FAILED! Oh, No! => The 'oc' command was not found on the execution host
       ({{ inventory_hostname }}). Please ensure the OpenShift CLI is installed
       and in the system's PATH.
     success_msg: "PASSED! Oh, Yes! => The 'oc' command is found and ready on the execution host. Proceeding..."
-  when: oc_check is defined
+  when: __oc_check is defined
 
-- name: Assert Vars | Set component_key (always set for consistency)
+- name: Assert Vars | Set component_key (always set for consistency) # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     component_key: "{{ ocp_must_gather_image | default('DEFAULT') | lower }}"
 
-- name: Assert Vars | Set dynamic component configuration (from user acronym)
+- name: Assert Vars | Set dynamic component configuration (from user acronym) # noqa: var-naming[no-role-prefix]
   # The component_key is the user input (acronym). Lookup is performed on the lowercase version.
   ansible.builtin.set_fact:
     # Lookup the configuration data using the lowercase acronym as the key.
     # Safely check if key exists before accessing to avoid attribute errors
     selected_component_config: >-
       {%- set image_key = ocp_must_gather_image | lower -%}
-      {%- if image_key in must_gather_components -%}
-        {{- must_gather_components[image_key] -}}
+      {%- if image_key in ocp_must_gather_components -%}
+        {{- ocp_must_gather_components[image_key] -}}
       {%- else -%}
         {}
       {%- endif -%}
@@ -95,9 +95,9 @@
 - name: Assert Vars | Print on screen pre-login validation complete
   ansible.builtin.debug:
     msg:
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
       - " {{ message_text }} "
-      - "{{ separator_char * (message_text | length + default_message_padding) | int }}"
+      - "{{ ocp_must_gather_separator_char * (message_text | length + ocp_must_gather_default_message_padding) | int }}"
   vars:
     message_text: "Pre-Flight Checks and Dynamic Image Validation Complete - (Local Validation)"
   run_once: true

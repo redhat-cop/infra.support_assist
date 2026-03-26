@@ -7,14 +7,14 @@
   delegate_to: localhost
   run_once: true
 
-- name: Browser | Verify source directory exists
+- name: Browser | Verify source directory exists # noqa: var-naming[no-role-prefix]
   ansible.builtin.stat:
     path: "{{ __aap_api_gather_source_path }}"
   register: __browser_source_stat
   delegate_to: localhost
   run_once: true
 
-- name: Browser | Find all JSON files in the source directory
+- name: Browser | Find all JSON files in the source directory # noqa: var-naming[no-role-prefix]
   ansible.builtin.find:
     paths: "{{ __aap_api_gather_source_path }}"
     patterns: "*.json"
@@ -24,7 +24,7 @@
   run_once: true
   when: __browser_source_stat.stat.exists
 
-- name: Browser | Build API structure and load JSON data using Python script
+- name: Browser | Build API structure and load JSON data using Python script # noqa: var-naming[no-role-prefix]
   when: __browser_source_stat.stat.exists and __browser_json_files.files | length > 0
   ansible.builtin.shell: |
     python3 << 'PYTHON_EOF'

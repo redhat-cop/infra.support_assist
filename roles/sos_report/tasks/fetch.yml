@@ -1,13 +1,13 @@
 ---
-- name: Fetch | Find the generated SOS Report
+- name: Fetch | Find the generated SOS Report # noqa: var-naming[no-role-prefix]
   ansible.builtin.find:
     paths: /var/tmp
     patterns: sosreport-*.tar.xz
     age: -5m # Find reports created in the last 5 minutes to be safe
-  register: found_sos_report
+  register: __found_sos_report
 
 - name: Fetch | Case folder block
-  when: found_sos_report.matched > 0
+  when: __found_sos_report.matched > 0
   vars:
     __dest_path: "{{ sos_report_dest }}/{{ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
   block:
@@ -19,7 +19,7 @@
       delegate_to: localhost
 
     - name: Fetch | Fetch the SOS Report to the control node
-      loop: "{{ found_sos_report.files }}"
+      loop: "{{ __found_sos_report.files }}"
       loop_control:
         label: "{{ item.path | basename }}"
       become: true
@@ -28,8 +28,8 @@
         dest: "{{ __dest_path }}/"
         flat: true
 
-    - name: Fetch | Build case_updates_needed variable
-      loop: "{{ found_sos_report.files }}"
+    - name: Fetch | Build case_updates_needed variable # noqa: var-naming[no-role-prefix]
+      loop: "{{ __found_sos_report.files }}"
       loop_control:
         label: "{{ item.path | basename }}"
       ansible.builtin.set_fact:

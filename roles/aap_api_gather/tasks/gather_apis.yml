@@ -35,7 +35,7 @@
         else ''))))
       }}
     # Define the list of endpoints for the current component
-    __endpoints: "{{ aap_api__endpoints[component_name] | default([]) }}"
+    __endpoints: "{{ aap_api_gather_endpoints[component_name] | default([]) }}"
     # Define the destination directory for this host and component
     __component_dest_dir: "{{ aap_api_gather_dest }}/{{ inventory_hostname }}/{{ component_name }}"
   ansible.builtin.include_tasks: gather_apis_component_loop.yml

@@ -177,8 +177,8 @@ This collection provides five main playbooks for common operations:
           -e ocp_must_gather_token="sha256~..." \
           -e ocp_must_gather_since="12h" \
           -e ocp_must_gather_image="AAP" \
-          -e ocp_disconnected_mode=true \
-          -e ocp_disconnected_registry="my.mirror.registry.com/ocp/mirror" \
+          -e ocp_must_gather_disconnected_mode=true \
+          -e ocp_must_gather_disconnected_registry="my.mirror.registry.com/ocp/mirror" \
           -e case_summary="Automated creation of case for OCP diagnostics" \
           -e case_severity="3 (Normal)" \
           -e offline_token=YOUR_OFFLINE_TOKEN_HERE
@@ -249,7 +249,7 @@ Please consult the dedicated documentation file for the full list of valid optio
     > * **Case Comment Template:** The content of the automatic comment posted after the Must-Gather upload can be customized via the Jinja2 template: **[roles/ocp_must_gather/templates/support_case_comment.j2](roles/ocp_must_gather/templates/support_case_comment.j2)**.
     > * **Time Window (`--since`):** Use the `ocp_must_gather_since` variable (e.g., `"12h"`, `"3d"`, `"7d"`) to limit log collection to a specific time range, optimizing file size and relevance. Options include: `"1h"`, `"3h"`, `"6h"`, `"12h"`, `"24h"`, `"3d"`, `"7d"`, `"14d"`, `"30d"`, or blank for "Full History".
     > * **Custom Feature Collection:** The `ocp_must_gather_image` variable allows selecting specialized component collections using their acronyms. Examples include **DEFAULT** (Default Must Gather Collection), **AAP** (Ansible Automation Platform), **OSSM** (OpenShift Service Mesh), **CNV** (Container Native Virtualization), and **ODF** (OpenShift Data Foundation). **All available options are listed in:** [ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md](./roles/ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md).
-    > * **Disconnected Environment:** Use the `ocp_disconnected_mode: true` flag and provide the `ocp_disconnected_registry` address (e.g., `my.mirror.registry.com/ocp/mirror`) to point the collection to your mirror registry. (See KCS solutions on disconnected must-gather: [https://access.redhat.com/solutions/4647561](https://access.redhat.com/solutions/4647561)).
+    > * **Disconnected Environment:** Use the `ocp_must_gather_disconnected_mode: true` flag and provide the `ocp_must_gather_disconnected_registry` address (e.g., `my.mirror.registry.com/ocp/mirror`) to point the collection to your mirror registry. (See KCS solutions on disconnected must-gather: [https://access.redhat.com/solutions/4647561](https://access.redhat.com/solutions/4647561)).
     > * **Cluster Name Extraction:** The role now automatically extracts the OpenShift cluster name from the provided API server URL, ensuring accurate identification in case comments and uploads.
 * **[rh_case](roles/rh_case/README.md)**: Unified role for creating and updating Red Hat Support Cases via API. Automatically detects operation mode (create, update, or hybrid) based on provided variables.
     > * **Case Comment Template:** The content of the automatic comment posted after case creation can be customized via the Jinja2 template: **[roles/rh_case/templates/support_case_comment.j2](roles/rh_case/templates/support_case_comment.j2)**.

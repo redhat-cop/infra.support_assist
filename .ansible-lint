@@ -14,6 +14,8 @@ exclude_paths:
   - changelogs/
   - .ansible/
   - tests/
+  - ignore_*
+  - ignore_*/
 
 # parseable: true
 # quiet: true
@@ -50,14 +52,14 @@ use_default_rules: true
 # When putting ignores inside the ignore file, they are marked as ignored, but
 # still visible, making it easier to address later.
 skip_list:
-  - fqcn[action]
-  - fqcn[keyword]
-  # - meta-runtime
+#   - fqcn[action]
+#   - fqcn[keyword]
+#   # - meta-runtime
   - role-name[path]
-  - sanity[cannot-ignore] # We're only ignoring sanity rules when we have to
-  - var-naming[no-role-prefix]
-  - name[prefix]
-  - internal-error
+#   - sanity[cannot-ignore] # We're only ignoring sanity rules when we have to
+#   - name[prefix]
+#   - internal-error
+  # - var-naming[no-role-prefix]
 
 # Ansible-lint does not automatically load rules that have the 'opt-in' tag.
 # You must enable opt-in rules by listing each rule 'id' below.

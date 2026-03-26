@@ -2,24 +2,33 @@
 - name: Verify
   hosts: all
   gather_facts: false
+  vars:
+    sos_report_dest: "/tmp/sos_reports_test"
   tasks:
-    - name: Verify sosreport destination directory exists
+    - name: Verify sosreport destination directory exists # noqa: var-naming[no-role-prefix]
       ansible.builtin.stat:
         path: "{{ sos_report_dest | default('/tmp/sos_reports_test') }}"
-      register: dest_stat
+      register: __dest_stat
       delegate_to: localhost
       run_once: true
-      failed_when: false
-    - name: Check if sos package is installed
+
+    - name: Assert destination directory was created
+      ansible.builtin.assert:
+        that: __dest_stat.stat.exists | default(false) | bool
+        fail_msg: "Expected sos_report destination directory '{{ sos_report_dest | default('/tmp/sos_reports_test') }}' to exist."
+        success_msg: "Destination directory exists."
+      delegate_to: localhost
+      run_once: true
+
+    - name: Check if sos package is installed # noqa: var-naming[no-role-prefix]
       ansible.builtin.dnf:
         list: sos
-      register: sos_pkg_check
-      failed_when: false
+      register: __sos_pkg_check
       changed_when: false
     - name: Display verification results
       ansible.builtin.debug:
         msg:
-          - "SOS package installed: {{ sos_pkg_check.results | default([]) | length > 0 }}"
-          - "Destination directory exists: {{ dest_stat.stat.exists | default(false) }}"
+          - "SOS package installed: {{ __sos_pkg_check.results | default([]) | length > 0 }}"
+          - "Destination directory exists: {{ __dest_stat.stat.exists | default(false) }}"
       run_once: true
 ...

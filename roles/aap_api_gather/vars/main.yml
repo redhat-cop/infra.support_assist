@@ -9,7 +9,7 @@
 #   - max_pages: Maximum pages to fetch (default: from aap_api_gather_max_pages defaults)
 #   - query_params: Query string to append (e.g., "order_by=-created" for newest first)
 
-aap_api_endpoints:
+aap_api_gather_endpoints:
   gateway:
     # Core system endpoints
     - "/api/gateway/v1/ping/"
@@ -215,7 +215,7 @@ aap_api_endpoints:
     - "/api/eda/v1/teams/"
     - "/api/eda/v1/organizations/"
 
-aap_api_legacy_endpoints:
+aap_api_gather_legacy_endpoints:
   controller:
     - "/api/v2/ping/"
     - "/api/v2/instances/"

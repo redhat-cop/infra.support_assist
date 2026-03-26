@@ -48,8 +48,8 @@ This role runs **`oc adm must-gather`** against a target OpenShift cluster, comp
 
 | Variable | Description | Type | Required | Default |
 |----------|-------------|------|----------|---------|
-| `ocp_disconnected_mode` | Enable disconnected/air-gapped environment mode. | `bool` | No | `false` |
-| `ocp_disconnected_registry` | Mirror registry address (e.g., `myregistry.local/ocp/mirror`). Required if `ocp_disconnected_mode` is `true`. | `string` | Conditional | `""` |
+| `ocp_must_gather_disconnected_mode` | Enable disconnected/air-gapped environment mode. | `bool` | No | `false` |
+| `ocp_must_gather_disconnected_registry` | Mirror registry address (e.g., `myregistry.local/ocp/mirror`). Required if `ocp_must_gather_disconnected_mode` is `true`. | `string` | Conditional | `""` |
 
 ### Case Variables
 
@@ -150,8 +150,8 @@ The role includes built-in safety checks:
   vars:
     ocp_must_gather_server_url: "https://api.my-ocp-cluster.com:6443"
     ocp_must_gather_token: "{{ vault_ocp_token }}"
-    ocp_disconnected_mode: true
-    ocp_disconnected_registry: "registry.local/must-gather-mirror"
+    ocp_must_gather_disconnected_mode: true
+    ocp_must_gather_disconnected_registry: "registry.local/must-gather-mirror"
     ocp_must_gather_validate_ssl: false
 
   tasks:
