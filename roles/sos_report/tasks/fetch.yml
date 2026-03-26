@@ -16,6 +16,7 @@
         name: "{{ __dest_path }}"
         state: directory
         mode: "0755"
+      delegate_to: localhost
 
     - name: Fetch | Fetch the SOS Report to the control node
       loop: "{{ found_sos_report.files }}"

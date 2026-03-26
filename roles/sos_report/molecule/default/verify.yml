@@ -7,6 +7,8 @@
       ansible.builtin.stat:
         path: "{{ sos_report_dest | default('/tmp/sos_reports_test') }}"
       register: dest_stat
+      delegate_to: localhost
+      run_once: true
       failed_when: false
     - name: Check if sos package is installed
       ansible.builtin.dnf:
@@ -19,4 +21,5 @@
         msg:
           - "SOS package installed: {{ sos_pkg_check.results | default([]) | length > 0 }}"
           - "Destination directory exists: {{ dest_stat.stat.exists | default(false) }}"
+      run_once: true
 ...

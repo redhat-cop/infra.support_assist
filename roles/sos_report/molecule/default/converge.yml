@@ -1,8 +1,11 @@
 ---
 - name: Converge
   hosts: all
-  roles:
-    - role: ../..
+  tasks:
+    # Use role name so Molecule's roles_path (roles/) resolves; relative `../..` is unreliable here.
+    - name: Converge sos_report role
+      ansible.builtin.import_role:
+        name: sos_report
       vars:
         sos_report_dest: "/tmp/sos_reports_test"
         sos_report_cleanup: false

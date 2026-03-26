@@ -1,4 +1,12 @@
 ---
+- name: Ensure SOS report destination root exists on control node
+  ansible.builtin.file:
+    path: "{{ sos_report_dest }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  run_once: true
+
 - name: Install
   ansible.builtin.include_tasks: install.yml
 
