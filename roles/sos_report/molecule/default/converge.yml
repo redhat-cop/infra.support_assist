@@ -2,7 +2,7 @@
 - name: Converge
   hosts: all
   tasks:
-    # Use role name so Molecule's roles_path (roles/) resolves; relative `../..` is unreliable here.
+    # Role name must match Molecule roles_path (roles/); relative `../..` does not resolve in CI.
     - name: Converge sos_report role
       ansible.builtin.import_role:
         name: sos_report

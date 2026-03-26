@@ -6,11 +6,19 @@
     - name: Verify sosreport destination directory exists # noqa: var-naming[no-role-prefix]
       ansible.builtin.stat:
         path: "{{ sos_report_dest | default('/tmp/sos_reports_test') }}"
-      register: dest_stat
+      register: __dest_stat
       delegate_to: localhost
       run_once: true
-      failed_when: false
-    - name: Check if sos package is installed
+
+    - name: Assert destination directory was created
+      ansible.builtin.assert:
+        that: __dest_stat.stat.exists | default(false) | bool
+        fail_msg: "Expected sos_report destination directory '{{ sos_report_dest | default('/tmp/sos_reports_test') }}' to exist."
+        success_msg: "Destination directory exists."
+      delegate_to: localhost
+      run_once: true
+
+    - name: Check if sos package is installed # noqa: var-naming[no-role-prefix]
       ansible.builtin.dnf:
         list: sos
       register: __sos_pkg_check
