@@ -19,4 +19,13 @@
     - name: Update package cache
       ansible.builtin.dnf:
         update_cache: true
+
+    # Matches converge sos_report_dest; verify asserts this path on the controller exists.
+    - name: Ensure controller destination path for sos_report tests
+      ansible.builtin.file:
+        path: /tmp/sos_reports_test
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      run_once: true
 ...

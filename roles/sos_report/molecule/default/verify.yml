@@ -2,6 +2,8 @@
 - name: Verify
   hosts: all
   gather_facts: false
+  vars:
+    sos_report_dest: "/tmp/sos_reports_test"
   tasks:
     - name: Verify sosreport destination directory exists # noqa: var-naming[no-role-prefix]
       ansible.builtin.stat:
@@ -26,7 +28,7 @@
     - name: Display verification results
       ansible.builtin.debug:
         msg:
-          - "SOS package installed: {{ sos_pkg_check.results | default([]) | length > 0 }}"
-          - "Destination directory exists: {{ dest_stat.stat.exists | default(false) }}"
+          - "SOS package installed: {{ __sos_pkg_check.results | default([]) | length > 0 }}"
+          - "Destination directory exists: {{ __dest_stat.stat.exists | default(false) }}"
       run_once: true
 ...
