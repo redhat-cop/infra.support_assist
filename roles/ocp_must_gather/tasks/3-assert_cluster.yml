@@ -12,8 +12,10 @@
 
 - name: Assert Cluster | Set fact for authenticated SA name # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
-    sa_name: "{{ oc_whoami.stdout | trim | split(':') | last }}"
-  when: oc_whoami.rc == 0
+    sa_name: "{{ __oc_whoami.stdout | trim | split(':') | last }}"
+  when:
+    - __oc_whoami is defined
+    - __oc_whoami.rc == 0
 
 - name: Assert Cluster | Check if authenticated account has cluster-admin privileges # noqa: var-naming[no-role-prefix]
   ansible.builtin.shell: |
@@ -28,15 +30,18 @@
 - name: Assert Cluster | Assert that authenticated account has cluster-admin privileges
   ansible.builtin.assert:
     that:
-      # Check if the stripped stdout equals the SA name (meaning the SA was found with the role) or the system:admin role
-      - (__cluster_admin_check.stdout | trim == sa_name) or (__cluster_admin_check.stdout | trim == 'system:admin')
+      # Logic: Matches if 'admin' is found in bindings OR if the raw output was 'kube:admin'/'system:admin'
+      - (__cluster_admin_check.stdout | trim == sa_name) or
+        (__cluster_admin_check.stdout | trim == 'system:admin') or
+        (__oc_whoami.stdout | trim == 'kube:admin')
     fail_msg: >-
       FAILED! Oh, No! => The authenticated user/service account '{{ sa_name }}' does NOT have 'cluster-admin' or 'system:admin' privileges.
       This permission is required to execute 'oc adm must-gather'.
       Please ensure the correct token or rolebinding is configured when you get a chance and try again.
       For more information, check the Resolution Link (KCS) - https://access.redhat.com/solutions/6375111
     success_msg: >-
-      PASSED! Oh, Yes! => User/Service account '{{ sa_name }}' has 'cluster-admin' or 'system:admin' privileges, so we are good to go. Proceeding with must-gather execution.
+      PASSED! Oh, Yes! => User/Service account '{{ sa_name }}' has 'cluster-admin'
+      or 'system:admin' privileges, so we are good to go. Proceeding with must-gather execution.
 
 - name: Assert Cluster | Check the Cluster ID # noqa: var-naming[no-role-prefix]
   ansible.builtin.shell: |
@@ -126,8 +131,9 @@
       - component_key is defined
       - (component_key == 'aap' and __component_discovery_result.rc is defined and __component_discovery_result.rc == 0) or
         (component_key != 'aap' and component_version_result.rc is defined and component_version_result.rc == 0)
-    fail_msg:
-      "FAILED! Oh, No! => The discovery/version command for component {{ component_key | upper }} failed. Please check if the Operator is installed and the authentication is correct."
+    fail_msg: >-
+      FAILED! Oh, No! => The discovery/version command for component {{ component_key | upper }} failed.
+      Please check if the Operator is installed and the authentication is correct.
     success_msg:
       "PASSED! Oh, Yes! => Discovery/version command for component '{{ component_key | upper }}' executed successfully. Proceeding to extract version(s)..."
   when: selected_component_config is defined
@@ -379,7 +385,7 @@
 - name: Assert Cluster | Set Available Space Fact (in Bytes) # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
     must_gather_space_available: "{{ (__df_result.stdout | int) * 1024 }}"
-  when: df_result.rc == 0
+  when: __df_result.rc == 0
   run_once: true
 
 - name: Assert Cluster | Assert Minimum Free Space (5 GB Floor)
