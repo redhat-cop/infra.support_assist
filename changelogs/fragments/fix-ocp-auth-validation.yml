@@ -1,0 +1,5 @@
+---
+bugfixes:
+  - ocp_must_gather - Fixed undefined variable `oc_whoami` and enhanced `cluster-admin` validation logic to support `kube:admin` users.
+  - ocp_must_gather - Fixed disk space validation variable mismatch (`__df_result`).
+  - ocp_must_gather - Added more robust error handling and messaging for authentication failures in `2-login.yml`.
