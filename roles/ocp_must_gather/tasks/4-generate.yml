@@ -60,7 +60,7 @@
     {% endif %}
     {{ ocp_must_gather_options | default('') }}
   register: __must_gather_result
-  changed_when: must_gather_result.rc == 0
+  changed_when: __must_gather_result.rc == 0
   async: 1800
   poll: 10
 
