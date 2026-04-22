@@ -25,7 +25,27 @@ jobs:
       change_level: ${{ steps.initial.outputs.change_level }}
       change_present: ${{ steps.initial.outputs.change_present }}
     steps:
-      - name: Emit fixed 1.0.0 (no prior tag/release required)
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Fail if 1.0.0 already exists (use release_auto.yml instead)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="1.0.0"
+          if gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "::error::GitHub release ${TAG} already exists. This workflow is for the first release only; use release_auto.yml."
+            exit 1
+          fi
+          if git tag -l "$TAG" | grep -qx "$TAG"; then
+            echo "::error::Git tag ${TAG} already exists. This workflow is for the first release only; use release_auto.yml."
+            exit 1
+          fi
+          echo "::notice::No existing ${TAG} release or tag; proceeding with initial release."
+
+      - name: Emit fixed 1.0.0 (no prior semver tag/release required)
         id: initial
         shell: bash
         run: |
