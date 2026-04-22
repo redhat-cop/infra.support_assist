@@ -278,7 +278,7 @@ jobs:
     with:
       quay_username: redhat_cop
     secrets:
-      QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+      quay_token: ${{ secrets.QUAY_TOKEN }}
 
   send_message:
     name: Send Matrix Notification
