@@ -1,4 +1,6 @@
 ---
 bugfixes:
-  - Harden GitHub release steps for immutable releases (skip redundant ``gh release edit``, create draft releases with ``--target`` the release branch, verify the version tag exists before upload, skip upload if the tarball asset is already attached).
+  - Harden GitHub release steps for immutable releases (skip redundant ``gh release edit``, create draft releases with ``--target`` the release branch, recreate missing version tags at the release-branch HEAD before upload when needed, skip upload if the tarball asset is already attached).
+minor_changes:
+  - Run Galaxy and Automation Hub publish jobs only after the GitHub release tarball upload succeeds, so a failed upload does not publish a version you must retract.
 ...

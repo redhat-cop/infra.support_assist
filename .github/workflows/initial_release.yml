@@ -157,9 +157,9 @@ jobs:
   release_galaxy:
     name: Publish to Galaxy
     needs:
-      - create_github_release
+      - upload_tarball
       - calculate_version
-    if: ${{ !cancelled() && needs.create_github_release.result == 'success' }}
+    if: ${{ !cancelled() && needs.upload_tarball.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -180,9 +180,9 @@ jobs:
   release_ah:
     name: Publish to Automation Hub
     needs:
-      - create_github_release
+      - upload_tarball
       - calculate_version
-    if: ${{ !cancelled() && needs.create_github_release.result == 'success' }}
+    if: ${{ !cancelled() && needs.upload_tarball.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -242,11 +242,14 @@ jobs:
         run: |
           set -euo pipefail
           REPO="${{ github.repository }}"
-          # gh release upload requires the tag ref to exist; orphan releases (tag deleted) return HTTP 422.
+          # gh release upload requires refs/tags/<TAG>. Re-running only this job after deleting the tag is common; recreate tag at this checkout (release branch tip).
           if ! gh api "repos/${REPO}/git/refs/tags/${TAG}" --silent 2>/dev/null; then
-            echo "::error::Git tag '${TAG}' is missing on ${REPO} but a Release may still exist (e.g. tag deleted in UI only)."
-            echo "::error::Fix: GitHub → Releases → delete the '${TAG}' release (and recreate tag from branch release/${TAG} if needed), then re-run."
-            exit 1
+            echo "::notice::Tag ${TAG} missing on ${REPO}; creating refs/tags/${TAG} at HEAD ($(git rev-parse --short HEAD))."
+            SHA=$(git rev-parse HEAD)
+            if ! gh api --method POST "repos/${REPO}/git/refs" -f "ref=refs/tags/${TAG}" -f "sha=${SHA}"; then
+              echo "::error::Could not create tag ${TAG} (immutable / rules may block reusing this version). Bump the collection version or ask an org admin."
+              exit 1
+            fi
           fi
           for tarball in ${{ env.COLLECTION_NAMESPACE }}-${{ env.COLLECTION_NAME }}*.tar.gz; do
             ASSET_NAME=$(basename "$tarball")
