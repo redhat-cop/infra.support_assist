@@ -1,7 +1,7 @@
 ---
-# One-time first release: version 1.0.0 without prior semver tags or GitHub releases.
+# One-time first release: version 1.0.1 without prior semver tags or GitHub releases.
 # After this completes successfully, use release_auto.yml for ongoing releases.
-name: Release - Initial (1.0.0)
+name: Release - Initial (1.0.1)
 
 on:
   workflow_dispatch:
@@ -29,12 +29,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fail if 1.0.0 already exists (use release_auto.yml instead)
+      - name: Fail if 1.0.1 already exists (use release_auto.yml instead)
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="1.0.0"
+          TAG="1.0.1"
           if gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1; then
             echo "::error::GitHub release ${TAG} already exists. This workflow is for the first release only; use release_auto.yml."
             exit 1
@@ -45,14 +45,14 @@ jobs:
           fi
           echo "::notice::No existing ${TAG} release or tag; proceeding with initial release."
 
-      - name: Emit fixed 1.0.0 (no prior semver tag/release required)
+      - name: Emit fixed 1.0.1 (no prior semver tag/release required)
         id: initial
         shell: bash
         run: |
-          echo "collection_version=1.0.0" >> "$GITHUB_OUTPUT"
+          echo "collection_version=1.0.1" >> "$GITHUB_OUTPUT"
           echo "change_level=major" >> "$GITHUB_OUTPUT"
           echo "change_present=true" >> "$GITHUB_OUTPUT"
-          echo "::notice::Initial release version fixed at 1.0.0"
+          echo "::notice::Initial release version fixed at 1.0.1"
 
   major_release_gate:
     name: Major Release Approval
