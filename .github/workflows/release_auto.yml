@@ -326,15 +326,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_WORKFLOW_KEY }}
 
-  deploy_ee:
-    name: Build Execution Environment
-    needs: merge_release
-    if: ${{ !cancelled() && needs.merge_release.result == 'success' }}
-    uses: redhat-cop/ansible_collections_tooling/.github/workflows/build_ee.yml@634342818b5d5fa2fa92b2c68c78a2bbe8aa4f10 # main
-    with:
-      quay_username: redhat_cop
-    secrets:
-      quay_token: ${{ secrets.QUAY_TOKEN }}
+  # deploy_ee:
+  #   name: Build Execution Environment
+  #   needs: merge_release
+  #   if: ${{ !cancelled() && needs.merge_release.result == 'success' }}
+  #   uses: redhat-cop/ansible_collections_tooling/.github/workflows/build_ee.yml@634342818b5d5fa2fa92b2c68c78a2bbe8aa4f10 # main
+  #   with:
+  #     quay_username: redhat_cop
+  #   secrets:
+  #     quay_token: ${{ secrets.QUAY_TOKEN }}
 
   send_message:
     name: Send Matrix Notification
