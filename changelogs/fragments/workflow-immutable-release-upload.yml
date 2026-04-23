@@ -1,0 +1,4 @@
+---
+bugfixes:
+  - Adjust release tarball upload to use ``gh release upload --clobber`` and to skip ``gh release edit`` when the release is no longer a draft, for compatibility with immutable GitHub Releases.
+...
