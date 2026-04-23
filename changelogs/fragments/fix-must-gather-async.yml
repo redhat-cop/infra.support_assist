@@ -1,4 +1,0 @@
----
-bugfixes:
-  - ocp_must_gather - Fixed undefined variable `must_gather_result` in the async generation task by aligning it with `__must_gather_result`.
-  - ocp_must_gather - Resolved authentication validation logic to correctly support `kube:admin` users.
