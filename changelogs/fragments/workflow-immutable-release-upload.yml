@@ -1,4 +1,4 @@
 ---
 bugfixes:
-  - Adjust release tarball upload to use ``gh release upload --clobber`` and to skip ``gh release edit`` when the release is no longer a draft, for compatibility with immutable GitHub Releases.
+  - Harden GitHub release steps for immutable releases (skip redundant ``gh release edit``, create draft releases with ``--target`` the release branch, verify the version tag exists before upload, skip upload if the tarball asset is already attached).
 ...

@@ -138,12 +138,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.calculate_version.outputs.collection_version }}
+          REL_BRANCH: release/${{ needs.calculate_version.outputs.collection_version }}
         run: |
-          if gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1; then
-            echo "::notice::Release $TAG already exists, updating it."
-            gh release edit "$TAG" --repo "${{ github.repository }}" --draft=false --latest
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+          if gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
+            IS_DRAFT=$(gh release view "$TAG" --repo "$REPO" --json isDraft -q '.isDraft' 2>/dev/null || echo false)
+            if [ "$IS_DRAFT" = "true" ]; then
+              echo "::notice::Release $TAG exists as draft; publishing."
+              gh release edit "$TAG" --repo "$REPO" --draft=false --latest
+            else
+              echo "::notice::Release $TAG already published; not editing (avoids immutable-release 422)."
+            fi
           else
-            gh release create "$TAG" --repo "${{ github.repository }}" --generate-notes --draft
+            gh release create "$TAG" --repo "$REPO" --generate-notes --draft --target "$REL_BRANCH"
           fi
 
   release_galaxy:
@@ -234,15 +242,26 @@ jobs:
         run: |
           set -euo pipefail
           REPO="${{ github.repository }}"
-          # Immutable GitHub Releases forbid delete-asset / some edits; use --clobber instead of delete + upload.
+          # gh release upload requires the tag ref to exist; orphan releases (tag deleted) return HTTP 422.
+          if ! gh api "repos/${REPO}/git/refs/tags/${TAG}" --silent 2>/dev/null; then
+            echo "::error::Git tag '${TAG}' is missing on ${REPO} but a Release may still exist (e.g. tag deleted in UI only)."
+            echo "::error::Fix: GitHub → Releases → delete the '${TAG}' release (and recreate tag from branch release/${TAG} if needed), then re-run."
+            exit 1
+          fi
           for tarball in ${{ env.COLLECTION_NAMESPACE }}-${{ env.COLLECTION_NAME }}*.tar.gz; do
-            gh release upload "$TAG" "$tarball" --repo "$REPO" --clobber
+            ASSET_NAME=$(basename "$tarball")
+            EXISTING=$(gh release view "$TAG" --repo "$REPO" --json assets --jq '.assets[].name' 2>/dev/null || true)
+            if printf '%s\n' "$EXISTING" | grep -qxF "$ASSET_NAME"; then
+              echo "::notice::Asset ${ASSET_NAME} already on release ${TAG}; skipping upload."
+              continue
+            fi
+            gh release upload "$TAG" "$tarball" --repo "$REPO"
           done
           IS_DRAFT=$(gh release view "$TAG" --repo "$REPO" --json isDraft -q '.isDraft' 2>/dev/null || true)
           if [ "${IS_DRAFT:-false}" = "true" ]; then
             gh release edit "$TAG" --repo "$REPO" --draft=false --latest
           else
-            echo "::notice::Release $TAG is not a draft (already published / immutable); skipping gh release edit."
+            echo "::notice::Release ${TAG} is not a draft; skipping gh release edit."
           fi
 
   merge_release:
