@@ -1,8 +1,0 @@
----
-bugfixes:
-  - Harden GitHub release steps for immutable releases (skip redundant ``gh release edit``, create draft releases with ``--target`` the release branch, recreate missing version tags at the release-branch HEAD before upload when needed, skip upload if the tarball asset is already attached).
-  - Upload job checks tags with ``git ls-remote`` using the same ``GH_WORKFLOW_KEY`` checkout as ``gh`` (default ``GITHUB_TOKEN`` could miss refs the PAT sees). If creating the ref fails, verify ``refs/tags/<version>`` via ``GET .../git/matching-refs/`` and continue when it already exists (e.g. tag created with the draft release).
-minor_changes:
-  - Run Galaxy and Automation Hub publish jobs only after the GitHub release tarball upload succeeds, so a failed upload does not publish a version you must retract.
-  - When automated release finds no prior semver tag or GitHub release, fail with an explicit hint to run the initial 1.0.0 workflow first.
-...
