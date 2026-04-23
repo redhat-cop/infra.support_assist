@@ -242,8 +242,9 @@ jobs:
         run: |
           set -euo pipefail
           REPO="${{ github.repository }}"
-          # gh release upload requires refs/tags/<TAG>. Re-running only this job after deleting the tag is common; recreate tag at this checkout (release branch tip).
-          if ! gh api "repos/${REPO}/git/ref/tags/${TAG}" --silent 2>/dev/null; then
+          # gh release upload requires refs/tags/<TAG>. GitHub GET /git/ref/{ref} needs ref URL-encoded (e.g. tags%2F1.0.0), not extra path segments.
+          TAG_REF_ENC=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('tags/' + sys.argv[1], safe=''))" "$TAG")
+          if ! gh api "repos/${REPO}/git/ref/${TAG_REF_ENC}" --silent 2>/dev/null; then
             echo "::notice::Tag ${TAG} missing on ${REPO}; creating refs/tags/${TAG} at HEAD ($(git rev-parse --short HEAD))."
             SHA=$(git rev-parse HEAD)
             if ! gh api --method POST "repos/${REPO}/git/refs" -f "ref=refs/tags/${TAG}" -f "sha=${SHA}"; then
