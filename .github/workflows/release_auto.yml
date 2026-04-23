@@ -288,16 +288,18 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_WORKFLOW_KEY }}
           TAG: ${{ needs.calculate_version.outputs.collection_version }}
         run: |
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+          # Immutable GitHub Releases forbid delete-asset / some edits; use --clobber instead of delete + upload.
           for tarball in ${{ env.COLLECTION_NAMESPACE }}-${{ env.COLLECTION_NAME }}*.tar.gz; do
-            ASSET_NAME=$(basename "$tarball")
-            EXISTING=$(gh release view "$TAG" --repo "${{ github.repository }}" --json assets --jq ".assets[].name" 2>/dev/null || true)
-            if echo "$EXISTING" | grep -qF "$ASSET_NAME"; then
-              echo "::notice::Asset $ASSET_NAME already exists on release $TAG, deleting before re-upload."
-              gh release delete-asset "$TAG" "$ASSET_NAME" --repo "${{ github.repository }}" --yes
-            fi
-            gh release upload "$TAG" "$tarball" --repo "${{ github.repository }}"
+            gh release upload "$TAG" "$tarball" --repo "$REPO" --clobber
           done
-          gh release edit "$TAG" --repo "${{ github.repository }}" --draft=false --latest
+          IS_DRAFT=$(gh release view "$TAG" --repo "$REPO" --json isDraft -q '.isDraft' 2>/dev/null || true)
+          if [ "${IS_DRAFT:-false}" = "true" ]; then
+            gh release edit "$TAG" --repo "$REPO" --draft=false --latest
+          else
+            echo "::notice::Release $TAG is not a draft (already published / immutable); skipping gh release edit."
+          fi
 
   merge_release:
     name: Merge Release Branch
