@@ -242,10 +242,13 @@ jobs:
         run: |
           set -euo pipefail
           REPO="${{ github.repository }}"
-          # gh release upload requires refs/tags/<TAG>. GitHub GET /git/ref/{ref} needs ref URL-encoded (e.g. tags%2F1.0.0), not extra path segments.
-          TAG_REF_ENC=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('tags/' + sys.argv[1], safe=''))" "$TAG")
-          if ! gh api "repos/${REPO}/git/ref/${TAG_REF_ENC}" --silent 2>/dev/null; then
-            echo "::notice::Tag ${TAG} missing on ${REPO}; creating refs/tags/${TAG} at HEAD ($(git rev-parse --short HEAD))."
+          # Detect tag via git (same view as push), not REST /git/ref — PAT/org quirks often 404 there while POST create returns 422 "already exists".
+          if ! tag_line=$(git ls-remote -q origin "refs/tags/${TAG}"); then
+            echo "::error::git ls-remote failed for refs/tags/${TAG}; check repository access."
+            exit 1
+          fi
+          if [ -z "${tag_line}" ]; then
+            echo "::notice::Tag ${TAG} missing on origin; creating refs/tags/${TAG} at HEAD ($(git rev-parse --short HEAD))."
             SHA=$(git rev-parse HEAD)
             if ! gh api --method POST "repos/${REPO}/git/refs" -f "ref=refs/tags/${TAG}" -f "sha=${SHA}"; then
               echo "::error::Could not create tag ${TAG} (immutable / rules may block reusing this version). Bump the collection version or ask an org admin."

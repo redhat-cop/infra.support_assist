@@ -1,7 +1,7 @@
 ---
 bugfixes:
   - Harden GitHub release steps for immutable releases (skip redundant ``gh release edit``, create draft releases with ``--target`` the release branch, recreate missing version tags at the release-branch HEAD before upload when needed, skip upload if the tarball asset is already attached).
-  - Detect an existing tag via ``GET .../git/ref/<url-encoded-ref>`` (e.g. ``tags%2F1.0.0``); unencoded multi-segment paths and ``.../git/refs/tags/...`` 404ed, so the workflow tried to recreate the tag and failed with HTTP 422.
+  - Detect an existing version tag with ``git ls-remote origin refs/tags/<version>`` instead of the GitHub ``/git/ref`` REST check, so org/PAT quirks do not 404 when the tag already exists and trigger a duplicate ``POST /git/refs`` HTTP 422.
 minor_changes:
   - Run Galaxy and Automation Hub publish jobs only after the GitHub release tarball upload succeeds, so a failed upload does not publish a version you must retract.
 ...
