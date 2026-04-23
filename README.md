@@ -37,13 +37,65 @@ This collection requires the following packages to be installed:
 
 ## Installing this collection
 
-You can install the `infra.support_assist` collection with the Ansible Galaxy CLI:
+Published builds (for example **1.0.1**) should be installed from **Ansible Galaxy** or **Red Hat Ansible Automation Hub**. Use **Git** only when you want the latest development commits from this repository (not necessarily released or supported the same way).
+
+### Ansible Galaxy (recommended)
+
+**Web UI:** open the collection on Galaxy, confirm the version, and use the install snippet shown there: [infra.support_assist on Ansible Galaxy](https://galaxy.ansible.com/ui/repo/published/infra/support_assist/).
+
+**CLI** (install a specific published version):
 
 ~~~shell
-ansible-galaxy collection install git+https://github.com/redhat-cop/infra.support_assist.git
+ansible-galaxy collection install infra.support_assist:1.0.1
 ~~~
 
-You can also include it in a `requirements.yml` file and install it with `ansible-galaxy collection install -r requirements.yml`, using the format:
+**CLI** (install the newest version Galaxy offers for this namespace/name):
+
+~~~shell
+ansible-galaxy collection install infra.support_assist
+~~~
+
+**`requirements.yml`** (Galaxy is the default source when you do not set `source` / `type: git`):
+
+~~~yaml
+---
+collections:
+  - name: infra.support_assist
+    version: ">=1.0.1"
+  # other collections as needed
+~~~
+
+Then run:
+
+~~~shell
+ansible-galaxy collection install -r requirements.yml
+~~~
+
+### Red Hat Ansible Automation Hub (console)
+
+If your organization consumes collections from **Red Hat** (certified / validated hub content):
+
+1. Sign in to the [Red Hat Hybrid Cloud Console](https://console.redhat.com/) (or your organization’s AAP / hub URL).
+2. Open **Ansible Automation Platform** (or **Automation Hub**, depending on your layout).
+3. Go to **Collections** (or **Content** → **Collections**), search for **`infra.support_assist`**, open the collection, and add or sync it per your hub workflow (remote, repository, and RBAC differ by org).
+
+On the execution or control host, use **`ansible-galaxy collection install`** against the hub once [the hub is configured as a Galaxy server](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/managing_content_in_automation_hub/index#assembly-configuring-the-cli_automation-hub) (for example `ansible.cfg` / `ANSIBLE_GALAXY_SERVER_*` and a token). Example with an explicit version:
+
+~~~shell
+ansible-galaxy collection install infra.support_assist:1.0.1
+~~~
+
+(Which server is used depends on your `ansible.cfg` / environment; many sites set the hub as the default or only source for Red Hat–curated content.)
+
+### Bleeding edge from Git (`devel`)
+
+To install whatever is currently at the tip of the **`devel`** branch (unreleased changes; use for testing or early fixes only):
+
+~~~shell
+ansible-galaxy collection install git+https://github.com/redhat-cop/infra.support_assist.git,devel
+~~~
+
+**`requirements.yml`** (Git source):
 
 ~~~yaml
 ---
@@ -51,8 +103,8 @@ collections:
   - name: infra.support_assist
     source: https://github.com/redhat-cop/infra.support_assist.git
     type: git
-    # If you need a specific version of the collection, you can specify like this:
-    # version: ...
+    version: devel
+  # other collections as needed
 ~~~
 
 ---

@@ -1,0 +1,4 @@
+---
+minor_changes:
+  - README installation section documents Ansible Galaxy and Automation Hub (UI and CLI) for published releases, with Git on ``devel`` as an optional source for latest development commits.
+...
