@@ -1,4 +1,0 @@
----
-minor_changes:
-  - Declared ``ansible.controller`` and ``ansible.platform`` in ``galaxy.yml`` dependencies for ``aap_api_token`` token modules.
-...

@@ -1,5 +1,0 @@
----
-bugfixes:
-  - Set ``galaxy.yml`` ``documentation`` to the collection README (there is no top-level ``docs/`` directory on GitHub).
-  - Corrected ``aap_api_token`` role metadata description text.
-...

@@ -1,0 +1,43 @@
+objects:
+  role:
+    aap_api_gather:
+      description: Auto-generated specs for aap_api_gather role - main entry point
+      name: aap_api_gather
+      version_added: null
+    aap_api_token:
+      description: Auto-generated specs for aap_api_token role - main entry point
+      name: aap_api_token
+      version_added: null
+    ocp_must_gather:
+      description: Auto-generated specs for ocp_must_gather role - main entry point
+      name: ocp_must_gather
+      version_added: null
+    rh_case:
+      description: Auto-generated specs for rh_case role - unified case management
+      name: rh_case
+      version_added: null
+    rh_token_refresh:
+      description: Auto-generated specs for rh_token_refresh role - main entry point
+      name: rh_token_refresh
+      version_added: null
+    sos_report:
+      description: Auto-generated specs for sos_report role - main entry point
+      name: sos_report
+      version_added: null
+plugins:
+  become: {}
+  cache: {}
+  callback: {}
+  cliconf: {}
+  connection: {}
+  filter: {}
+  httpapi: {}
+  inventory: {}
+  lookup: {}
+  module: {}
+  netconf: {}
+  shell: {}
+  strategy: {}
+  test: {}
+  vars: {}
+version: 1.0.1

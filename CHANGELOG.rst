@@ -1,5 +1,50 @@
-==================================
-infra.support_assist Release Notes
-==================================
+===================================
+infra.support\_assist Release Notes
+===================================
 
 .. contents:: Topics
+
+v1.0.1
+======
+
+Major Changes
+-------------
+
+- Added the `aap_api_gather` role to gather diagnostic output from AAP component APIs (Controller, Hub, Gateway, EDA).
+- Added the `ocp_must_gather` role to log into an OpenShift cluster, run `oc adm must-gather`, and archive the result.
+- Added the `rh_case` role (unified) to create cases, add comments, and/or upload files to the Red Hat Support Case Portal.
+- Added the `rh_token_refresh` role to handle Red Hat token refresh logic.
+- Added the `sos_report` role to gather SOS reports from managed hosts.
+- Created the `sos_report.yml` playbook to gather and upload SOS reports to Red Hat Support Case Portal.
+- Implement the OCP Support Autopilot Pipeline for end-to-end automated diagnostic submission, handling token refresh, case creation, collection, and upload.
+- Introduce unified role `rh_case` for programmatic Red Hat Support Case creation and updates, combining functionality from `rh_case_create` and `rh_case_update` roles.
+
+Minor Changes
+-------------
+
+- 'ocp_must_gather': Implemented **Acronym-based Component Selection** (e.g., AAP, ODF) for Must-Gather image lookup, simplifying user input.
+- 'ocp_must_gather': Implemented **Disconnected/Air-Gapped** environment support via `ocp_must_gather_disconnected_mode` and `ocp_must_gather_disconnected_registry`.
+- 'ocp_must_gather': Implemented **Disk Space** and **Cluster-Admin Privilege** safety assertions for pre-flight validation.
+- 'rh_case': Added logic for **Generalized Case Creation** payload (conditionally includes OpenShift fields).
+- 'rh_case': Implemented **Structured JSON Logging (`to_nice_json`)** in handlers for clean AAP output.
+- 'rh_case': Introduced custom Jinja templates for initial case comment and final summary.
+- 'rh_case': Unified case management with automatic mode detection (create, update, or hybrid).
+- 'rh_token_refresh': Refactored for highly reliable token retrieval using semantic sorting.
+- Added `# noqa: var-naming[no-role-prefix]` to some tasks to enforce variable naming conventions.
+- Declared ``ansible.controller`` and ``ansible.platform`` in ``galaxy.yml`` dependencies for ``aap_api_token`` token modules.
+- Renamed role variables to include the role name as a prefix to avoid precedence conflicts.
+- Standardize internal variable naming to use two underscores instead of one.
+
+Bugfixes
+--------
+
+- Corrected ``aap_api_token`` role metadata description text.
+- Corrected variable precedence issues that led to 'undefined variable' errors in handlers when mixing role defaults and dynamic facts.
+- Resolved ambiguous role resolution by enforcing the FQCN where necessary (or clarifying search path).
+- Set ``galaxy.yml`` ``documentation`` to the collection README (there is no top-level ``docs/`` directory on GitHub).
+- ocp_must_gather - Added more robust error handling and messaging for authentication failures in `2-login.yml`.
+- ocp_must_gather - Fixed disk space validation variable mismatch (`__df_result`).
+- ocp_must_gather - Fixed undefined variable `must_gather_result` in async generation task by aligning with `__must_gather_result`.
+- ocp_must_gather - Fixed undefined variable `must_gather_result` in the async generation task by aligning it with `__must_gather_result`.
+- ocp_must_gather - Fixed undefined variable `oc_whoami` and enhanced `cluster-admin` validation logic to support `kube:admin` users.
+- ocp_must_gather - Resolved authentication validation logic to correctly support `kube:admin` users.

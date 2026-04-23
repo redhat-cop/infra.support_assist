@@ -1,4 +1,0 @@
----
-minor_changes:
-  - "Added `# noqa: var-naming[no-role-prefix]` to some tasks to enforce variable naming conventions."
-  - "Renamed role variables to include the role name as a prefix to avoid precedence conflicts."
