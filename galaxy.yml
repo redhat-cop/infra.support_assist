@@ -11,25 +11,51 @@ repository: https://github.com/redhat-cop/infra.support_assist
 issues: https://github.com/redhat-cop/infra.support_assist/issues
 documentation: https://github.com/redhat-cop/infra.support_assist/docs
 build_ignore:
+  - .ansible
+  - .ansible-lint
+  - .ansible-lint-ignore
+  - .black.cfg
+  - .code-workspace
+  - .coverage
+  - .cursor
+  - .devcontainer
+  - .flake8
   - .github
-  - "__pycache__"
-  - ".coverage"
-  - ".pytest_cache"
-  - ".rh_offline_token*"
+  - .hypothesis
+  - .isort.cfg
+  - .markdownlint.yml
+  - .mlc_config.json
+  - .mypy_cache
+  - .pre-commit-config.yaml
+  - .prettierignore
+  - .pytest_cache
+  - .rh_offline_token*
+  - .ruff_cache
+  - .vscode
+  - .yamllint.yml
+  - "*.code-workspace"
   - "*.egg-info"
   - "*.log"
   - "*.pyc"
+  - "*.swp"
   - "*.tar.gz"
-  - "ignore_*"
-  - "inventory-*"
+  - "*~"
   - changelogs/
   - collections/
   - devfile.yaml
   - galaxy.yml.j2
+  - htmlcov*
+  - ignore_*
+  - inventory-*
+  - playbooks/ignore_*
   - pyproject.toml
   - release.yml
   - requirements.txt
   - roles/ignore_*
+  - roles/*/.gitattributes
+  - roles/*/.gitignore
+  - roles/*/.yamllint.yml
+  - roles/*/molecule
   - test-requirements.txt
   - test-workflow.txt
   - tests/*
