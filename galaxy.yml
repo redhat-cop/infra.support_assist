@@ -73,5 +73,7 @@ tags:
   - support
   - tools
 dependencies:
+  ansible.controller: ">=4.6.0"
+  ansible.platform: ">=2.5.0"
   community.general: ">=11.4.0"
 ...

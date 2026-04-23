@@ -18,8 +18,10 @@ This collection currently includes the following playbooks and roles:
 ## Requirements
 
 ### Ansible Collections
-This collection requires the following Ansible Collections to be installed:
-* `community.general` (for the `archive` module used in the `ocp_must_gather` role)
+This collection requires the following Ansible Collections to be installed (declared in `galaxy.yml` so `ansible-galaxy` can resolve them):
+* `ansible.controller` (for the `token` module used by the `aap_api_token` role against Automation Controller)
+* `ansible.platform` (for the `token` module used by the `aap_api_token` role against the AAP Gateway)
+* `community.general` (for the `archive` module used by the `ocp_must_gather` and `aap_api_gather` roles)
 
 ### System Dependencies
 This collection requires the following packages to be installed:
