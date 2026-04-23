@@ -301,16 +301,16 @@ jobs:
             create the case, and then upload the diagnostics directly to the Support Case Portal.
             Visit ${{ env.COLLECTION_REPO }} For more information and updates.
 
-      - name: Send message to team channel
-        uses: fadenb/matrix-chat-message@89baab2b9ea06ffdd5f5b1ca80e9f888c3d7c9d3 # v0.0.6
-        with:
-          homeserver: "matrix.org"
-          token: ${{ secrets.MATRIX_TOKEN }}
-          channel: "!ccrdinGkMeyakqWzIM:matrix.org"
-          messagetype: "m.text"
-          message: |
-            ${{ env.COLLECTION_NAMESPACE }}.${{ env.COLLECTION_NAME }} ${{ needs.calculate_version.outputs.collection_version }} has been released.
-            This Ansible Collection will gather various reports/outputs that are commonly asked for in Red Hat Support Cases, and can optionally
-            create the case, and then upload the diagnostics directly to the Support Case Portal.
-            Visit ${{ env.COLLECTION_REPO }} For more information and updates.
+      # - name: Send message to team channel
+      #   uses: fadenb/matrix-chat-message@89baab2b9ea06ffdd5f5b1ca80e9f888c3d7c9d3 # v0.0.6
+      #   with:
+      #     homeserver: "matrix.org"
+      #     token: ${{ secrets.MATRIX_TOKEN }}
+      #     channel: "!ccrdinGkMeyakqWzIM:matrix.org"
+      #     messagetype: "m.text"
+      #     message: |
+      #       ${{ env.COLLECTION_NAMESPACE }}.${{ env.COLLECTION_NAME }} ${{ needs.calculate_version.outputs.collection_version }} has been released.
+      #       This Ansible Collection will gather various reports/outputs that are commonly asked for in Red Hat Support Cases, and can optionally
+      #       create the case, and then upload the diagnostics directly to the Support Case Portal.
+      #       Visit ${{ env.COLLECTION_REPO }} For more information and updates.
 ...
