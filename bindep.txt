@@ -1,0 +1,10 @@
+# System packages used by this collection (control/execution node). See README.md.
+#
+# rh_case: HTTPS uploads to the Red Hat Support API
+curl [platform:rpm]
+curl [platform:dpkg]
+
+# ocp_must_gather: OpenShift CLI (oc binary)
+openshift-clients [platform:rhel-8]
+openshift-clients [platform:rhel-9]
+openshift-clients [platform:fedora]
