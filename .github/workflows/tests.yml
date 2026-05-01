@@ -34,7 +34,7 @@ jobs:
     uses: ansible/ansible-content-actions/.github/workflows/ansible_lint.yaml@main
   sanity:
     # Local workflow: certified hub env must live on real jobs (not on caller-only `uses:` jobs).
-    uses: ./.github/workflows/sanity_certified.yml
+    uses: ./.github/workflows/tests_sanity.yml
     with:
       # AAP floor alignment: ansible-core 2.16 + Python 3.12 (see meta/runtime.yml)
       extra_matrix_entries: >-
@@ -44,7 +44,12 @@ jobs:
   unit-galaxy:
     needs:
       - ansible-lint
-    uses: ansible/ansible-content-actions/.github/workflows/unit.yaml@main
+    uses: ./.github/workflows/tests_unit.yml
+    with:
+      extra_matrix_entries: >-
+        [{"description":"Unit tests using ansible-core 2.16 and python 3.12","factors":["unit","py3.12","2.16"],"name":"unit-py3.12-2.16","python":"3.12"}]
+    secrets:
+      crc_publish_key: ${{ secrets.CRC_PUBLISH_KEY }}
   molecule:
     name: Molecule Tests
     runs-on: ubuntu-latest
