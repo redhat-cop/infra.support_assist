@@ -6,3 +6,4 @@ minor_changes:
   - CI runs extra sanity matrix entry ``sanity-py3.12-2.16``; Molecule uses Python 3.12
   - README role/docs/template links now use absolute GitHub URLs for Automation Hub rendering
   - README adds a **Support** section for entitled Red Hat customers (Automation Hub **Create issue**)
+  - README fixes broken URLs (AAP 2.6 Hub CLI procedure on docs.redhat.com, Ansible Forum search for ``infra-support-assist``)

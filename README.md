@@ -79,7 +79,7 @@ If your organization consumes collections from **Red Hat** (certified / validate
 2. Open **Ansible Automation Platform** (or **Automation Hub**, depending on your layout).
 3. Go to **Collections** (or **Content** → **Collections**), search for **`infra.support_assist`**, open the collection, and add or sync it per your hub workflow (remote, repository, and RBAC differ by org).
 
-On the execution or control host, use **`ansible-galaxy collection install`** against the hub once [the hub is configured as a Galaxy server](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/managing_content_in_automation_hub/index#assembly-configuring-the-cli_automation-hub) (for example `ansible.cfg` / `ANSIBLE_GALAXY_SERVER_*` and a token). Example with an explicit version:
+On the execution or control host, use **`ansible-galaxy collection install`** against the hub once [the hub is configured as a Galaxy server](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.4/html-single/getting_started_with_automation_hub/index#configure-hub-primary) (for example `ansible.cfg` / `ANSIBLE_GALAXY_SERVER_*` and a token). Example with an explicit version:
 
 ~~~shell
 ansible-galaxy collection install infra.support_assist:1.0.1
