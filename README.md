@@ -351,11 +351,11 @@ Releasing the current major version happens from the `devel` branch.
   - [ ] Add an option to the `ocp_must_gather` or create a new role to gather data for one or more namespace using `oc adm inspect ns/<namespace>` as guidance from Red Hat KCS: [What are inspect logs, and how can we collect inspect logs from projects/namespaces?](https://access.redhat.com/solutions/7117361)
   - [x] Add some lessons learned and tips how to use this automation on Ansible Automation Platform (Implemented above some useful tips/guidance: **[AAP Lessons Learned for Must-Gather Pipeline](#-aap-lessons-learned-for-must-gather-pipeline))**
 
-## Getting Help
+## Support
 
-We are on the Ansible Forums, if you want to discuss something, ask for help, or participate in the community, please use the `#infra-support-assist` tag on the forum.
+As Red Hat Ansible Certified Content, this collection is entitled to support through the Ansible Automation Platform (AAP) using the **Create issue** button at the top right of this collection's page on Red Hat Ansible Automation Hub.
 
-[Ansible Forums](https://forum.ansible.com/tag/infra-support-assist)
+If a support case cannot be opened with Red Hat and the collection has been obtained either from Galaxy or GitHub, use the [Ansible Forum](https://forum.ansible.com/) for community help. For this collection, prefer topics tagged [`#infra-support-assist`](https://forum.ansible.com/tag/infra-support-assist).
 
 ## Contributing to this collection
 

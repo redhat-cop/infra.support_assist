@@ -5,3 +5,4 @@ minor_changes:
   - Raised ``requires_ansible`` to ``>=2.16.0`` in ``meta/runtime.yml`` (AAP / Python alignment)
   - CI runs extra sanity matrix entry ``sanity-py3.12-2.16``; Molecule uses Python 3.12
   - README role/docs/template links now use absolute GitHub URLs for Automation Hub rendering
+  - README adds a **Support** section for entitled Red Hat customers (Automation Hub **Create issue**)
