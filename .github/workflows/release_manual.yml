@@ -1,0 +1,73 @@
+---
+# Manual one-off release (fixed semver without using release_auto.yml bump logic).
+name: Release - Manual (one-off)
+
+on:
+  workflow_dispatch:
+    inputs:
+      collection_version:
+        description: "Required. Semver MAJOR.MINOR.PATCH (digits only, e.g. 1.2.3)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  calculate_version:
+    name: Set collection version (manual)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      collection_version: ${{ steps.initial.outputs.collection_version }}
+      change_level: ${{ steps.initial.outputs.change_level }}
+      change_present: ${{ steps.initial.outputs.change_present }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate version and emit outputs for reusable pipeline
+        id: initial
+        shell: bash
+        env:
+          TAG: ${{ inputs.collection_version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(echo "$TAG" | tr -d '[:space:]')
+          if [[ -z "$TAG" ]]; then
+            echo "::error::collection_version is empty. Enter semver MAJOR.MINOR.PATCH (digits only)."
+            exit 1
+          fi
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::collection_version must be semver MAJOR.MINOR.PATCH (digits only), got: ${TAG}"
+            exit 1
+          fi
+          if gh release view "$TAG" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            echo "::error::GitHub release ${TAG} already exists. Use release_auto.yml or pick a new version."
+            exit 1
+          fi
+          if git tag -l "$TAG" | grep -qx "$TAG"; then
+            echo "::error::Git tag ${TAG} already exists. Use release_auto.yml or pick a new version."
+            exit 1
+          fi
+          echo "collection_version=$TAG" >> "$GITHUB_OUTPUT"
+          echo "change_level=major" >> "$GITHUB_OUTPUT"
+          echo "change_present=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::Manual release version: $TAG"
+
+  release:
+    name: Run release pipeline
+    needs: calculate_version
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/release_collection_reusable.yml
+    with:
+      collection_version: ${{ needs.calculate_version.outputs.collection_version }}
+      change_level: ${{ needs.calculate_version.outputs.change_level }}
+      change_present: ${{ needs.calculate_version.outputs.change_present }}
+      skip_major_release_gate: true
+    secrets: inherit
+...
