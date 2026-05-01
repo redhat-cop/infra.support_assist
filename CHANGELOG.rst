@@ -4,6 +4,14 @@ infra.support\_assist Release Notes
 
 .. contents:: Topics
 
+v1.1.0
+======
+
+Minor Changes
+-------------
+
+- README installation section documents Ansible Galaxy and Automation Hub (UI and CLI) for published releases, with Git on ``devel`` as an optional source for latest development commits.
+
 v1.0.1
 ======
 
