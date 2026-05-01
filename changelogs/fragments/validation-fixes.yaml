@@ -2,3 +2,5 @@ minor_changes:
   - Fixed some ansible-lint warnings
   - Fixed some ansible-test warnings
   - Added ``bindep.txt`` declaring ``curl`` and ``openshift-clients`` (``oc``) for Automation Hub certification / EE builds
+  - Raised ``requires_ansible`` to ``>=2.16.0`` in ``meta/runtime.yml`` (AAP / Python alignment)
+  - CI runs extra sanity matrix entry ``sanity-py3.12-2.16``; Molecule uses Python 3.12

@@ -124,6 +124,8 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv-ansible216
+.tmp_collections_layout
 env/
 venv/
 ENV/
