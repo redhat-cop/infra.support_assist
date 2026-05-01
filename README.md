@@ -75,7 +75,7 @@ ansible-galaxy collection install -r requirements.yml
 
 If your organization consumes collections from **Red Hat** (certified / validated hub content):
 
-1. Sign in to the [Red Hat Hybrid Cloud Console](https://console.redhat.com/) (or your organization’s AAP / hub URL).
+1. Sign in to the [Red Hat Hybrid Cloud Console](https://console.redhat.com/) (or your organization's AAP / hub URL).
 2. Open **Ansible Automation Platform** (or **Automation Hub**, depending on your layout).
 3. Go to **Collections** (or **Content** → **Collections**), search for **`infra.support_assist`**, open the collection, and add or sync it per your hub workflow (remote, repository, and RBAC differ by org).
 

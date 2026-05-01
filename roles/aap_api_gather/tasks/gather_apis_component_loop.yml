@@ -34,7 +34,15 @@
     __full_url: "{{ __base_url }}{{ __endpoint_with_params }}"
     # Create a safe filename from the endpoint path (use original path, not with params)
     # Replace "/" with "_" and remove leading "/" if present
-    __safe_filename: "{{ (__endpoint_path | regex_replace('^/', '') | replace('/', '_') | replace('?', '_') | replace('&', '_') | replace('=', '_')) | default('index') }}.json"
+    __safe_filename: >-
+      {{
+        (
+          (
+            __endpoint_path | regex_replace('^/', '') | replace('/', '_')
+            | replace('?', '_') | replace('&', '_') | replace('=', '_')
+          ) | default('index')
+        ) ~ '.json'
+      }}
     __output_file_path: "{{ __component_dest_dir }}/{{ __safe_filename }}"
   loop: "{{ __endpoints }}"
   loop_control:
