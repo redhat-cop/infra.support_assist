@@ -4,6 +4,21 @@ infra.support\_assist Release Notes
 
 .. contents:: Topics
 
+v1.1.1
+======
+
+Minor Changes
+-------------
+
+- Added ``bindep.txt`` declaring ``curl`` and ``openshift-clients`` (``oc``) for Automation Hub certification / EE builds
+- CI runs extra sanity matrix entry ``sanity-py3.12-2.16``; Molecule uses Python 3.12
+- Fixed some ansible-lint warnings
+- Fixed some ansible-test warnings
+- README adds a **Support** section for entitled Red Hat customers (Automation Hub **Create issue**)
+- README fixes broken URLs (AAP 2.6 Hub CLI procedure on docs.redhat.com, Ansible Forum search for ``infra-support-assist``)
+- README role/docs/template links now use absolute GitHub URLs for Automation Hub rendering
+- Raised ``requires_ansible`` to ``>=2.16.0`` in ``meta/runtime.yml`` (AAP / Python alignment)
+
 v1.1.0
 ======
 
