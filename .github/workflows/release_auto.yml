@@ -163,7 +163,7 @@ jobs:
           python-version: "3.x"
 
       - name: Install dependencies
-        run: pip install --upgrade "ansible-core>=2.15,<2.19" antsibull-changelog
+        run: pip install --upgrade "ansible-core>=2.16,<2.19" antsibull-changelog
 
       - name: Update galaxy.yml version for changelog (remove -devel)
         run: |

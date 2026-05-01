@@ -16,7 +16,7 @@ This role automates the process of authenticating with Ansible Automation Platfo
 
 ## Requirements
 
-- Ansible >= 2.15.0
+- Ansible >= 2.16.0
 - One of the following collections:
   - `ansible.controller` – For AAP Controller versions < 4.6.0
   - `ansible.platform` – For AAP Controller versions >= 4.6.0
