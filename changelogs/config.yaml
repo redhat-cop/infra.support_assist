@@ -1,4 +1,6 @@
 ---
+# Indent lists so ansible-lint / console.redhat.com certification pass yaml[indentation]
+changelog_nice_yaml: true
 changelog_filename_template: ../CHANGELOG.rst
 changelog_filename_version_depth: 0
 changes_file: changelog.yaml
