@@ -4,3 +4,4 @@ minor_changes:
   - Added ``bindep.txt`` declaring ``curl`` and ``openshift-clients`` (``oc``) for Automation Hub certification / EE builds
   - Raised ``requires_ansible`` to ``>=2.16.0`` in ``meta/runtime.yml`` (AAP / Python alignment)
   - CI runs extra sanity matrix entry ``sanity-py3.12-2.16``; Molecule uses Python 3.12
+  - README role/docs/template links now use absolute GitHub URLs for Automation Hub rendering
