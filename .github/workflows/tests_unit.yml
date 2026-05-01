@@ -40,7 +40,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Check for tox-ansible.ini file, else add default
-        uses: ansible/ansible-content-actions/.github/actions/add_tox_ansible@main
+        uses: ansible/ansible-content-actions/.github/actions/add_tox_ansible@17784d5248b78835d2f2488211367e8de5a95381 # ansible-content-actions main
       - name: Install tox-ansible, includes tox
         run: python -m pip install tox-ansible
       - name: Generate matrix
@@ -91,7 +91,7 @@ jobs:
       - name: Install tox-ansible, includes tox
         run: python -m pip install tox-ansible
       - name: Check for tox-ansible.ini file, else add default
-        uses: ansible/ansible-content-actions/.github/actions/add_tox_ansible@main
+        uses: ansible/ansible-content-actions/.github/actions/add_tox_ansible@17784d5248b78835d2f2488211367e8de5a95381 # ansible-content-actions main
       - name: Install build toolchain and openssl headers on Linux
         shell: bash
         run: sudo apt update && sudo apt install build-essential libssl-dev
