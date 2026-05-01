@@ -8,7 +8,10 @@
     that:
       - aap_api_gather_aap_hostname is defined
       - aap_api_gather_aap_hostname | length > 0
-    fail_msg: "AAP hostname is required for controller/gateway components. Please provide 'aap_hostname' as an extra-var or set the 'AAP_HOSTNAME', 'CONTROLLER_HOST', or 'TOWER_HOST' environment variable."
+    fail_msg: >-
+      AAP hostname is required for controller/gateway components. Please provide
+      'aap_hostname' as an extra-var or set the 'AAP_HOSTNAME', 'CONTROLLER_HOST', or
+      'TOWER_HOST' environment variable.
     quiet: true
 
 - name: Pre-Validation | Ensure hub URL or hostname is provided if hub component is selected
@@ -16,7 +19,10 @@
   ansible.builtin.assert:
     that:
       - (aap_api_gather_aap_hub_url | length > 0) or (aap_api_gather_aap_hostname | length > 0)
-    fail_msg: "AAP Hub URL or hostname is required when hub component is selected. Please provide 'aap_hub_url' as an extra-var, set the 'AAP_HUB_URL' environment variable, or provide 'aap_hostname' for fallback."
+    fail_msg: >-
+      AAP Hub URL or hostname is required when hub component is selected. Please provide
+      'aap_hub_url' as an extra-var, set the 'AAP_HUB_URL' environment variable, or provide
+      'aap_hostname' for fallback.
     quiet: true
 
 - name: Pre-Validation | Ensure EDA URL or hostname is provided if eda component is selected
@@ -24,7 +30,10 @@
   ansible.builtin.assert:
     that:
       - (aap_api_gather_aap_eda_url | length > 0) or (aap_api_gather_aap_hostname | length > 0)
-    fail_msg: "AAP EDA URL or hostname is required when eda component is selected. Please provide 'aap_eda_url' as an extra-var, set the 'AAP_EDA_URL' environment variable, or provide 'aap_hostname' for fallback."
+    fail_msg: >-
+      AAP EDA URL or hostname is required when eda component is selected. Please provide
+      'aap_eda_url' as an extra-var, set the 'AAP_EDA_URL' environment variable, or provide
+      'aap_hostname' for fallback.
     quiet: true
 
 - name: Pre-Validation | Ensure API Token is provided

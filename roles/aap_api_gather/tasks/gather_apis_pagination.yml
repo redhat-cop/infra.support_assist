@@ -34,7 +34,12 @@
         __next_url_raw: "{{ __api_result.json.next | default('') }}"
         __has_next_page: "{{ __api_result.json.next is defined and __api_result.json.next is not none and __api_result.json.next != '' }}"
         __max_pages_reached: "{{ ((__max_pages | int) > 0) and ((__current_page | int) >= (__max_pages | int)) }}"
-        __next_url: "{{ (__base_url + __next_url_raw) if __has_next_page and not (__next_url_raw | regex_search('^https?://')) else (__next_url_raw if (__has_next_page | bool) else '') }}"
+        __next_url: >-
+          {{
+            (__base_url + __next_url_raw)
+            if __has_next_page and not (__next_url_raw | regex_search('^https?://'))
+            else (__next_url_raw if (__has_next_page | bool) else '')
+          }}
       ansible.builtin.set_fact:
         __has_next_page: "{{ __has_next_page }}"
         __max_pages_reached: "{{ __max_pages_reached }}"
@@ -59,14 +64,38 @@
   when: __api_result is not defined or __api_result.status is not defined or __api_result.status != 200
   block:
     - name: Gather APIs | Pagination | Register failure and log warning
+      vars:
+        __pagination_failure_entry:
+          component: "{{ component_name }}"
+          endpoint: "{{ endpoint_path }}"
+          url: "{{ __next_url }}"
+          status_code: >-
+            {{ __api_result.status | default('N/A') if __api_result is defined else 'N/A' }}
+          error_message: >-
+            {{
+              (__api_result.msg | default(
+                __api_result.body | default(
+                  __api_result.json | default({}) | to_json | default('Unknown error')
+                )
+              )) if __api_result is defined else 'Request failed - no response received'
+            }}
+          page: "{{ __current_page }}"
       ansible.builtin.set_fact:
-        aap_api_gather_failures: "{{ aap_api_gather_failures | default([]) + [{'component': component_name, 'endpoint': endpoint_path, 'url': __next_url, 'status_code': __api_result.status | default('N/A') if __api_result is defined else 'N/A', 'error_message': (__api_result.msg | default(__api_result.body | default(__api_result.json | default({}) | to_json | default('Unknown error')))) if __api_result is defined else 'Request failed - no response received', 'page': __current_page}] }}"
+        aap_api_gather_failures: "{{ aap_api_gather_failures | default([]) + [__pagination_failure_entry] }}"
       run_once: true
 
     - name: Gather APIs | Pagination | Log warning
       ansible.builtin.debug:
         msg: >-
           Warning: Failed to query {{ __next_url }} (page {{ __current_page }}).
-          Status: {{ __api_result.status | default('N/A') if __api_result is defined else 'N/A' }}.
-          Error: {{ (__api_result.msg | default(__api_result.body | default(__api_result.json | default({}) | to_json | default('Unknown error')))) if __api_result is defined else 'Request failed - no response received' }}
+          Status:
+          {{ __api_result.status | default('N/A') if __api_result is defined else 'N/A' }}.
+          Error:
+          {{
+            (__api_result.msg | default(
+              __api_result.body | default(
+                __api_result.json | default({}) | to_json | default('Unknown error')
+              )
+            )) if __api_result is defined else 'Request failed - no response received'
+          }}
 ...

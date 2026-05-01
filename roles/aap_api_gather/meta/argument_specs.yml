@@ -52,12 +52,26 @@ argument_specs:
       aap_token:
         description: Authentication token (configured with default value)
         type: str
-        default: "{{ lookup('env', 'AAP_TOKEN') | default(lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(lookup('env', 'TOWER_OAUTH_TOKEN') | default(''))) }}"
+        default: >-
+          {{
+            lookup('env', 'AAP_TOKEN') | default(
+              lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(
+                lookup('env', 'TOWER_OAUTH_TOKEN') | default('')
+              )
+            )
+          }}
         version_added: 0.1.0-devel
       aap_validate_certs:
         description: SSL/TLS certificate (enabled by default)
         type: bool
-        default: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(lookup('env', 'CONTROLLER_VERIFY_SSL') | default(lookup('env', 'TOWER_VERIFY_SSL') | default('true'))) | bool }}"
+        default: >-
+          {{
+            lookup('env', 'AAP_VALIDATE_CERTS') | default(
+              lookup('env', 'CONTROLLER_VERIFY_SSL') | default(
+                lookup('env', 'TOWER_VERIFY_SSL') | default('true')
+              )
+            ) | bool
+          }}
         version_added: 0.1.0-devel
       component_name:
         description: 'Variable used in included task file: gather_apis.yml'

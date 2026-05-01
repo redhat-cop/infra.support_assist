@@ -23,13 +23,40 @@ aap_api_token_aap_hostname: >-
   }}
 
 # Username - priority: extra_vars (aap_username) > AAP_USERNAME > CONTROLLER_USERNAME > TOWER_USERNAME
-aap_api_token_aap_username: "{{ aap_username | default(lookup('env', 'AAP_USERNAME') | default(lookup('env', 'CONTROLLER_USERNAME') | default(lookup('env', 'TOWER_USERNAME') | default('')))) }}"
+aap_api_token_aap_username: >-
+  {{
+    aap_username | default(
+      lookup('env', 'AAP_USERNAME') | default(
+        lookup('env', 'CONTROLLER_USERNAME') | default(
+          lookup('env', 'TOWER_USERNAME') | default('')
+        )
+      )
+    )
+  }}
 
 # Password - priority: extra_vars (aap_password) > AAP_PASSWORD > CONTROLLER_PASSWORD > TOWER_PASSWORD
-aap_api_token_aap_password: "{{ aap_password | default(lookup('env', 'AAP_PASSWORD') | default(lookup('env', 'CONTROLLER_PASSWORD') | default(lookup('env', 'TOWER_PASSWORD') | default('')))) }}"
+aap_api_token_aap_password: >-
+  {{
+    aap_password | default(
+      lookup('env', 'AAP_PASSWORD') | default(
+        lookup('env', 'CONTROLLER_PASSWORD') | default(
+          lookup('env', 'TOWER_PASSWORD') | default('')
+        )
+      )
+    )
+  }}
 
 # Token - priority: extra_vars (aap_token) > AAP_TOKEN > CONTROLLER_OAUTH_TOKEN > TOWER_OAUTH_TOKEN
-aap_api_token_aap_token: "{{ aap_token | default(lookup('env', 'AAP_TOKEN') | default(lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(lookup('env', 'TOWER_OAUTH_TOKEN') | default('')))) }}"
+aap_api_token_aap_token: >-
+  {{
+    aap_token | default(
+      lookup('env', 'AAP_TOKEN') | default(
+        lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(
+          lookup('env', 'TOWER_OAUTH_TOKEN') | default('')
+        )
+      )
+    )
+  }}
 
 # Validate Certs - priority: extra_vars (aap_validate_certs) > AAP_VALIDATE_CERTS > CONTROLLER_VERIFY_SSL > TOWER_VERIFY_SSL
 aap_api_token_aap_validate_certs: >-

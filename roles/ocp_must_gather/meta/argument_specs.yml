@@ -35,7 +35,9 @@ argument_specs:
         default: false
         version_added: 0.2.0-devel
       ocp_must_gather_disconnected_registry:
-        description: 'The address of the mirror registry containing the must-gather images (e.g., myregistry.local/ocp/mirror). Required if ocp_must_gather_disconnected_mode is true.'
+        description: >-
+          The address of the mirror registry containing the must-gather images (e.g.,
+          myregistry.local/ocp/mirror). Required if ocp_must_gather_disconnected_mode is true.
         type: str
         default: ''
         version_added: 0.2.0-devel

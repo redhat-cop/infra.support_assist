@@ -29,7 +29,14 @@ argument_specs:
       aap_token:
         description: Authentication token (configured with default value)
         type: str
-        default: "{{ lookup('env', 'AAP_TOKEN') | default(lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(lookup('env', 'TOWER_OAUTH_TOKEN') | default(''))) }}"
+        default: >-
+          {{
+            lookup('env', 'AAP_TOKEN') | default(
+              lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(
+                lookup('env', 'TOWER_OAUTH_TOKEN') | default('')
+              )
+            )
+          }}
         version_added: 0.1.0-devel
       aap_username:
         description: Username for authentication (configured with default value)
@@ -39,7 +46,14 @@ argument_specs:
       aap_validate_certs:
         description: SSL/TLS certificate (configured with default value)
         type: bool
-        default: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(lookup('env', 'CONTROLLER_VERIFY_SSL') | default(lookup('env', 'TOWER_VERIFY_SSL') | default('true'))) | bool }}"
+        default: >-
+          {{
+            lookup('env', 'AAP_VALIDATE_CERTS') | default(
+              lookup('env', 'CONTROLLER_VERIFY_SSL') | default(
+                lookup('env', 'TOWER_VERIFY_SSL') | default('true')
+              )
+            ) | bool
+          }}
         version_added: 0.1.0-devel
   clear_token:
     short_description: Auto-generated specs for aap_api_token role - clear_token entry point
@@ -70,7 +84,14 @@ argument_specs:
       aap_token:
         description: Authentication token (configured with default value)
         type: str
-        default: "{{ lookup('env', 'AAP_TOKEN') | default(lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(lookup('env', 'TOWER_OAUTH_TOKEN') | default(''))) }}"
+        default: >-
+          {{
+            lookup('env', 'AAP_TOKEN') | default(
+              lookup('env', 'CONTROLLER_OAUTH_TOKEN') | default(
+                lookup('env', 'TOWER_OAUTH_TOKEN') | default('')
+              )
+            )
+          }}
         version_added: 0.1.0-devel
       aap_username:
         description: Username for authentication (configured with default value)
@@ -80,6 +101,13 @@ argument_specs:
       aap_validate_certs:
         description: SSL/TLS certificate (configured with default value)
         type: bool
-        default: "{{ lookup('env', 'AAP_VALIDATE_CERTS') | default(lookup('env', 'CONTROLLER_VERIFY_SSL') | default(lookup('env', 'TOWER_VERIFY_SSL') | default('true'))) | bool }}"
+        default: >-
+          {{
+            lookup('env', 'AAP_VALIDATE_CERTS') | default(
+              lookup('env', 'CONTROLLER_VERIFY_SSL') | default(
+                lookup('env', 'TOWER_VERIFY_SSL') | default('true')
+              )
+            ) | bool
+          }}
         version_added: 0.1.0-devel
 ...

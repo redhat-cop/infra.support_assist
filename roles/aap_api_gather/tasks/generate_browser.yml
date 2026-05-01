@@ -196,7 +196,9 @@
   ansible.builtin.debug:
     msg: >-
       HTML browser generated: {{ __aap_api_gather_source_path }}/api_browser.html
-      (Static version skipped - upload={{ upload | default(true) | bool }}, generate_static_browser={{ aap_api_gather_generate_static_browser | default(true) | bool }})
+      (Static version skipped - upload={{ upload | default(true) | bool }},
+      generate_static_browser={{
+        aap_api_gather_generate_static_browser | default(true) | bool }})
   delegate_to: localhost
   run_once: true
 ...
