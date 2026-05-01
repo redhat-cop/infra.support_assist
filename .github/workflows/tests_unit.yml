@@ -17,6 +17,9 @@ name: Ansible Unit
         description: Red Hat Automation Hub token (certified + galaxy resolution)
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   tox-matrix:
     name: Matrix Unit
