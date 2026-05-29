@@ -9,6 +9,5 @@
       vars:
         ocp_must_gather_token: "placeholder_token"
         ocp_must_gather_server_url: "https://api.example.com:6443"
-        case_id: "12345"
         ocp_must_gather_validate_ssl: false
 ...

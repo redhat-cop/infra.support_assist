@@ -7,11 +7,6 @@ argument_specs:
       - Diego Felipe Mateus
       - Lenny Shirley
     options:
-      case_id:
-        description: 'The Red Hat Support Case number (e.g., 01234567). Used in archive naming and context.'
-        type: str
-        required: true
-        version_added: 0.1.0-devel
       # --- AUTHENTICATION AND CONNECTION ---
       ocp_must_gather_server_url:
         description: 'The URL of the OpenShift API server (e.g., https://api.my-cluster.com:6443).'
