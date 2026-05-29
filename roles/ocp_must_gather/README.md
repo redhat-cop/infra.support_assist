@@ -51,12 +51,6 @@ This role runs **`oc adm must-gather`** against a target OpenShift cluster, comp
 | `ocp_must_gather_disconnected_mode` | Enable disconnected/air-gapped environment mode. | `bool` | No | `false` |
 | `ocp_must_gather_disconnected_registry` | Mirror registry address (e.g., `myregistry.local/ocp/mirror`). Required if `ocp_must_gather_disconnected_mode` is `true`. | `string` | Conditional | `""` |
 
-### Case Variables
-
-| Variable | Description | Type | Required | Default |
-|----------|-------------|------|----------|---------|
-| `case_id` | Red Hat Support Case number (e.g., `01234567`). Only needed for automatic upload. | `string` | No | — |
-
 ### Output Variables
 
 | Variable | Description | Type |
@@ -170,7 +164,6 @@ export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
 
 # Run the full pipeline
 ansible-playbook infra.support_assist.ocp_must_gather \
-  -e case_id=00000000 \
   -e ocp_must_gather_server_url="https://api.my-ocp-cluster.com:6443" \
   -e ocp_must_gather_token="sha256~..." \
   -e ocp_must_gather_image="AAP" \

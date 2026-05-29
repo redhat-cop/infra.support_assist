@@ -22,7 +22,6 @@
   loop:
     - { name: ocp_must_gather_token }
     - { name: ocp_must_gather_server_url }
-    - { name: case_id }
 
 - name: Assert Vars | Set cluster_name from API URL # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
