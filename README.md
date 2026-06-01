@@ -197,7 +197,7 @@ This collection provides five main playbooks for common operations:
         export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
         export AAP_CONTROLLER_URL="https://aap-controller.example.com"
         export AAP_HUB_URL="https://aap-hub.example.com"
-        
+
         ansible-playbook playbooks/aap_api_gather.yml \
           -e case_id=01234567 \
           -e upload=true
@@ -205,7 +205,7 @@ This collection provides five main playbooks for common operations:
     * **Example (standalone gather without upload):**
         ~~~shell
         export AAP_CONTROLLER_URL="https://aap-controller.example.com"
-        
+
         ansible-playbook playbooks/aap_api_gather.yml \
           -e upload=false
         ~~~
@@ -215,7 +215,7 @@ This collection provides five main playbooks for common operations:
     * **Example (using an environment variable):**
         ~~~shell
         export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
-        
+
         ansible-playbook -i inventory infra.support_assist.sos_report \
           -e case_id=01234567 \
           -e upload=true \
@@ -353,9 +353,7 @@ Releasing the current major version happens from the `devel` branch.
 
 ## Support
 
-As Red Hat Ansible Certified Content, this collection is entitled to support through the Ansible Automation Platform (AAP) using the **Create issue** button at the top right of this collection's page on Red Hat Ansible Automation Hub.
-
-If a support case cannot be opened with Red Hat and the collection has been obtained either from Galaxy or GitHub, use the [Ansible Forum](https://forum.ansible.com/) for community help. For this collection, prefer topics tagged [`#infra-support-assist`](https://forum.ansible.com/tag/infra-support-assist).
+This collection is Ansible Validated Content. It is reviewed and tested by Red Hat but is not supported under a Red Hat SLA. For reporting issues and requesting improvements, file an issue [here](https://github.com/redhat-cop/infra.support_assist/issues/new/choose).
 
 ## Contributing to this collection
 
