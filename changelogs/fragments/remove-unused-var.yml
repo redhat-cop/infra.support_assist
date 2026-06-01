@@ -1,4 +1,0 @@
----
-bugfixes:
-  - ocp_must_gather - Removed unused variable `case_id`.
-...

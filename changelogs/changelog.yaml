@@ -103,3 +103,10 @@ releases:
     fragments:
       - validation-fixes.yaml
     release_date: '2026-05-01'
+  1.1.2:
+    changes:
+      bugfixes:
+        - ocp_must_gather - Removed unused variable `case_id`.
+    fragments:
+      - remove-unused-var.yml
+    release_date: '2026-06-01'
