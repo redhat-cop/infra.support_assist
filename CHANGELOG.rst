@@ -4,6 +4,14 @@ infra.support\_assist Release Notes
 
 .. contents:: Topics
 
+v1.1.2
+======
+
+Bugfixes
+--------
+
+- ocp_must_gather - Removed unused variable `case_id`.
+
 v1.1.1
 ======
 
