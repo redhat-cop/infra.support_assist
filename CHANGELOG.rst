@@ -4,6 +4,14 @@ infra.support\_assist Release Notes
 
 .. contents:: Topics
 
+v1.1.3
+======
+
+Bugfixes
+--------
+
+- README - Updated support wording to reflect Ansible Validated Content status.
+
 v1.1.2
 ======
 

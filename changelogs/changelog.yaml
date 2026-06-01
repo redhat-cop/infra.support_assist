@@ -110,3 +110,10 @@ releases:
     fragments:
       - remove-unused-var.yml
     release_date: '2026-06-01'
+  1.1.3:
+    changes:
+      bugfixes:
+        - README - Updated support wording to reflect Ansible Validated Content status.
+    fragments:
+      - update-readme-support-wording.yml
+    release_date: '2026-06-01'
