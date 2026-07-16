@@ -122,8 +122,9 @@ This collection includes primary playbooks that orchestrate the roles in the cor
 > 4.  A new offline token will be generated. **Copy this token immediately**, as Red Hat notes, "Tokens are only displayed once and are not stored. They will expire after 30 days of inactivity".
 
 All playbooks that access the Red Hat API will look for the token in this order:
-1. An extra-var named `offline_token`.
-2. An environment variable named `REDHAT_OFFLINE_TOKEN`.
+1. An extra-var named `redhat_offline_token`.
+2. An extra-var named `offline_token` (deprecated; kept for backward compatibility).
+3. An environment variable named `REDHAT_OFFLINE_TOKEN`.
 
 ---
 
@@ -235,7 +236,7 @@ This collection provides five main playbooks for common operations:
           -e ocp_must_gather_disconnected_registry="my.mirror.registry.com/ocp/mirror" \
           -e case_summary="Automated creation of case for OCP diagnostics" \
           -e case_severity="3 (Normal)" \
-          -e offline_token=YOUR_OFFLINE_TOKEN_HERE
+          -e redhat_offline_token=YOUR_OFFLINE_TOKEN_HERE
         ~~~
     > **Note:** To use this playbook to **create** a case, you must provide **all six mandatory variables**: `case_summary`, `case_description`, `case_product`, `case_product_version`, `case_type`, and `case_severity`. Crucially, you must also **omit** the `case_id` variable. If `case_id` is provided, the playbook skips creation and proceeds directly to upload.
 
@@ -257,7 +258,7 @@ Please consult the dedicated documentation file for the full list of valid optio
           -e case_severity="4 (Low)" \
           -e case_product="Red Hat Ansible Automation Platform" \
           -e case_product_version="2.4" \
-          -e offline_token=YOUR_OFFLINE_TOKEN_HERE
+          -e redhat_offline_token=YOUR_OFFLINE_TOKEN_HERE
         ~~~
         > **Note:** The `case_product_version` must be provided as the **normalized base version** (e.g., `4.16`, `8.9`) and not the full patch version (e.g., `4.16.48`).
 
@@ -287,7 +288,7 @@ Please consult the dedicated documentation file for the full list of valid optio
         -e case_type="Configuration Issue" \
         -e case_severity="3 (Normal)" \
         -e "case_updates_needed=[{'attachment': '/path/to/file.log', 'attachmentDescription': 'Diagnostic log'}]" \
-        -e offline_token=YOUR_OFFLINE_TOKEN_HERE
+        -e redhat_offline_token=YOUR_OFFLINE_TOKEN_HERE
       ~~~
 
 ---

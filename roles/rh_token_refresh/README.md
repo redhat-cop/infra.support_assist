@@ -23,7 +23,7 @@ None. This role runs on `localhost` using only built-in Ansible modules.
 
 | Variable | Description | Type | Required | Default |
 |----------|-------------|------|----------|---------|
-| `rh_token_refresh_api_offline_token` | Your Red Hat offline token used to acquire the API access token. | `string` | Yes | `{{ offline_token \| default(lookup('env', 'REDHAT_OFFLINE_TOKEN')) }}` |
+| `rh_token_refresh_api_offline_token` | Your Red Hat offline token used to acquire the API access token. | `string` | Yes | `{{ redhat_offline_token \| default(offline_token \| default(lookup('env', 'REDHAT_OFFLINE_TOKEN'))) }}` |
 | `rh_token_refresh_token_cache_file` | Full path to the file where the access token and timestamp will be cached. | `path` | No | `/tmp/redhat_refresh_token.json` |
 | `rh_token_refresh_token_max_age_seconds` | Maximum age (in seconds) of a cached token before it's considered expired. | `int` | No | `900` (15 minutes) |
 | `rh_token_refresh_api_token_url` | Full URL for the Red Hat SSO token endpoint. | `string` | No | `https://sso.redhat.com/auth/realms/redhat-external/protocol/openid-connect/token` |
@@ -64,7 +64,7 @@ None.
 
   vars:
     # Provide the token directly (Ansible Vault recommended!)
-    offline_token: "YOUR_REDHAT_OFFLINE_TOKEN_HERE"
+    redhat_offline_token: "YOUR_REDHAT_OFFLINE_TOKEN_HERE"
 
   tasks:
     - name: Retrieve Red Hat API access token
@@ -115,7 +115,7 @@ export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
   gather_facts: false
 
   vars:
-    offline_token: "{{ vault_offline_token }}"
+    redhat_offline_token: "{{ vault_offline_token }}"
 
   tasks:
     - name: Retrieve Red Hat API access token
@@ -133,14 +133,14 @@ export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
 │                       rh_token_refresh                          │
 ├─────────────────────────────────────────────────────────────────┤
 │  1. Pre-validation                                              │
-│     └── Verify offline_token is provided                        │
+│     └── Verify redhat_offline_token is provided                 │
 │                                                                 │
 │  2. Check cache                                                 │
 │     ├── If cache exists and token is fresh → Use cached token   │
 │     └── If cache missing or expired → Proceed to refresh        │
 │                                                                 │
 │  3. Token refresh (if needed)                                   │
-│     ├── POST to Red Hat SSO with offline_token                  │
+│     ├── POST to Red Hat SSO with offline token                  │
 │     ├── Receive new access_token                                │
 │     └── Store in cache file with timestamp                      │
 │                                                                 │

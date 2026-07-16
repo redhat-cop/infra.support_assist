@@ -149,7 +149,7 @@ ansible-playbook -i inventory infra.support_assist.sos_report \
   gather_facts: false
 
   vars:
-    offline_token: "{{ vault_offline_token }}"
+    redhat_offline_token: "{{ vault_offline_token }}"
 
   tasks:
     - name: Refresh API token

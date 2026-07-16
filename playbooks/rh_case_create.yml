@@ -17,7 +17,7 @@
     # case_product_version: "9.6" # Placeholder value for local testing
     # case_product: "Red Hat Enterprise Linux" # Placeholder value for local testing
     # CRITICAL: This offline token is required for API access.
-    # offline_token: "" # User's Red Hat Offline Token (from https://access.redhat.com/management/api
+    # redhat_offline_token: "" # User's Red Hat Offline Token (from https://access.redhat.com/management/api
     # CASE CREATION MANDATORY FIELDS (Must be provided via survey/extra-vars)
     # case_summary: "Automated Test Case Creation - API Only Pipeline [TEST-{{ run_timestamp }}-UTC]" # Summary of the case
     # case_description: "Automated case created via Ansible for testing purposes. Unique Run ID: {{ run_timestamp }} - UTC" # Description of the case

@@ -6,7 +6,7 @@
   roles:
     - role: ../..
       vars:
-        offline_token: "placeholder_token"
+        redhat_offline_token: "placeholder_token"
         case_summary: "Molecule test case"
         case_product: "Red Hat Enterprise Linux"
         case_description: "Validation run"

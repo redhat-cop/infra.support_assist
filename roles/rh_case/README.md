@@ -152,7 +152,7 @@ Please consult the dedicated documentation file for the full list of valid optio
 
   vars:
     # --- REQUIRED AUTHENTICATION INPUTS ---
-    offline_token: "YOUR_OFFLINE_TOKEN_HERE"  # Use Ansible Vault!
+    redhat_offline_token: "YOUR_OFFLINE_TOKEN_HERE"  # Use Ansible Vault!
 
     # --- REQUIRED CASE INPUTS ---
     case_summary: "Example Support Case Created via Ansible Automation"
@@ -188,7 +188,7 @@ Please consult the dedicated documentation file for the full list of valid optio
   gather_facts: false
 
   vars:
-    offline_token: "{{ vault_offline_token }}"
+    redhat_offline_token: "{{ vault_offline_token }}"
     case_id: "01234567"
     case_updates_needed:
       - attachment: "/var/log/my-custom-app.log"
@@ -216,7 +216,7 @@ Please consult the dedicated documentation file for the full list of valid optio
   gather_facts: false
 
   vars:
-    offline_token: "{{ vault_offline_token }}"
+    redhat_offline_token: "{{ vault_offline_token }}"
     
     # Case creation fields
     case_summary: "Pod scheduling issues after upgrade"
@@ -263,7 +263,7 @@ Please consult the dedicated documentation file for the full list of valid optio
   gather_facts: false
 
   vars:
-    offline_token: "{{ vault_offline_token }}"
+    redhat_offline_token: "{{ vault_offline_token }}"
     case_summary: "Cluster connectivity issues"
     case_description: "Experiencing intermittent connectivity issues between nodes."
     case_product: "OpenShift Container Platform"
@@ -293,7 +293,7 @@ Please consult the dedicated documentation file for the full list of valid optio
 
   vars:
     case_id: "01234567"
-    offline_token: "{{ vault_offline_token }}"
+    redhat_offline_token: "{{ vault_offline_token }}"
     case_updates_needed:
       - attachment: "/tmp/sos_reports/case_01234567/server1/sosreport-server1.tar.xz"
         attachmentDescription: "SOS Report from server1"

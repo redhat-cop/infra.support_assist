@@ -15,7 +15,7 @@ argument_specs:
       rh_token_refresh_api_offline_token:
         description: Authentication token (configured with default value)
         type: str
-        default: '{{ offline_token | default(lookup(''env'', ''REDHAT_OFFLINE_TOKEN'')) }}'
+        default: '{{ redhat_offline_token | default(offline_token | default(lookup(''env'', ''REDHAT_OFFLINE_TOKEN''))) }}'
         version_added: 0.1.0-devel
       rh_token_refresh_api_token_url:
         description: Authentication token (configured with default value) (defined in vars)
