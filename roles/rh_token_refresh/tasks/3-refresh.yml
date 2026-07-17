@@ -33,12 +33,18 @@
     rh_token_refresh_api_access_token: "{{ __token_response.json.access_token }}"
   no_log: "{{ rh_token_refresh_no_log }}" # <--- To keep sensitive values out of Ansible output logs
 
+- name: Refresh Token | Get current epoch time for cache timestamp
+  ansible.builtin.command:
+    cmd: date +%s
+  register: __token_cache_epoch
+  changed_when: false
+
 - name: Refresh Token | Cache the new token and timestamp locally
   ansible.builtin.copy:
     content: |
       {
         "token": "{{ rh_token_refresh_api_access_token }}",
-        "timestamp": {{ lookup('pipe', 'date +%s') }}
+        "timestamp": {{ __token_cache_epoch.stdout | int }}
       }
     dest: "{{ rh_token_refresh_token_cache_file }}"
     mode: '0600' # Set secure permissions for the token file.

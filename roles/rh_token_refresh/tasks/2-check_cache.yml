@@ -5,18 +5,38 @@
   register: __token_file_stat
 
 - name: Check token cache | Read the cached token if the file exists # noqa: var-naming[no-role-prefix]
-  ansible.builtin.set_fact:
-    cached_token_data: "{{ lookup('file', rh_token_refresh_token_cache_file) | from_json | default({}) }}"
+  ansible.builtin.slurp:
+    src: "{{ rh_token_refresh_token_cache_file }}"
+  register: __cached_token_slurp
   when: __token_file_stat.stat.exists
   no_log: "{{ rh_token_refresh_no_log }}" # <--- To keep sensitive values out of Ansible output logs
+
+- name: Check token cache | Parse the cached token data # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    cached_token_data: "{{ __cached_token_slurp.content | b64decode | from_json }}"
+  when:
+    - __token_file_stat.stat.exists
+    - __cached_token_slurp.content is defined
+  no_log: "{{ rh_token_refresh_no_log }}" # <--- To keep sensitive values out of Ansible output logs
+
+- name: Check token cache | Get current epoch time for cache age check
+  ansible.builtin.command:
+    cmd: date +%s
+  register: __cache_check_epoch
+  changed_when: false
+  when:
+    - __token_file_stat.stat.exists
+    - cached_token_data is defined
+    - cached_token_data.timestamp is defined
 
 - name: Check token cache | Determine if the cached token is still valid # noqa: var-naming[no-role-prefix]
   when:
     - __token_file_stat.stat.exists
     - cached_token_data is defined
     - cached_token_data.timestamp is defined
+    - __cache_check_epoch.stdout is defined
   ansible.builtin.set_fact:
-    token_is_valid: "{{ ((lookup('pipe', 'date +%s') | int) - (cached_token_data.timestamp | int)) < rh_token_refresh_token_max_age_seconds }}"
+    token_is_valid: "{{ ((__cache_check_epoch.stdout | int) - (cached_token_data.timestamp | int)) < rh_token_refresh_token_max_age_seconds }}"
 
 - name: Check token cache | Use the valid cached token if available
   when:
@@ -41,4 +61,3 @@
       No valid cached token found. A new token will be requested.
       {% endif %}
   run_once: true
-...
