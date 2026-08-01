@@ -117,3 +117,21 @@ releases:
     fragments:
       - update-readme-support-wording.yml
     release_date: '2026-06-01'
+  1.2.0:
+    changes:
+      bugfixes:
+        - rh_token_refresh - Read and timestamp the token cache on the target host
+          (``slurp`` / ``command``) instead of controller-side ``lookup('file')``
+          / ``lookup('pipe')``, which failed when the role ran against a remote host
+          or from an execution environment.
+      deprecated_features:
+        - The ``offline_token`` extra-var is deprecated in favor of ``redhat_offline_token``.
+          ``offline_token`` remains supported as a fallback for backward compatibility.
+      minor_changes:
+        - rh_token_refresh - Prefer ``redhat_offline_token`` when providing the Red
+          Hat offline token. Resolution order is ``redhat_offline_token``, then ``offline_token``,
+          then the ``REDHAT_OFFLINE_TOKEN`` environment variable.
+    fragments:
+      - rename-redhat-offline-token.yml
+      - rh-token-refresh-slurp-cache.yml
+    release_date: '2026-08-01'

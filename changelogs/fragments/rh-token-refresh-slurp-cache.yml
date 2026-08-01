@@ -1,6 +1,0 @@
----
-bugfixes:
-  - rh_token_refresh - Read and timestamp the token cache on the target host
-    (``slurp`` / ``command``) instead of controller-side ``lookup('file')`` /
-    ``lookup('pipe')``, which failed when the role ran against a remote host or
-    from an execution environment.
