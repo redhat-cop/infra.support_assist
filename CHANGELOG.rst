@@ -4,6 +4,24 @@ infra.support\_assist Release Notes
 
 .. contents:: Topics
 
+v1.2.0
+======
+
+Minor Changes
+-------------
+
+- rh_token_refresh - Prefer ``redhat_offline_token`` when providing the Red Hat offline token. Resolution order is ``redhat_offline_token``, then ``offline_token``, then the ``REDHAT_OFFLINE_TOKEN`` environment variable.
+
+Deprecated Features
+-------------------
+
+- The ``offline_token`` extra-var is deprecated in favor of ``redhat_offline_token``. ``offline_token`` remains supported as a fallback for backward compatibility.
+
+Bugfixes
+--------
+
+- rh_token_refresh - Read and timestamp the token cache on the target host (``slurp`` / ``command``) instead of controller-side ``lookup('file')`` / ``lookup('pipe')``, which failed when the role ran against a remote host or from an execution environment.
+
 v1.1.3
 ======
 
