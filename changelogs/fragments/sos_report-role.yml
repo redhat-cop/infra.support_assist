@@ -1,0 +1,3 @@
+---
+major_changes:
+  - Added the options below: --mask, --all-logs, --dry-run,  --estimate-only, and --threads

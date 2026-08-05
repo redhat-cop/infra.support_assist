@@ -6,4 +6,17 @@ sos_report_dest: "/tmp/sos_reports"
 sos_report_aap_containerized: "{{ containerized | default(false) | bool }}"
 
 sos_report_cleanup: "{{ clean | default(true) | bool }}"
+
+sos_report_mask: "{{ mask | default(true) | bool }}"
+
+sos_report_all_logs: "{{ all_logs | default(false) | bool }}"
+
+sos_report_dry_run: "{{ dry_run | default(false) | bool }}"
+
+sos_report_estimate_only: "{{ estimate_only | default(false) | bool }}"
+
+sos_report_threads: "{{ threads | default(false) | bool }}"
+
+sos_report_threads_number: "{{ 4 | default(false) | bool }}"
+
 ...
