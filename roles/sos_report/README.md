@@ -426,6 +426,36 @@ ansible-playbook infra.support_assist.sos_report_ocp \
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+## Security Considerations
+
+### SSH Fallback (ocp_debug mode)
+
+The SSH fallback path in `ocp_debug` mode (`sos_report_ocp_fallback_ssh: true`) connects
+from the control node directly to RHCOS node internal IPs using `StrictHostKeyChecking=no`
+and `UserKnownHostsFile=/dev/null`. This disables host key verification.
+
+**Risk:** An attacker with network access between the control node and the OCP nodes could
+perform a man-in-the-middle attack during the SSH connection. The SOS report (which may
+contain sensitive cluster configuration, logs, and credentials) could be intercepted.
+
+**Mitigations in common deployments:**
+
+- OCP node internal IPs are typically reachable only from within the cluster's private
+  network (VPN, VNET peering, or a dedicated management network). MITM attacks require
+  an attacker already inside that network boundary.
+- In AAP environments, the Execution Environment connects through a bastion/jump host
+  (configured via `sos_report_ocp_ssh_extra_args`), which adds another trust boundary.
+
+**For regulated or high-security environments:**
+
+- Use `ocp_debug` mode without SSH fallback (`sos_report_ocp_fallback_ssh: false`,
+  the default) — no SSH connection is made.
+- If SSH fallback is required, ensure the control node and OCP nodes share a private,
+  monitored network segment and rely on VPN or private peering rather than public IPs.
+- Consider setting `sos_report_ocp_ssh_extra_args` to enforce a specific known-hosts
+  file or certificate-based verification if your RHCOS provisioning populates node
+  host keys into a trusted store.
+
 ## License
 
 GPL-3.0-or-later
