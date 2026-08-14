@@ -23,6 +23,11 @@
     message_text: "Starting Collect — SOS Report on Node '{{ __ocp_node }}' via oc debug"
 
 # --- Disk space pre-flight: verify /var/tmp has enough room for the SOS report ---
+# Intentionally placed OUTSIDE the block/rescue below.
+# If disk space is insufficient, SSH fallback would also fail (same /var/tmp path),
+# so falling through to the rescue block would waste time and produce a confusing error.
+# A pre-flight failure here surfaces a clear, actionable message and skips the node
+# entirely, including the SSH fallback path.
 # Runs via 'oc debug' to check free space on the node BEFORE the slow collection.
 # Uses 'df' with POSIX output (-P) piped through 'awk' to extract available KB,
 # then converts to MB. No official Ansible module exists for remote disk checks
