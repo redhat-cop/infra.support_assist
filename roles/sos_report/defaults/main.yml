@@ -97,7 +97,9 @@ sos_report_clean: false
 # Red Hat support case identifier (--case-id). Embeds the case number in
 # the report metadata so support engineers can correlate reports with cases
 # automatically. Example: "03456789".
-sos_report_case_id: ""
+# Falls back to 'case_id' (the shared pipeline variable) so callers that
+# already pass '-e case_id=01234567' don't need a separate variable.
+sos_report_case_id: "{{ case_id | default('') }}"
 
 # Limit collection to specific plugins only (--only-plugins). Comma-separated
 # list of plugin names. When set, ONLY these plugins run — all others are

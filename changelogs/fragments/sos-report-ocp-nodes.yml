@@ -1,4 +1,11 @@
 ---
+breaking_changes:
+  - sos_report - Rename playbook ``sos_report.yml`` to ``sos_report_rhel.yml``.
+    A backward-compatible alias at ``playbooks/sos_report.yml`` is provided
+    for this release, but will be removed in a future version.
+    Migration path - RHEL hosts use ``infra.support_assist.sos_report_rhel``;
+    OCP nodes use ``infra.support_assist.sos_report_ocp``.
+
 minor_changes:
   - sos_report - Add three collection modes for OCP/RHCOS nodes -
     ``ocp_ssh`` (SSH via support-tools container) and ``ocp_debug``
@@ -20,6 +27,13 @@ minor_changes:
     details.
   - sos_report - Restructure tasks into subdirectories by mode
     (``standard/``, ``ocp_ssh/``, ``ocp_debug/``, ``common/``).
-  - sos_report - Rename playbook ``sos_report.yml`` to
-    ``sos_report_rhel.yml`` and add ``sos_report_ocp.yml`` for
-    ``ocp_debug`` mode.
+  - sos_report - Add ``sos_report_mode`` validation assert that fails
+    fast on unrecognised values instead of silently running nothing.
+  - sos_report - Wire ``sos_report_case_id`` to fall back to the shared
+    ``case_id`` pipeline variable so callers do not need to pass both.
+  - sos_report - Enable ``--low-priority`` by default
+    (``sos_report_low_priority`` now defaults to ``true``) to reduce I/O
+    and CPU impact on target hosts during collection. Override with
+    ``-e sos_report_low_priority=false`` to restore previous behavior.
+  - sos_report - Add new ``sos_report_ocp.yml`` playbook for OCP node
+    collection via ``oc debug``.

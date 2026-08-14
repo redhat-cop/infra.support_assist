@@ -144,7 +144,7 @@ To ensure your Project Synchronization successfully downloads the necessary Ansi
 
 ### Required AAP Configuration Steps
 
-| Location (Left Navigation Menu) | Setting to**Enable** | Purpose |
+| Location (Left Navigation Menu) | Setting to **Enable** | Purpose |
 | :------------------------------------------------------------------ | :-------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
 | **Settings** > **Automation Execution** > **Job** | **Enable Role Download** | Allows the Execution Environment to pull dependent Ansible Roles defined outside of a Collection. |
 | **Settings** > **Automation Execution** > **Job** | **Enable Collection(s) Download** | Allows the Execution Environment to pull Collections (e.g.,`infra.support_assist`) from configured sources. |
@@ -221,18 +221,31 @@ This collection provides five main playbooks for common operations:
       -e upload=false
     ```
 
-* **`infra.support_assist.sos_report`**: Gathers `sosreport`s from all hosts in your inventory, fetches them to the control node, and uploads them to the specified case.
+* **`infra.support_assist.sos_report_rhel`**: Gathers `sosreport`s from all RHEL hosts in your inventory, fetches them to the control node, and uploads them to the specified case.
+
+  > **Note:** `infra.support_assist.sos_report` is a deprecated alias kept for backward compatibility. It will be removed in a future release — please update job templates and automation to use `sos_report_rhel` (RHEL hosts) or `sos_report_ocp` (OCP nodes).
 
   * **Role-specific documentation:** [roles/sos_report/README.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/sos_report/README.md)
-  * **Example (using an environment variable):**
+  * **Example (RHEL hosts):**
 
     ```shell
     export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
 
-    ansible-playbook -i inventory infra.support_assist.sos_report \
+    ansible-playbook -i inventory infra.support_assist.sos_report_rhel \
       -e case_id=01234567 \
       -e upload=true \
       -e clean=true
+    ```
+
+  * **Example (OCP nodes via oc debug):**
+
+    ```shell
+    export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
+
+    ansible-playbook infra.support_assist.sos_report_ocp \
+      -e sos_report_ocp_token_file=/path/to/kubeconfig \
+      -e case_id=01234567 \
+      -e upload=true
     ```
 
 * **`infra.support_assist.ocp_must_gather` (Pipeline)**: **The primary automation playbook.** This runs the full workflow: **Token Refresh** → **Case Creation (optional)** → **Must-Gather Execution** → **Upload/Comment**. This playbook runs on `localhost`.

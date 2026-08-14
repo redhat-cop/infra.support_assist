@@ -1,0 +1,18 @@
+---
+# Backward-compatible alias — kept so existing AAP job templates using
+# 'infra.support_assist.sos_report' continue to work without changes.
+# Deprecated: switch to sos_report_rhel (RHEL hosts) or sos_report_ocp (OCP nodes).
+- name: "SOS Report — deprecation notice"
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: "Deprecation warning — this playbook will be removed in a future release"
+      ansible.builtin.debug:
+        msg: >-
+          ⚠️  playbooks/sos_report.yml is deprecated and will be removed in a future release.
+          For RHEL hosts: use infra.support_assist.sos_report_rhel
+          For OCP nodes (oc debug): use infra.support_assist.sos_report_ocp
+
+- name: "Collect SOS Reports from RHEL hosts (via sos_report_rhel)"
+  import_playbook: sos_report_rhel.yml
+...
