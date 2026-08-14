@@ -1,0 +1,81 @@
+# --- OCP Pre-Flight Assertions (shared by ocp_ssh and ocp_debug modes) ---
+---
+- name: "[Preflight - OCP Assert] | 0.0) Print execution status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Starting OCP Pre-Flight Assertions"
+
+- name: "[Preflight - OCP Assert] | 0.1) Validate SOS report mode is a recognized OCP mode"
+  ansible.builtin.assert:
+    that:
+      - sos_report_mode in ["ocp_ssh", "ocp_debug"]
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => 'sos_report_mode' must be 'ocp_ssh' or 'ocp_debug' to use OCP assertions.
+      Current value: '{{ sos_report_mode }}'.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => SOS report mode '{{ sos_report_mode }}' is valid for OCP collection.
+
+- name: "[Preflight - OCP Assert] | 0.2) Validate support-tools image is defined"
+  ansible.builtin.assert:
+    that:
+      - sos_report_ocp_support_tools_image is defined
+      - sos_report_ocp_support_tools_image | length > 0
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => 'sos_report_ocp_support_tools_image' is not defined or empty.
+      This image is required to run sos report on RHCOS nodes.
+      Default: registry.redhat.io/rhel9/support-tools
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => Support-tools image: {{ sos_report_ocp_support_tools_image }}
+
+# --- OCP Debug mode specific assertions ---
+- name: "[Preflight - OCP Assert] | 0.3) Validate OCP API connection variables (oc debug mode only)"
+  when: sos_report_mode == "ocp_debug"
+  block:
+    - name: "[Preflight - OCP Assert] | 0.3.1) Validate required OCP connection variables are defined"
+      ansible.builtin.assert:
+        that:
+          - item.value is defined
+          - item.value | length > 0
+        fail_msg: >-
+          ❌ FAILED! Oh. No! => The required variable '{{ item.name }}' is missing or empty.
+          This variable is essential for 'oc debug' mode. Provide it directly or ensure
+          the corresponding 'ocp_must_gather' variable is set.
+        success_msg: >-
+          ✅ PASSED! Oh. Yes! => Required variable '{{ item.name }}' is defined.
+      loop:
+        - { name: "sos_report_ocp_token", value: "{{ sos_report_ocp_token }}" }
+        - { name: "sos_report_ocp_server_url", value: "{{ sos_report_ocp_server_url }}" }
+      loop_control:
+        label: "{{ item.name }}"
+      no_log: true
+
+    - name: "[Preflight - OCP Assert] | 0.3.2) Check if 'oc' command exists on execution host" # noqa: var-naming[no-role-prefix]
+      ansible.builtin.command: command -v oc
+      register: __sos_report_oc_check
+      changed_when: false
+      failed_when: false
+
+    - name: "[Preflight - OCP Assert] | 0.3.3) Assert 'oc' command is available"
+      ansible.builtin.assert:
+        that:
+          - __sos_report_oc_check.rc == 0
+        fail_msg: >-
+          ❌ FAILED! Oh. No! => The 'oc' command was not found on the execution host.
+          Please ensure the OpenShift CLI is installed and in the system's PATH.
+          The 'oc debug' mode requires the 'oc' CLI to interact with the cluster.
+        success_msg: >-
+          ✅ PASSED! Oh. Yes! => The 'oc' command is available on the execution host.
+
+- name: "[Preflight - OCP Assert] | 0.4) Print completion status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "OCP Pre-Flight Assertions Completed Successfully"
+...

@@ -1,0 +1,59 @@
+# --- OCP Debug Mode: Login to OpenShift Cluster ---
+# Reuses the same authentication pattern as the ocp_must_gather role.
+---
+- name: "[STAGE 01 - OCP Login] | 1.0) Print execution status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Starting OCP Login — Authenticate to OpenShift Cluster"
+
+- name: "[STAGE 01 - OCP Login] | 1.1) Log into OpenShift cluster using 'oc login'" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.command: >
+    oc login
+    --token={{ sos_report_ocp_token }}
+    --server={{ sos_report_ocp_server_url }}
+    {% if not sos_report_ocp_validate_ssl | bool %} --insecure-skip-tls-verify {% endif %}
+  register: __sos_report_oc_login_result
+  changed_when: __sos_report_oc_login_result.rc == 0
+  failed_when: false
+  no_log: true
+
+- name: "[STAGE 01 - OCP Login] | 1.2) Verify 'oc' authentication" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.command: oc whoami
+  register: __sos_report_oc_whoami
+  changed_when: false
+  failed_when: false
+
+- name: "[STAGE 01 - OCP Login] | 1.3) Assert successful authentication to OpenShift cluster"
+  ansible.builtin.assert:
+    that:
+      - __sos_report_oc_login_result.rc == 0
+      - __sos_report_oc_whoami.rc == 0
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => Failed to authenticate to OpenShift cluster for SOS report collection.
+      This is often caused by an expired token or incorrect API URL.
+      Login Error: {{ __sos_report_oc_login_result.stderr | default(__sos_report_oc_login_result.stdout | default('No login output')) }}
+      Whoami Error: {{ __sos_report_oc_whoami.stderr | default(__sos_report_oc_whoami.stdout | default('No whoami output')) }}
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => Authentication successful.
+      Logged in as {{ __sos_report_oc_whoami.stdout | default('N/A') }}.
+  when: __sos_report_oc_login_result is defined and __sos_report_oc_whoami is defined
+
+- name: "[STAGE 01 - OCP Login] | 1.4) Set cluster name from API URL" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    __sos_report_cluster_name: "{{ sos_report_ocp_server_url | regex_replace('^(http[s]?://api\\.)', '') | regex_replace('(\\..*)$', '') }}"
+
+- name: "[STAGE 01 - OCP Login] | 1.5) Print completion status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: >-
+      OCP Login Completed — Cluster: {{ __sos_report_cluster_name | default('N/A') }},
+      User: {{ __sos_report_oc_whoami.stdout | default('N/A') }}
+...

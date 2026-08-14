@@ -1,26 +1,91 @@
+# --- Standard Mode: Generate SOS Report on RHEL hosts ---
 ---
-- name: Generate | Gather needed facts
+- name: "[STAGE 02 - Generate] | 2.0) Print execution status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Generate — Run SOS Report on RHEL Host"
+
+- name: "[STAGE 02 - Generate] | 2.1) Gather needed facts"
   ansible.builtin.setup:
     filter:
       - 'ansible_user_id'
       - 'ansible_fqdn'
 
-- name: Generate | Generate the SOS Report
+# --- Disk space pre-flight: verify /var/tmp has enough room for the SOS report ---
+# Runs on the target RHEL host via SSH before the slow sos collection.
+# No Ansible module reports free disk space without full gather_facts;
+# a targeted 'df' is cheaper and consistent with the OCP mode checks.
+- name: "[STAGE 02 - Generate] | 2.1.1) Check available disk space on target host (/var/tmp)" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.command: df -P /var/tmp
+  register: __sos_report_disk_raw
+  changed_when: false
+
+- name: "[STAGE 02 - Generate] | 2.1.2) Assert sufficient disk space on target host"
+  vars:
+    __avail_kb: "{{ __sos_report_disk_raw.stdout_lines[1].split()[3] }}"
+  ansible.builtin.assert:
+    that:
+      - __avail_kb | int > (sos_report_min_disk_mb | int * 1024)
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => Insufficient disk space on '{{ inventory_hostname }}'.
+      Available: {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
+      in /var/tmp, required: {{ sos_report_min_disk_mb }} MB
+      (sos_report_min_disk_mb). Free up space or lower the threshold
+      with '-e sos_report_min_disk_mb=<value>'.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => Host '{{ inventory_hostname }}' has
+      {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
+      free in /var/tmp (minimum: {{ sos_report_min_disk_mb }} MB).
+
+- name: "[STAGE 02 - Generate] | 2.2) Generate the SOS Report" # noqa: var-naming[no-role-prefix]
   register: __sos_report_output
   changed_when: __sos_report_output.rc == 0
   become: true
-  async: 1800 # Allow up to 30 minutes for sos to run
-  poll: 10 # Check every 10 seconds
+  async: 1800  # seconds (30 minutes) — allow time for sos to complete
+  poll: 10  # seconds — check interval
   ansible.builtin.command: >
     sos report --batch
-      {% if sos_report_aap_containerized | bool %} -k aap_containerized.username={{ ansible_user_id }}{% endif %}
+      {% if sos_report_aap_containerized | bool %}-k aap_containerized.username={{ ansible_user_id }}{% endif %}
+      {% if sos_report_clean | bool %}--clean{% endif %}
+      {% if sos_report_case_id | length > 0 %}--case-id={{ sos_report_case_id }}{% endif %}
+      {% if sos_report_only_plugins | length > 0 %}--only-plugins={{ sos_report_only_plugins }}{% endif %}
+      {% if sos_report_skip_plugins | length > 0 %}--skip-plugins={{ sos_report_skip_plugins }}{% endif %}
+      {% if sos_report_since | length > 0 %}--since={{ sos_report_since }}{% endif %}
+      {% if sos_report_log_size | int > 0 %}--log-size={{ sos_report_log_size }}{% endif %}
+      {% if sos_report_journal_size | int > 0 %}--journal-size={{ sos_report_journal_size }}{% endif %}
+      {% if sos_report_low_priority | bool %}--low-priority{% endif %}
+      {% if sos_report_threads | int > 0 %}--threads={{ sos_report_threads }}{% endif %}
+      {% if sos_report_compression_type != 'auto' %}-z {{ sos_report_compression_type }}{% endif %}
+      {% if sos_report_clean | bool and sos_report_clean_keywords | length > 0 %}--keywords={{ sos_report_clean_keywords }}{% endif %}
+      {% if sos_report_clean | bool and sos_report_clean_domains | length > 0 %}--domains={{ sos_report_clean_domains }}{% endif %}
+      {% if sos_report_clean | bool and sos_report_clean_usernames | length > 0 %}--usernames={{ sos_report_clean_usernames }}{% endif %}
       --label={{ inventory_hostname | lower }}
 
-- name: Generate | Set SOS Report location variable
+- name: "[STAGE 02 - Generate] | 2.3) Set SOS Report location variable"
   ansible.builtin.set_fact:
     sos_report_location: "{{ __sos_report_output.stdout | regex_search('.*/sosreport-.*.tar.xz') | regex_replace('\\t', '') }}"
 
-- name: Generate | View sosreport location on remote nodes
+- name: "[STAGE 02 - Generate] | 2.4) Assert SOS Report was generated successfully"
+  ansible.builtin.assert:
+    that:
+      - sos_report_location is defined
+      - sos_report_location | length > 0
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => Could not locate the generated SOS Report in the command output.
+      Output: {{ __sos_report_output.stdout | default('No output') }}
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => SOS Report generated at: {{ sos_report_location }}
+
+- name: "[STAGE 02 - Generate] | 2.5) Print completion status"
   ansible.builtin.debug:
-    msg: "Server-side SOS Report located at: {{ sos_report_location }}"
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Generate Completed — SOS Report Created on {{ inventory_hostname }}"
 ...

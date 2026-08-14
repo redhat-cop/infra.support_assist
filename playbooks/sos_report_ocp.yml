@@ -1,10 +1,12 @@
 ---
-# Pipeline playbook for collecting SOS Reports from standard RHEL hosts.
-# Targets remote inventory hosts (hosts: all) — each host runs 'sos report'
-# locally and the archive is fetched back to the control node.
-- name: "RHEL Host SOS Report Pipeline"
-  hosts: all
+# Pipeline playbook for OCP/RHCOS node SOS Report collection via 'oc debug'.
+# Runs on localhost — no SSH access to nodes required; the oc CLI drives all
+# interactions with the cluster API and node pods.
+- name: "OCP Node SOS Report Pipeline"
+  hosts: localhost
+  connection: local
   gather_facts: false
+  any_errors_fatal: true
 
   tasks:
     # --- STAGE 00: Preflight ---
@@ -29,26 +31,30 @@
             tasks_from: 1-pre_validation.yml
 
     # --- STAGE 01: Collect ---
-    # The role installs sos (if missing), generates the report on each host,
-    # fetches the archive to the control node, and cleans up.
-    - name: "[STAGE 01 - Collect] | Block: Gather SOS Report(s) from RHEL hosts"
+    # The role handles the full OCP debug pipeline internally: login, node
+    # discovery/validation, per-node SOS generation via support-tools container,
+    # fetch via 'oc debug -- cat', and optional cleanup.
+    - name: "[STAGE 01 - Collect] | Block: Gather OCP Node SOS Report(s)"
       tags:
         - collect
       block:
-        - name: "[STAGE 01 - Collect] | 1.1) Run SOS Report (Install, Generate, Fetch, Cleanup)"
+        - name: "[STAGE 01 - Collect] | 1.1) Run OCP Node SOS Report (Login, Discover, Collect, Fetch)"
           ansible.builtin.include_role:
             name: infra.support_assist.sos_report
+          vars:
+            sos_report_mode: "ocp_debug"
       rescue:
-        - name: "[STAGE 01 - Collect] | Rescue: SOS Report collection failed"
+        - name: "[STAGE 01 - Collect] | Rescue: OCP Node SOS Report collection failed"
           ansible.builtin.fail:
             msg: >-
-              ❌ FAILED! Oh. No! => SOS Report execution failed during
+              ❌ FAILED! Oh. No! => OCP Node SOS Report execution failed during
               collection or archiving. Stopping pipeline immediately; check the
               logs above for details.
 
     # --- STAGE 02: Upload ---
-    # Aggregates case_updates_needed from all hosts (each host adds its own
-    # attachment entry) and uploads them all to the Red Hat Support Case.
+    # Refreshes the Red Hat API token and uploads all collected reports to the
+    # support case. No host aggregation needed — 'hosts: localhost' means
+    # case_updates_needed is already populated directly by the role's loop.
     - name: "[STAGE 02 - Upload] | Block: Upload to Red Hat Support Case"
       tags:
         - upload
@@ -57,19 +63,6 @@
       when:
         - upload | default(true) | bool
       block:
-        # hosts: all — each host sets its own case_updates_needed; we must
-        # combine them into a single list on the delegate (localhost).
-        - name: "[STAGE 02 - Upload] | 2.0) Aggregate case_updates_needed from all hosts"
-          ansible.builtin.set_fact:
-            case_updates_needed: |
-              {% set combined_list = [] %}
-              {% for host in ansible_play_hosts %}
-              {%   if hostvars[host].case_updates_needed is defined %}
-              {%     set _ = combined_list.extend(hostvars[host].case_updates_needed) %}
-              {%   endif %}
-              {% endfor %}
-              {{ combined_list }}
-
         - name: "[STAGE 02 - Upload] | Block: Refresh Red Hat API Token"
           block:
             - name: "[STAGE 02 - Upload] | 2.1) Refresh Red Hat API token"

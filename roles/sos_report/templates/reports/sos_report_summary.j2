@@ -1,0 +1,44 @@
+{% set total_files = case_updates_needed | default([]) | length %}
+{% set fallback_nodes = __sos_report_fallback_nodes | default([]) %}
+========================================================================
+  SOS REPORT COLLECTION SUMMARY
+========================================================================
+
+1. EXECUTION DETAILS
+------------------------------------------------------------------------
+ * Collection Mode:     {{ sos_report_mode }}
+ * Destination:         {{ sos_report_dest }}
+ * Cleanup Enabled:     {{ sos_report_cleanup | bool | ternary('Yes', 'No') }}
+{% if sos_report_mode == 'ocp_debug' %}
+ * Cluster:             {{ __sos_report_cluster_name | default('N/A') }}
+ * Nodes Targeted:      {{ __sos_report_ocp_node_list | default([]) | length }}
+ * Node List:           {{ __sos_report_ocp_node_list | default([]) | join(', ') }}
+{% if sos_report_ocp_node_selector | default('') | length > 0 %}
+ * Node Selector:       {{ sos_report_ocp_node_selector }}
+{% endif %}
+ * SSH Fallback:        {{ sos_report_ocp_fallback_ssh | bool | ternary('Enabled', 'Disabled') }}
+{% if fallback_nodes | length > 0 %}
+ * ⚠️ Fallback Used:    {{ fallback_nodes | length }} node(s) collected via SSH instead of oc debug
+ * Fallback Nodes:      {{ fallback_nodes | join(', ') }}
+{% endif %}
+{% elif sos_report_mode == 'ocp_ssh' %}
+ * Target Host:         {{ inventory_hostname }}
+{% elif sos_report_mode == 'standard' %}
+ * Target Host:         {{ inventory_hostname }}
+{% endif %}
+
+2. COLLECTED REPORTS
+------------------------------------------------------------------------
+{% for item in case_updates_needed | default([]) %}
+ ✅ {{ loop.index }}) {{ item.attachment | basename }}
+    └─ {{ item.attachmentDescription }}
+{% endfor %}
+{% if total_files == 0 %}
+ ❌ No reports were collected.
+{% endif %}
+
+3. RESULT
+------------------------------------------------------------------------
+ * Total Files:         {{ total_files }}
+ * Status:              {{ (total_files > 0) | ternary('✅ Collection completed successfully', '❌ No reports collected — check logs above') }}
+========================================================================
