@@ -1,0 +1,25 @@
+---
+minor_changes:
+  - sos_report - Add three collection modes for OCP/RHCOS nodes -
+    ``ocp_ssh`` (SSH via support-tools container) and ``ocp_debug``
+    (oc debug node from localhost) in addition to the existing
+    ``standard`` mode for RHEL hosts.
+  - sos_report - Add auto-discovery of cluster nodes via ``oc get nodes``
+    with optional label selector filtering (``sos_report_ocp_node_selector``).
+  - sos_report - Add SSH fallback for ``ocp_debug`` mode when
+    ``oc debug`` fails on a node, with bastion/ProxyJump support.
+  - sos_report - Add 13 new CLI parameter variables mapping to
+    ``sos report`` flags - ``--clean``, ``--case-id``, ``--low-priority``,
+    ``--since``, ``--only-plugins``, ``--skip-plugins``, ``--log-size``,
+    ``--journal-size``, ``--threads``, ``-z``, ``--keywords``,
+    ``--domains``, ``--usernames``.
+  - sos_report - Add sos version pre-flight check requiring >= 4.0.
+  - sos_report - Add per-node disk space pre-flight check before
+    SOS collection.
+  - sos_report - Add per-node summary report template with collection
+    details.
+  - sos_report - Restructure tasks into subdirectories by mode
+    (``standard/``, ``ocp_ssh/``, ``ocp_debug/``, ``common/``).
+  - sos_report - Rename playbook ``sos_report.yml`` to
+    ``sos_report_rhel.yml`` and add ``sos_report_ocp.yml`` for
+    ``ocp_debug`` mode.
