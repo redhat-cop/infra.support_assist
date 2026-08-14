@@ -186,10 +186,13 @@
               }] }}
 
     # --- Step 4: Cleanup (if enabled) ---
-    - name: "[STAGE 03 - Collect] | 3.7) Cleanup SOS Report from node '{{ __ocp_node }}'"
+    # Remove only the specific file collected in this run to avoid deleting
+    # reports from concurrent runs or manually generated archives.
+    - name: "[STAGE 03 - Collect] | 3.7) Cleanup SOS Report from node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
       when: sos_report_cleanup | bool
       ansible.builtin.shell: |
-        oc debug node/{{ __ocp_node }} -- bash -c 'rm -f /host/var/tmp/sosreport-*.tar.xz /host/var/tmp/sosreport-*.tar.xz.md5'
+        oc debug node/{{ __ocp_node }} -- bash -c \
+          'rm -f /host{{ __ocp_debug_sos_remote_path }} /host{{ __ocp_debug_sos_remote_path }}.md5'
       changed_when: true
 
   # --- Fallback: SSH-based collection when oc debug fails ---

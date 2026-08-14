@@ -329,18 +329,26 @@ If you are running both `ocp_must_gather` and `sos_report` in the same playbook,
 
 ### Using the Collection Playbook (Recommended)
 
-The recommended way to use this role is via the main playbook, which handles token refresh and upload logic:
+The recommended way to use this role is via the mode-specific playbooks, which handle token refresh and upload logic:
 
 ```shell
 # Set your Red Hat token as an environment variable
 export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
 
-# Run the full pipeline (standard mode)
-ansible-playbook -i inventory infra.support_assist.sos_report \
+# RHEL hosts (standard mode)
+ansible-playbook -i inventory infra.support_assist.sos_report_rhel \
   -e case_id=01234567 \
   -e upload=true \
   -e clean=true
+
+# OCP nodes via oc debug
+ansible-playbook infra.support_assist.sos_report_ocp \
+  -e sos_report_ocp_token_file=/path/to/kubeconfig \
+  -e case_id=01234567 \
+  -e upload=true
 ```
+
+> **Deprecated:** `infra.support_assist.sos_report` is kept as a backward-compatible alias for this release. Update job templates and automation to use `sos_report_rhel` or `sos_report_ocp` before the next major version.
 
 ## How It Works
 

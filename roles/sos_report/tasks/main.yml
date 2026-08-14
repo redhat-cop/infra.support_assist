@@ -5,6 +5,16 @@
 #   - "ocp_ssh"   → ocp_ssh/   (SSH to RHCOS nodes)
 #   - "ocp_debug" → ocp_debug/ (oc debug node from localhost)
 ---
+- name: "Main | 0) Assert sos_report_mode is valid"
+  ansible.builtin.assert:
+    that: sos_report_mode in ['standard', 'ocp_ssh', 'ocp_debug']
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => Invalid sos_report_mode: '{{ sos_report_mode }}'.
+      Valid values: standard, ocp_ssh, ocp_debug.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => sos_report_mode is valid: '{{ sos_report_mode }}'.
+  run_once: true
+
 - name: "Main | Print on screen role initiation status"
   ansible.builtin.debug:
     msg:
