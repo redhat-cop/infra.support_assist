@@ -1,25 +1,252 @@
 ---
 argument_specs:
   main:
-    short_description: Auto-generated specs for sos_report role - main entry point
+    short_description: Gather SOS Reports from managed hosts or OCP nodes
     description:
-      - Gather's SOS Report's from managed nodes
+      - >-
+        Generates SOS reports on target hosts, fetches the resulting archives to the control node,
+        and prepares them for upload to a Red Hat Support Case. Supports standard RHEL hosts,
+        OCP/RHCOS nodes via SSH, and OCP nodes via oc debug.
     author:
       - Lenny Shirley
     options:
-      sos_report_aap_containerized:
-        description: 'Port number for network connection (default: ''{{ containerized | default(false) | bool }}'')'
-        type: str
-        default: '{{ containerized | default(false) | bool }}'
-        version_added: 0.1.0-devel
-      sos_report_cleanup:
-        description: 'Port number for network connection (default: ''{{ clean | default(true) | bool }}'')'
-        type: str
-        default: '{{ clean | default(true) | bool }}'
-        version_added: 0.1.0-devel
       sos_report_dest:
-        description: 'Port number for network connection (default: ''/tmp/sos_reports'')'
+        description: >-
+          Base directory on the control node where fetched SOS reports are stored.
+          A subdirectory is created per host/node.
         type: str
         default: /tmp/sos_reports
         version_added: 0.1.0-devel
+      sos_report_aap_containerized:
+        description: >-
+          Enable AAP containerized-specific options for the SOS report (standard mode only).
+        type: bool
+        default: false
+        version_added: 0.1.0-devel
+      sos_report_cleanup:
+        description: >-
+          Remove the generated SOS report from target hosts/nodes after fetching.
+        type: bool
+        default: true
+        version_added: 0.1.0-devel
+      sos_report_min_disk_mb:
+        description: >-
+          Minimum free disk space in MB required on the target node's /var/tmp
+          before generating a SOS report. The check runs per-node before the
+          collection begins. If insufficient, the task fails with a clear message.
+        type: int
+        default: 500
+        version_added: 1.2.0-devel
+      sos_report_clean:
+        description: >-
+          Enable data obfuscation (--clean / --mask). When true, sos replaces
+          sensitive data (IPs, hostnames, MACs) with consistent obfuscated values.
+          Recommended before sharing reports outside the organization.
+        type: bool
+        default: false
+        version_added: 1.2.0-devel
+      sos_report_case_id:
+        description: >-
+          Red Hat support case identifier (--case-id). Embeds the case number
+          in the report metadata for automatic correlation.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
+      sos_report_only_plugins:
+        description: >-
+          Limit collection to specific plugins only (--only-plugins). Comma-separated
+          list of plugin names. In OCP modes, this overrides the default OCP plugin
+          selection — use with caution.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
+      sos_report_skip_plugins:
+        description: >-
+          Skip specific plugins during collection (--skip-plugins). Comma-separated
+          list of plugin names to disable.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
+      sos_report_since:
+        description: >-
+          Collect only data newer than this date (--since). Format: YYYYMMDD or
+          YYYYMMDDHHMMSS. Limits archived files and journals.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
+      sos_report_log_size:
+        description: >-
+          Maximum size for individual log files in MiB (--log-size).
+          0 means do not pass the flag (sos default: 25 MiB).
+        type: int
+        default: 0
+        version_added: 1.2.0-devel
+      sos_report_journal_size:
+        description: >-
+          Maximum size for systemd journals in MiB (--journal-size).
+          0 means do not pass the flag (sos default: 100 MiB).
+        type: int
+        default: 0
+        version_added: 1.2.0-devel
+      sos_report_low_priority:
+        description: >-
+          Generate report with reduced system priority (--low-priority).
+          Uses ionice/nice to minimize impact on production workloads.
+        type: bool
+        default: true
+        version_added: 1.2.0-devel
+      sos_report_threads:
+        description: >-
+          Number of threads for parallel data collection (--threads).
+          0 means do not pass the flag (sos default: 4 threads).
+        type: int
+        default: 0
+        version_added: 1.2.0-devel
+      sos_report_compression_type:
+        description: >-
+          Compression algorithm for the archive (-z). 'auto' lets sos choose
+          (usually xz). Use 'gzip' for speed, 'xz' for size, 'none' to skip.
+        type: str
+        default: auto
+        choices:
+          - auto
+          - gzip
+          - xz
+          - none
+        version_added: 1.2.0-devel
+      sos_report_clean_keywords:
+        description: >-
+          Additional keywords to obfuscate (--keywords). Comma-separated list.
+          Only effective when sos_report_clean is true.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
+      sos_report_clean_domains:
+        description: >-
+          Additional domain names to obfuscate (--domains). Comma-separated list.
+          Only effective when sos_report_clean is true.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
+      sos_report_clean_usernames:
+        description: >-
+          Usernames to obfuscate (--usernames). Comma-separated list.
+          Only effective when sos_report_clean is true.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
+      sos_report_mode:
+        description: >-
+          Collection mode. 'standard' for regular RHEL hosts (default),
+          'ocp_ssh' for RHCOS nodes via SSH access,
+          'ocp_debug' for RHCOS nodes via oc debug node.
+        type: str
+        default: standard
+        choices:
+          - standard
+          - ocp_ssh
+          - ocp_debug
+        version_added: 1.2.0-devel
+      sos_report_ocp_support_tools_image:
+        description: >-
+          Support-tools container image used on RHCOS nodes to run sos report.
+          Override for disconnected/air-gapped environments.
+        type: str
+        default: registry.redhat.io/rhel9/support-tools
+        version_added: 1.2.0-devel
+      sos_report_ocp_authfile:
+        description: >-
+          Path to the container registry auth file on the RHCOS node.
+          Required for pulling the support-tools image from registry.redhat.io.
+          RHCOS nodes store the cluster pull secret at /var/lib/kubelet/config.json.
+        type: str
+        default: /var/lib/kubelet/config.json
+        version_added: 1.2.0-devel
+      sos_report_ocp_all_logs:
+        description: >-
+          Include --all-logs flag in the OCP sos report command.
+          Set to false if reports become too large.
+        type: bool
+        default: true
+        version_added: 1.2.0-devel
+      sos_report_ocp_plugin_timeout:
+        description: >-
+          Plugin timeout in seconds for OCP sos report command.
+        type: int
+        default: 600
+        version_added: 1.2.0-devel
+      sos_report_ocp_token:
+        description: >-
+          OpenShift API token for authentication (oc debug mode only).
+          Falls back to ocp_must_gather_token if not set.
+        type: str
+        required: false
+        version_added: 1.2.0-devel
+      sos_report_ocp_server_url:
+        description: >-
+          OpenShift API server URL (oc debug mode only).
+          Falls back to ocp_must_gather_server_url if not set.
+        type: str
+        required: false
+        version_added: 1.2.0-devel
+      sos_report_ocp_validate_ssl:
+        description: >-
+          Whether to validate SSL certificates when connecting to the OpenShift cluster
+          (oc debug mode only).
+        type: bool
+        default: true
+        version_added: 1.2.0-devel
+      sos_report_ocp_nodes:
+        description: >-
+          List of specific OCP node names to collect SOS reports from (oc debug mode only).
+          Example: ["worker-0.ocp.example.com", "master-0.ocp.example.com"].
+          Takes priority over sos_report_ocp_node_selector.
+          Leave empty to auto-discover nodes.
+        type: list
+        elements: str
+        default: []
+        version_added: 1.2.0-devel
+      sos_report_ocp_node_selector:
+        description: >-
+          Kubernetes label selector to filter which nodes to collect from during
+          auto-discovery (oc debug mode only). Used when sos_report_ocp_nodes is empty.
+          Examples: "node-role.kubernetes.io/worker=" for worker nodes only,
+          "node-role.kubernetes.io/master=" for control-plane nodes only.
+          Leave empty to collect from all nodes.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
+      sos_report_ocp_fallback_ssh:
+        description: >-
+          Enable SSH fallback when 'oc debug' fails on a node (oc debug mode only).
+          When true, the role attempts SSH-based SOS collection on the failed node
+          using the same support-tools container approach as ocp_ssh mode.
+          Requires SSH connectivity and key-based auth to the RHCOS node.
+        type: bool
+        default: false
+        version_added: 1.2.0-devel
+      sos_report_ocp_ssh_user:
+        description: >-
+          SSH user for RHCOS nodes when SSH fallback is triggered (oc debug mode only).
+          RHCOS nodes use 'core' as the default SSH user.
+        type: str
+        default: core
+        version_added: 1.2.0-devel
+      sos_report_ocp_ssh_key:
+        description: >-
+          Path to the SSH private key for RHCOS node access when SSH fallback
+          is triggered (oc debug mode only). Leave empty to use Ansible's default
+          SSH key resolution (~/.ssh/id_rsa, ssh-agent, etc.). In AAP, leave
+          empty — Machine credentials inject the key via ssh-agent automatically.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
+      sos_report_ocp_ssh_extra_args:
+        description: >-
+          Extra SSH arguments appended to ansible_ssh_common_args for the fallback
+          SSH connection (oc debug mode only). Use for bastion/jump host access
+          or custom SSH configuration. Example: '-o ProxyJump=bastion.example.com'.
+        type: str
+        default: ""
+        version_added: 1.2.0-devel
 ...
