@@ -1,25 +1,130 @@
+# --- Main Task File for sos_report role (Workflow Router) ---
+#
+# Dispatches to the correct mode based on 'sos_report_mode':
+#   - "standard"  → standard/  (RHEL hosts)
+#   - "ocp_ssh"   → ocp_ssh/   (SSH to RHCOS nodes)
+#   - "ocp_debug" → ocp_debug/ (oc debug node from localhost)
 ---
-- name: Ensure SOS report destination root exists on control node
+- name: "Main | 0) Assert sos_report_mode is valid"
+  ansible.builtin.assert:
+    that: sos_report_mode in ['standard', 'ocp_ssh', 'ocp_debug']
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => Invalid sos_report_mode: '{{ sos_report_mode }}'.
+      Valid values: standard, ocp_ssh, ocp_debug.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => sos_report_mode is valid: '{{ sos_report_mode }}'.
+  run_once: true
+
+- name: "Main | Print on screen role initiation status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Starting SOS Report Collection Role Execution (mode: {{ sos_report_mode }})"
+  run_once: true
+
+# --- STAGE 00: Setup (all modes) ---
+# become: false is explicit here because this task runs on the control node
+# (delegate_to: localhost). If the playbook runs with --become (needed for sos
+# on the remote host), the directory would be created as root, and the later
+# fetch task would fail with 'Permission denied' when writing as the ansible user.
+- name: "[STAGE 00 - Setup] | 0.1) Ensure SOS report destination root exists on control node"
   ansible.builtin.file:
     path: "{{ sos_report_dest }}"
     state: directory
     mode: "0755"
   delegate_to: localhost
+  become: false
   run_once: true
 
-- name: Install
-  ansible.builtin.include_tasks: install.yml
-
-- name: Block
+# ==========================================================================
+# --- Standard RHEL Host Mode ---
+# ==========================================================================
+- name: "[Standard Mode] | Block: Collect SOS Report from RHEL hosts"
+  when: sos_report_mode == "standard"
+  tags:
+    - collect
   block:
-    - name: Generate
-      ansible.builtin.include_tasks: generate.yml
+    - name: "[Standard Mode] | 1) Install sos package"
+      ansible.builtin.include_tasks: standard/1-install.yml
 
-    - name: Fetch
-      ansible.builtin.include_tasks: fetch.yml
+    - name: "[Standard Mode] | Block: Generate, Fetch and Cleanup"
+      block:
+        - name: "[Standard Mode] | 2) Generate SOS Report"
+          ansible.builtin.include_tasks: standard/2-generate.yml
 
-  always:
-    - name: Cleanup
-      when: sos_report_cleanup | bool
-      ansible.builtin.include_tasks: cleanup.yml
+        - name: "[Standard Mode] | 3) Fetch SOS Report to control node"
+          ansible.builtin.include_tasks: common/fetch.yml
+
+      always:
+        - name: "[Standard Mode] | 4) Cleanup SOS Report from target node"
+          when: sos_report_cleanup | bool
+          ansible.builtin.include_tasks: common/cleanup.yml
+
+# ==========================================================================
+# --- OCP SSH Mode (SSH to RHCOS nodes via support-tools container) ---
+# ==========================================================================
+- name: "[OCP SSH Mode] | Block: Collect SOS Report from OCP nodes via SSH"
+  when: sos_report_mode == "ocp_ssh"
+  tags:
+    - collect
+  block:
+    - name: "[OCP SSH Mode] | 0) Assert OCP prerequisites"
+      ansible.builtin.include_tasks: common/assert.yml
+
+    - name: "[OCP SSH Mode] | Block: Generate, Fetch and Cleanup"
+      block:
+        - name: "[OCP SSH Mode] | 1) Generate SOS Report via support-tools container"
+          ansible.builtin.include_tasks: ocp_ssh/1-generate.yml
+
+        - name: "[OCP SSH Mode] | 2) Fetch SOS Report to control node"
+          ansible.builtin.include_tasks: common/fetch.yml
+
+      always:
+        - name: "[OCP SSH Mode] | 3) Cleanup SOS Report from target node"
+          when: sos_report_cleanup | bool
+          ansible.builtin.include_tasks: common/cleanup.yml
+
+# ==========================================================================
+# --- OCP Debug Mode (oc debug node from execution host) ---
+# ==========================================================================
+- name: "[OCP Debug Mode] | Block: Collect SOS Report from OCP nodes via oc debug"
+  when: sos_report_mode == "ocp_debug"
+  tags:
+    - collect
+  block:
+    - name: "[OCP Debug Mode] | 0) Assert OCP prerequisites"
+      ansible.builtin.include_tasks: common/assert.yml
+
+    - name: "[OCP Debug Mode] | 1) Login to OpenShift cluster"
+      ansible.builtin.include_tasks: ocp_debug/1-login.yml
+
+    - name: "[OCP Debug Mode] | 2) Discover or validate node list"
+      ansible.builtin.include_tasks: ocp_debug/2-nodes.yml
+
+    - name: "[OCP Debug Mode] | 3) Collect SOS Report from each node"
+      ansible.builtin.include_tasks: ocp_debug/3-collect.yml
+      loop: "{{ __sos_report_ocp_node_list }}"
+      loop_control:
+        loop_var: __ocp_node
+        label: "{{ __ocp_node }}"
+
+# ==========================================================================
+# --- Summary Report ---
+# ==========================================================================
+- name: "Main | Summary) Display SOS Report Collection Summary"
+  ansible.builtin.debug:
+    msg: "{{ lookup('ansible.builtin.template', 'reports/sos_report_summary.j2').split('\n') }}"
+
+- name: "Main | Print on screen role completion status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "SOS Report Collection Role Execution Completed Successfully (mode: {{ sos_report_mode }})"
+  run_once: true
 ...

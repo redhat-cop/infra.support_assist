@@ -1,7 +1,0 @@
----
-- name: Install | Ensure sos package is installed
-  become: true
-  ansible.builtin.package:
-    name: sos
-    state: present
-...

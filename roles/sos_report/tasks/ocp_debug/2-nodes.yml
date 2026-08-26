@@ -1,0 +1,94 @@
+# --- OCP Debug Mode: Discover or Validate Node List ---
+#
+# Node selection priority:
+#   1. If sos_report_ocp_nodes is provided (non-empty list) -> use those exact nodes
+#   2. If sos_report_ocp_node_selector is set -> discover nodes matching that label selector
+#   3. If both are empty -> discover ALL nodes in the cluster
+---
+- name: "[STAGE 02 - Node Discovery] | 2.0) Print execution status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Node Discovery — Identify Target OCP Nodes"
+
+- name: "[STAGE 02 - Node Discovery] | 2.1) Auto-discover nodes from cluster" # noqa: var-naming[no-role-prefix]
+  when: sos_report_ocp_nodes | length == 0
+  block:
+    - name: "[STAGE 02 - Node Discovery] | 2.1.1) Get node names from the cluster"
+      ansible.builtin.command: >
+        oc get nodes
+        {% if sos_report_ocp_node_selector | default('') | length > 0 %}
+        -l {{ sos_report_ocp_node_selector }}
+        {% endif %}
+        -o jsonpath='{.items[*].metadata.name}'
+      register: __sos_report_discovered_nodes
+      changed_when: false
+
+    - name: "[STAGE 02 - Node Discovery] | 2.1.2) Set discovered node list"
+      ansible.builtin.set_fact:
+        __sos_report_ocp_node_list: "{{ __sos_report_discovered_nodes.stdout.split() }}"
+
+    - name: "[STAGE 02 - Node Discovery] | 2.1.3) Assert that at least one node was discovered"
+      ansible.builtin.assert:
+        that:
+          - __sos_report_ocp_node_list | length > 0
+        fail_msg: >-
+          ❌ FAILED! Oh. No! => No nodes were discovered on the cluster
+          {% if sos_report_ocp_node_selector | default('') | length > 0 %}
+          matching selector '{{ sos_report_ocp_node_selector }}'.
+          Verify the label selector is correct (oc get nodes -l {{ sos_report_ocp_node_selector }}).
+          {% else %}
+          (no selector applied).
+          Verify the cluster is accessible and the authenticated user has permissions to list nodes.
+          {% endif %}
+        success_msg: >-
+          ✅ PASSED! Oh. Yes! => Discovered {{ __sos_report_ocp_node_list | length }} node(s)
+          {% if sos_report_ocp_node_selector | default('') | length > 0 %}
+          matching '{{ sos_report_ocp_node_selector }}'
+          {% endif %}:
+          {{ __sos_report_ocp_node_list | join(', ') }}
+
+- name: "[STAGE 02 - Node Discovery] | 2.2) Use user-provided node list" # noqa: var-naming[no-role-prefix]
+  when: sos_report_ocp_nodes | length > 0
+  block:
+    - name: "[STAGE 02 - Node Discovery] | 2.2.1) Set user-provided node list"
+      ansible.builtin.set_fact:
+        __sos_report_ocp_node_list: "{{ sos_report_ocp_nodes }}"
+
+    - name: "[STAGE 02 - Node Discovery] | 2.2.2) Validate user-provided nodes exist in the cluster" # noqa: var-naming[no-role-prefix]
+      ansible.builtin.command: >
+        oc get node {{ item }} -o jsonpath='{.metadata.name}'
+      register: __sos_report_node_check
+      changed_when: false
+      failed_when: false
+      loop: "{{ __sos_report_ocp_node_list }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: "[STAGE 02 - Node Discovery] | 2.2.3) Assert all user-provided nodes exist"
+      ansible.builtin.assert:
+        that:
+          - item.rc == 0
+        fail_msg: >-
+          ❌ FAILED! Oh. No! => Node '{{ item.item }}' was not found in the cluster.
+          Please verify the node name is correct (oc get nodes).
+        success_msg: >-
+          ✅ PASSED! Oh. Yes! => Node '{{ item.item }}' exists in the cluster.
+      loop: "{{ __sos_report_node_check.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+- name: "[STAGE 02 - Node Discovery] | 2.3) Print completion status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: >-
+      Node Discovery Completed — {{ __sos_report_ocp_node_list | length }} node(s) targeted:
+      {{ __sos_report_ocp_node_list | join(', ') }}
+...

@@ -1,0 +1,234 @@
+# --- OCP Debug Mode: Per-Node SOS Report Collection ---
+# Called in a loop with __ocp_node as the loop variable (node name).
+#
+# Reference KCS: https://access.redhat.com/solutions/5065411
+#
+# Flow:
+#   1. Generate SOS report on the node via 'oc debug node/<name>'
+#   2. Find the generated report filename on the node
+#   3. Fetch the report to the control node via 'oc debug' + 'cat'
+#   4. Cleanup the report from the node (if enabled)
+#
+# Fallback:
+#   If any step above fails and sos_report_ocp_fallback_ssh is true,
+#   the rescue block attempts SSH-based collection on the failed node.
+---
+- name: "[STAGE 03 - Collect] | 3.0) Print execution status for node '{{ __ocp_node }}'"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Collect — SOS Report on Node '{{ __ocp_node }}' via oc debug"
+
+# --- Disk space pre-flight: verify /var/tmp has enough room for the SOS report ---
+# Intentionally placed OUTSIDE the block/rescue below.
+# If disk space is insufficient, SSH fallback would also fail (same /var/tmp path),
+# so falling through to the rescue block would waste time and produce a confusing error.
+# A pre-flight failure here surfaces a clear, actionable message and skips the node
+# entirely, including the SSH fallback path.
+# Runs via 'oc debug' to check free space on the node BEFORE the slow collection.
+# Uses 'df' with POSIX output (-P) piped through 'awk' to extract available KB,
+# then converts to MB. No official Ansible module exists for remote disk checks
+# via 'oc debug' — the node is not in inventory, so ansible.builtin.setup (facts)
+# is not an option here.
+- name: "[STAGE 03 - Collect] | 3.0.1) Check available disk space on node (/var/tmp) — {{ __ocp_node }}" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.shell:
+    cmd: >
+      set -o pipefail &&
+      oc debug node/{{ __ocp_node }} --
+      chroot /host df -P /var/tmp | awk 'NR==2 {print $4}'
+    executable: /bin/bash
+  register: __ocp_node_disk_avail_kb
+  changed_when: false
+
+- name: "[STAGE 03 - Collect] | 3.0.2) Assert sufficient disk space on — {{ __ocp_node }}"
+  ansible.builtin.assert:
+    that:
+      - __ocp_node_disk_avail_kb.stdout | trim | int > (sos_report_min_disk_mb | int * 1024)
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => Insufficient disk space on node '{{ __ocp_node }}'.
+      Available: {{ ((__ocp_node_disk_avail_kb.stdout | trim | int) / 1024) | round(0) | int }} MB
+      in /var/tmp, required: {{ sos_report_min_disk_mb }} MB
+      (sos_report_min_disk_mb). Free up space on the node or lower the
+      threshold with '-e sos_report_min_disk_mb=<value>'.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => Node '{{ __ocp_node }}' has
+      {{ ((__ocp_node_disk_avail_kb.stdout | trim | int) / 1024) | round(0) | int }} MB
+      free in /var/tmp (minimum: {{ sos_report_min_disk_mb }} MB).
+
+# --- Primary method: oc debug ---
+- name: "[STAGE 03 - Collect] | Block: Attempt SOS collection via oc debug on node '{{ __ocp_node }}'"
+  block:
+    # --- Step 1: Generate SOS Report ---
+    - name: "[STAGE 03 - Collect] | 3.1) Generate SOS Report on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      ansible.builtin.shell: |
+        oc debug node/{{ __ocp_node }} -- chroot /host bash -c '
+          podman run --rm --privileged \
+            --authfile={{ sos_report_ocp_authfile }} \
+            --ipc=host --net=host --pid=host \
+            -e HOST=/host -e NAME=sos-toolbox-{{ __ocp_node | lower }} \
+            -e IMAGE={{ sos_report_ocp_support_tools_image }} \
+            -v /run:/run \
+            -v /var/log:/var/log \
+            -v /etc/machine-id:/etc/machine-id \
+            -v /etc/localtime:/etc/localtime \
+            -v /:/host \
+            {{ sos_report_ocp_support_tools_image }} \
+            sos report --batch \
+              -e openshift -e openshift_ovn -e openvswitch -e podman -e crio \
+              -k crio.all=on -k crio.logs=on \
+              -k podman.all=on -k podman.logs=on \
+              -k networking.ethtool-namespaces=off \
+              {% if sos_report_ocp_all_logs | bool %}--all-logs{% endif %} \
+              --plugin-timeout={{ sos_report_ocp_plugin_timeout }} \
+              {% if sos_report_clean | bool %}--clean{% endif %} \
+              {% if sos_report_case_id | length > 0 %}--case-id={{ sos_report_case_id }}{% endif %} \
+              {% if sos_report_only_plugins | length > 0 %}--only-plugins={{ sos_report_only_plugins }}{% endif %} \
+              {% if sos_report_skip_plugins | length > 0 %}--skip-plugins={{ sos_report_skip_plugins }}{% endif %} \
+              {% if sos_report_since | length > 0 %}--since={{ sos_report_since }}{% endif %} \
+              {% if sos_report_log_size | int > 0 %}--log-size={{ sos_report_log_size }}{% endif %} \
+              {% if sos_report_journal_size | int > 0 %}--journal-size={{ sos_report_journal_size }}{% endif %} \
+              {% if sos_report_low_priority | bool %}--low-priority{% endif %} \
+              {% if sos_report_threads | int > 0 %}--threads={{ sos_report_threads }}{% endif %} \
+              {% if sos_report_compression_type != 'auto' %}-z {{ sos_report_compression_type }}{% endif %} \
+              {% if sos_report_clean | bool and sos_report_clean_keywords | length > 0 %}--keywords={{ sos_report_clean_keywords }}{% endif %} \
+              {% if sos_report_clean | bool and sos_report_clean_domains | length > 0 %}--domains={{ sos_report_clean_domains }}{% endif %} \
+              {% if sos_report_clean | bool and sos_report_clean_usernames | length > 0 %}--usernames={{ sos_report_clean_usernames }}{% endif %} \
+              --label={{ __ocp_node | lower }}
+        '
+      register: __ocp_debug_generate_result
+      changed_when: __ocp_debug_generate_result.rc == 0
+      async: 3600  # seconds (60 minutes) — SOS collection can be slow on large nodes
+      poll: 15  # seconds — check interval
+
+    - name: "[STAGE 03 - Collect] | 3.2) Assert SOS Report generation succeeded on node '{{ __ocp_node }}'"
+      ansible.builtin.assert:
+        that:
+          - __ocp_debug_generate_result.rc == 0
+        fail_msg: >-
+          ❌ FAILED! Oh. No! => SOS Report generation failed on node '{{ __ocp_node }}'.
+          Return Code: {{ __ocp_debug_generate_result.rc }}
+          Stdout: {{ __ocp_debug_generate_result.stdout | default('No output') }}
+          Stderr: {{ __ocp_debug_generate_result.stderr | default('No errors') }}
+        success_msg: >-
+          ✅ PASSED! Oh. Yes! => SOS Report generated successfully on node '{{ __ocp_node }}'.
+
+    # --- Step 2: Find the generated report filename ---
+    - name: "[STAGE 03 - Collect] | 3.3) Find SOS Report filename on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      ansible.builtin.shell: |
+        set -o pipefail
+        oc debug node/{{ __ocp_node }} -- bash -c 'ls -t /host/var/tmp/sosreport-*.tar.xz 2>/dev/null | head -1'
+      register: __ocp_debug_find_result
+      changed_when: false
+
+    - name: "[STAGE 03 - Collect] | 3.4) Set SOS Report filename for node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        __ocp_debug_sos_remote_path: "{{ __ocp_debug_find_result.stdout | trim }}"
+        __ocp_debug_sos_filename: "{{ __ocp_debug_find_result.stdout | trim | basename }}"
+
+    - name: "[STAGE 03 - Collect] | 3.5) Assert SOS Report file was found on node '{{ __ocp_node }}'"
+      ansible.builtin.assert:
+        that:
+          - __ocp_debug_sos_filename is defined
+          - __ocp_debug_sos_filename | length > 0
+          - __ocp_debug_sos_filename.endswith('.tar.xz')
+        fail_msg: >-
+          ❌ FAILED! Oh. No! => Could not locate the generated SOS Report on node '{{ __ocp_node }}'.
+          Expected a file matching 'sosreport-*.tar.xz' in /host/var/tmp/.
+          ls output: {{ __ocp_debug_find_result.stdout | default('empty') }}
+        success_msg: >-
+          ✅ PASSED! Oh. Yes! => Found SOS Report: {{ __ocp_debug_sos_filename }}
+
+    # --- Step 3: Fetch the report to the control node ---
+    - name: "[STAGE 03 - Collect] | 3.6) Fetch SOS Report from node '{{ __ocp_node }}'"
+      vars:
+        __dest_path: "{{ sos_report_dest }}/{{ __ocp_node | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
+      block:
+        - name: "[STAGE 03 - Collect] | 3.6.1) Ensure destination folder exists for node '{{ __ocp_node }}'"
+          ansible.builtin.file:
+            name: "{{ __dest_path }}"
+            state: directory
+            mode: "0755"
+
+        - name: "[STAGE 03 - Collect] | 3.6.2) Download SOS Report via oc debug from node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+          ansible.builtin.shell: >
+            oc debug node/{{ __ocp_node }} --
+            cat {{ __ocp_debug_sos_remote_path }}
+            > "{{ __dest_path }}/{{ __ocp_debug_sos_filename }}"
+          register: __ocp_debug_fetch_result
+          changed_when: __ocp_debug_fetch_result.rc == 0
+
+        - name: "[STAGE 03 - Collect] | 3.6.3) Verify downloaded file is not empty for node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+          ansible.builtin.stat:
+            path: "{{ __dest_path }}/{{ __ocp_debug_sos_filename }}"
+          register: __ocp_debug_fetched_file
+
+        - name: "[STAGE 03 - Collect] | 3.6.4) Assert downloaded file is valid for node '{{ __ocp_node }}'"
+          ansible.builtin.assert:
+            that:
+              - __ocp_debug_fetched_file.stat.exists
+              - __ocp_debug_fetched_file.stat.size > 0
+            fail_msg: >-
+              ❌ FAILED! Oh. No! => The downloaded SOS Report for node '{{ __ocp_node }}' is empty or does not exist.
+              Path: {{ __dest_path }}/{{ __ocp_debug_sos_filename }}
+            success_msg: >-
+              ✅ PASSED! Oh. Yes! => SOS Report fetched successfully for node '{{ __ocp_node }}'
+              ({{ (__ocp_debug_fetched_file.stat.size / 1048576) | round(2) }} MB).
+
+        - name: "[STAGE 03 - Collect] | 3.6.5) Build case_updates_needed variable for node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+          ansible.builtin.set_fact:
+            case_updates_needed: >-
+              {{ case_updates_needed | default([]) +
+              [{
+                'attachment': __dest_path ~ '/' ~ __ocp_debug_sos_filename,
+                'attachmentDescription': (
+                  "OCP Node SOS Report gathered from '" ~ __ocp_node
+                  ~ "' via 'oc debug' method using the 'infra.support_assist' Ansible Collection."
+                  ~ " Cluster: " ~ (__sos_report_cluster_name | default('N/A'))
+                )
+              }] }}
+
+    # --- Step 4: Cleanup (if enabled) ---
+    # Remove only the specific file collected in this run to avoid deleting
+    # reports from concurrent runs or manually generated archives.
+    - name: "[STAGE 03 - Collect] | 3.7) Cleanup SOS Report from node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      when: sos_report_cleanup | bool
+      ansible.builtin.shell: |
+        oc debug node/{{ __ocp_node }} -- bash -c \
+          'rm -f /host{{ __ocp_debug_sos_remote_path }} /host{{ __ocp_debug_sos_remote_path }}.md5'
+      changed_when: true
+
+  # --- Fallback: SSH-based collection when oc debug fails ---
+  rescue:
+    - name: "[STAGE 03 - Collect] | 3.R.0) ⚠️ oc debug failed — evaluating SSH fallback for {{ __ocp_node }}"
+      ansible.builtin.debug:
+        msg:
+          - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+          - " {{ message_text }} "
+          - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      vars:
+        message_text: "⚠️ oc debug FAILED on '{{ __ocp_node }}' — SSH fallback {{ sos_report_ocp_fallback_ssh | bool | ternary('ENABLED', 'DISABLED') }}"
+
+    - name: "[STAGE 03 - Collect] | 3.R.1) Fail if SSH fallback is disabled"
+      when: not (sos_report_ocp_fallback_ssh | bool)
+      ansible.builtin.fail:
+        msg: >-
+          ❌ FAILED! Oh. No! => SOS Report collection via 'oc debug' failed on node '{{ __ocp_node }}'
+          and SSH fallback is disabled (sos_report_ocp_fallback_ssh: false).
+          Enable it with '-e sos_report_ocp_fallback_ssh=true' and ensure SSH access to the node is available.
+
+    - name: "[STAGE 03 - Collect] | 3.R.2) Execute SSH fallback for node '{{ __ocp_node }}'"
+      when: sos_report_ocp_fallback_ssh | bool
+      ansible.builtin.include_tasks: ocp_debug/4-fallback-ssh.yml
+
+- name: "[STAGE 03 - Collect] | 3.8) Print completion status for node '{{ __ocp_node }}'"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Collect Completed — SOS Report Retrieved from Node '{{ __ocp_node }}'"
+...

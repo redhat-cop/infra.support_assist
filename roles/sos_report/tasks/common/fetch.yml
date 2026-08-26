@@ -1,0 +1,79 @@
+# --- Common: Fetch SOS Report to control node (shared by standard and ocp_ssh modes) ---
+---
+- name: "[Common - Fetch] | 0.0) Print execution status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Fetch — Retrieve SOS Report to Control Node"
+
+- name: "[Common - Fetch] | 0.1) Find the generated SOS Report" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.find:
+    paths: /var/tmp
+    patterns: sosreport-*.tar.xz
+    age: -5m  # reports created in the last 5 minutes
+  register: __found_sos_report
+
+- name: "[Common - Fetch] | 0.2) Assert SOS Report file was found"
+  ansible.builtin.assert:
+    that:
+      - __found_sos_report.matched > 0
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => No SOS Report found in /var/tmp/ (pattern: sosreport-*.tar.xz, age < 5m).
+      The report may have failed to generate or the file may be older than expected.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => Found {{ __found_sos_report.matched }} SOS Report file(s) in /var/tmp/.
+
+- name: "[Common - Fetch] | 0.3) Fetch and build case update entries"
+  when: __found_sos_report.matched > 0
+  vars:
+    __dest_path: "{{ sos_report_dest }}/{{ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
+  block:
+    # become: false is explicit here because this task runs on the control node
+    # (delegate_to: localhost). Without it, --become creates the directory as
+    # root, and the fetch task below fails writing the file as the ansible user.
+    - name: "[Common - Fetch] | 0.3.1) Ensure destination folder exists"
+      ansible.builtin.file:
+        name: "{{ __dest_path }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      become: false
+
+    - name: "[Common - Fetch] | 0.3.2) Fetch the SOS Report to the control node"
+      loop: "{{ __found_sos_report.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      become: true
+      ansible.builtin.fetch:
+        src: "{{ item.path }}"
+        dest: "{{ __dest_path }}/"
+        flat: true
+
+    - name: "[Common - Fetch] | 0.3.3) Build case_updates_needed variable" # noqa: var-naming[no-role-prefix]
+      loop: "{{ __found_sos_report.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+      ansible.builtin.set_fact:
+        case_updates_needed: >-
+          {{ case_updates_needed | default([]) +
+          [{
+            'attachment': __dest_path ~ '/' ~ item.path | basename,
+            'attachmentDescription': (
+              "Gathered from '" ~ ansible_fqdn
+              ~ "' using the 'infra.support_assist' Ansible Collection. Inventory Hostname: '"
+              ~ inventory_hostname ~ "'"
+            )
+          }] }}
+
+- name: "[Common - Fetch] | 0.4) Print completion status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Fetch — SOS Report Retrieved to Control Node Successfully"
+...

@@ -18,20 +18,24 @@ This collection currently includes the following playbooks and roles:
 ## Requirements
 
 ### Ansible Collections
+
 This collection requires the following Ansible Collections to be installed (declared in `galaxy.yml` so `ansible-galaxy` can resolve them):
+
 * `ansible.controller` (for the `token` module used by the `aap_api_token` role against Automation Controller)
 * `ansible.platform` (for the `token` module used by the `aap_api_token` role against the AAP Gateway)
 * `community.general` (for the `archive` module used by the `ocp_must_gather` and `aap_api_gather` roles)
 
 ### System Dependencies
+
 This collection requires the following packages to be installed:
 
 * **On the Target Hosts** (for the `sos_report` role):
-    * `sos`: This is required to generate the `sosreport` and is installed by the role.
 
+  * `sos`: This is required to generate the `sosreport` and is installed by the role.
 * **On the Control Node** (or execution node):
-    * `curl` (for the `rh_case` role): Required for robust, streaming file uploads to the Red Hat support portal.
-    * `oc` (for the `ocp_must_gather` role): The OpenShift CLI (`oc`) must be installed and in the system's `PATH`.
+
+  * `curl` (for the `rh_case` role): Required for robust, streaming file uploads to the Red Hat support portal.
+  * `oc` (for the `ocp_must_gather` role): The OpenShift CLI (`oc`) must be installed and in the system's `PATH`.
 
 ---
 
@@ -45,31 +49,31 @@ Published builds (for example **1.0.1**) should be installed from **Ansible Gala
 
 **CLI** (install a specific published version):
 
-~~~shell
+```shell
 ansible-galaxy collection install infra.support_assist:1.0.1
-~~~
+```
 
 **CLI** (install the newest version Galaxy offers for this namespace/name):
 
-~~~shell
+```shell
 ansible-galaxy collection install infra.support_assist
-~~~
+```
 
 **`requirements.yml`** (Galaxy is the default source when you do not set `source` / `type: git`):
 
-~~~yaml
+```yaml
 ---
 collections:
   - name: infra.support_assist
     version: ">=1.0.1"
   # other collections as needed
-~~~
+```
 
 Then run:
 
-~~~shell
+```shell
 ansible-galaxy collection install -r requirements.yml
-~~~
+```
 
 ### Red Hat Ansible Automation Hub (console)
 
@@ -81,9 +85,9 @@ If your organization consumes collections from **Red Hat** (certified / validate
 
 On the execution or control host, use **`ansible-galaxy collection install`** against the hub once [the hub is configured as a Galaxy server](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.4/html-single/getting_started_with_automation_hub/index#configure-hub-primary) (for example `ansible.cfg` / `ANSIBLE_GALAXY_SERVER_*` and a token). Example with an explicit version:
 
-~~~shell
+```shell
 ansible-galaxy collection install infra.support_assist:1.0.1
-~~~
+```
 
 (Which server is used depends on your `ansible.cfg` / environment; many sites set the hub as the default or only source for Red Hat–curated content.)
 
@@ -91,13 +95,13 @@ ansible-galaxy collection install infra.support_assist:1.0.1
 
 To install whatever is currently at the tip of the **`devel`** branch (unreleased changes; use for testing or early fixes only):
 
-~~~shell
+```shell
 ansible-galaxy collection install git+https://github.com/redhat-cop/infra.support_assist.git,devel
-~~~
+```
 
 **`requirements.yml`** (Git source):
 
-~~~yaml
+```yaml
 ---
 collections:
   - name: infra.support_assist
@@ -105,7 +109,7 @@ collections:
     type: git
     version: devel
   # other collections as needed
-~~~
+```
 
 ---
 
@@ -114,14 +118,16 @@ collections:
 This collection includes primary playbooks that orchestrate the roles in the correct order. All playbooks that access the Red Hat API require a valid **Red Hat Offline Token** (see generation instructions below).
 
 ### Preparing Your Offline Token
+
 > **💡 How to Generate a Red Hat Offline Token**
 >
-> 1.  Navigate to the Red Hat API Token management page: [https://access.redhat.com/management/api](https://access.redhat.com/management/api)
-> 2.  Click the **"Generate Token"** button.
-> 3.  Log in with your Red Hat customer portal credentials if prompted.
-> 4.  A new offline token will be generated. **Copy this token immediately**, as Red Hat notes, "Tokens are only displayed once and are not stored. They will expire after 30 days of inactivity".
+> 1. Navigate to the Red Hat API Token management page: [https://access.redhat.com/management/api](https://access.redhat.com/management/api)
+> 2. Click the **"Generate Token"** button.
+> 3. Log in with your Red Hat customer portal credentials if prompted.
+> 4. A new offline token will be generated. **Copy this token immediately**, as Red Hat notes, "Tokens are only displayed once and are not stored. They will expire after 30 days of inactivity".
 
 All playbooks that access the Red Hat API will look for the token in this order:
+
 1. An extra-var named `redhat_offline_token`.
 2. An extra-var named `offline_token` (deprecated; kept for backward compatibility).
 3. An environment variable named `REDHAT_OFFLINE_TOKEN`.
@@ -139,9 +145,9 @@ To ensure your Project Synchronization successfully downloads the necessary Ansi
 ### Required AAP Configuration Steps
 
 | Location (Left Navigation Menu) | Setting to **Enable** | Purpose |
-| :--- | :--- | :--- |
+| :------------------------------------------------------------------ | :-------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
 | **Settings** > **Automation Execution** > **Job** | **Enable Role Download** | Allows the Execution Environment to pull dependent Ansible Roles defined outside of a Collection. |
-| **Settings** > **Automation Execution** > **Job** | **Enable Collection(s) Download** | Allows the Execution Environment to pull Collections (e.g., `infra.support_assist`) from configured sources. |
+| **Settings** > **Automation Execution** > **Job** | **Enable Collection(s) Download** | Allows the Execution Environment to pull Collections (e.g.,`infra.support_assist`) from configured sources. |
 
 ### Organizational Access Check
 
@@ -157,24 +163,24 @@ When running the **`ocp_must_gather`** pipeline on an AAP instance hosted on Ope
 
 To allocate sufficient storage for the collection, you must create a specialized **Instance Group** with a **Pod Spec Override**.
 
-| Setting | Recommendation | Rationale |
-| :--- | :--- | :--- |
-| **Instance Group Name** | **`MUST-GATHER-HIGH-STORAGE`** | Clear, descriptive name for easy assignment. |
-| **Resource to Increase** | **`ephemeral-storage`** | Must-Gather relies heavily on temporary disk space. |
-| **Pod Spec Override** | Modify the **`resources.limits`** and **`resources.requests`** for the **`main`** container. | A minimum of **`20Gi`** to **`30Gi`** is often necessary for a full OCP collection. |
+| Setting                        | Recommendation                                                                                                      | Rationale                                                                                          |
+| :----------------------------- | :------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------- |
+| **Instance Group Name**  | **`MUST-GATHER-HIGH-STORAGE`**                                                                              | Clear, descriptive name for easy assignment.                                                       |
+| **Resource to Increase** | **`ephemeral-storage`**                                                                                     | Must-Gather relies heavily on temporary disk space.                                                |
+| **Pod Spec Override**    | Modify the**`resources.limits`** and **`resources.requests`** for the **`main`** container. | A minimum of**`20Gi`** to **`30Gi`** is often necessary for a full OCP collection. |
 
 ### Resource Adjustment References
 
-| Customization Option | Reference Link |
-| :--- | :--- |
+| Customization Option                                               | Reference Link                                                                                                                                                                                                                                                                                  |
+| :----------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Customizing Pod Specs via Instance Group** (Specific jobs) | [Customizing the pod specification](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/performance_considerations_for_operator_environments/assembly-pod-spec-modifications_performance-considerations#proc-customizing-pod-specs_performance-considerations) |
-| **Global Control Plane Adjustments** (All jobs) | [Chapter 2. Control plane adjustments](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/performance_considerations_for_operator_environments/assembly-control-plane-adjustments_performance-considerations) |
+| **Global Control Plane Adjustments** (All jobs)              | [Chapter 2. Control plane adjustments](https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/performance_considerations_for_operator_environments/assembly-control-plane-adjustments_performance-considerations)                                                 |
 
 ### Pod Spec Override Example Snippet
 
 This YAML snippet should be used in the **Pod Spec Override** field of the new Instance Group:
 
-~~~yaml
+```yaml
 spec:
   containers:
   - name: main
@@ -183,7 +189,7 @@ spec:
         ephemeral-storage: 30Gi  # Set limit high enough for full collection
       requests:
         ephemeral-storage: 30Gi  # Request sufficient storage to ensure scheduling
-~~~
+```
 
 ---
 
@@ -192,53 +198,76 @@ spec:
 This collection provides five main playbooks for common operations:
 
 * **`infra.support_assist.aap_api_gather`**: Gathers diagnostic output from AAP component APIs (Controller, Hub, Gateway, EDA), creates a compressed archive, and optionally uploads it to a Red Hat Support Case.
-    * **Role-specific documentation:** [roles/aap_api_gather/README.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/aap_api_gather/README.md)
-    * **Example (with case upload):**
-        ~~~shell
-        export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
-        export AAP_CONTROLLER_URL="https://aap-controller.example.com"
-        export AAP_HUB_URL="https://aap-hub.example.com"
 
-        ansible-playbook playbooks/aap_api_gather.yml \
-          -e case_id=01234567 \
-          -e upload=true
-        ~~~
-    * **Example (standalone gather without upload):**
-        ~~~shell
-        export AAP_CONTROLLER_URL="https://aap-controller.example.com"
+  * **Role-specific documentation:** [roles/aap_api_gather/README.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/aap_api_gather/README.md)
+  * **Example (with case upload):**
 
-        ansible-playbook playbooks/aap_api_gather.yml \
-          -e upload=false
-        ~~~
+    ```shell
+    export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
+    export AAP_CONTROLLER_URL="https://aap-controller.example.com"
+    export AAP_HUB_URL="https://aap-hub.example.com"
 
-* **`infra.support_assist.sos_report`**: Gathers `sosreport`s from all hosts in your inventory, fetches them to the control node, and uploads them to the specified case.
-    * **Role-specific documentation:** [roles/sos_report/README.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/sos_report/README.md)
-    * **Example (using an environment variable):**
-        ~~~shell
-        export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
+    ansible-playbook playbooks/aap_api_gather.yml \
+      -e case_id=01234567 \
+      -e upload=true
+    ```
 
-        ansible-playbook -i inventory infra.support_assist.sos_report \
-          -e case_id=01234567 \
-          -e upload=true \
-          -e clean=true
-        ~~~
+  * **Example (standalone gather without upload):**
+
+    ```shell
+    export AAP_CONTROLLER_URL="https://aap-controller.example.com"
+
+    ansible-playbook playbooks/aap_api_gather.yml \
+      -e upload=false
+    ```
+
+* **`infra.support_assist.sos_report_rhel`**: Gathers `sosreport`s from all RHEL hosts in your inventory, fetches them to the control node, and uploads them to the specified case.
+
+  > **Note:** `infra.support_assist.sos_report` is a deprecated alias kept for backward compatibility. It will be removed in a future release — please update job templates and automation to use `sos_report_rhel` (RHEL hosts) or `sos_report_ocp` (OCP nodes).
+
+  * **Role-specific documentation:** [roles/sos_report/README.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/sos_report/README.md)
+  * **Example (RHEL hosts):**
+
+    ```shell
+    export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
+
+    ansible-playbook -i inventory infra.support_assist.sos_report_rhel \
+      -e case_id=01234567 \
+      -e upload=true \
+      -e clean=true
+    ```
+
+  * **Example (OCP nodes via oc debug):**
+
+    ```shell
+    export REDHAT_OFFLINE_TOKEN="YOUR_OFFLINE_TOKEN_HERE"
+
+    ansible-playbook infra.support_assist.sos_report_ocp \
+      -e sos_report_ocp_token_file=/path/to/kubeconfig \
+      -e case_id=01234567 \
+      -e upload=true
+    ```
 
 * **`infra.support_assist.ocp_must_gather` (Pipeline)**: **The primary automation playbook.** This runs the full workflow: **Token Refresh** → **Case Creation (optional)** → **Must-Gather Execution** → **Upload/Comment**. This playbook runs on `localhost`.
-    * **Role-specific documentation:** [roles/ocp_must_gather/README.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/README.md)
-    * **Example (creating a case and uploading with all advanced options):**
-        ~~~shell
-        ansible-playbook -i inventory infra.support_assist.ocp_must_gather \
-          -e ocp_must_gather_server_url="https://api.my-ocp-cluster.com:6443" \
-          -e ocp_must_gather_token="sha256~..." \
-          -e ocp_must_gather_since="12h" \
-          -e ocp_must_gather_image="AAP" \
-          -e ocp_must_gather_disconnected_mode=true \
-          -e ocp_must_gather_disconnected_registry="my.mirror.registry.com/ocp/mirror" \
-          -e case_summary="Automated creation of case for OCP diagnostics" \
-          -e case_severity="3 (Normal)" \
-          -e redhat_offline_token=YOUR_OFFLINE_TOKEN_HERE
-        ~~~
-    > **Note:** To use this playbook to **create** a case, you must provide **all six mandatory variables**: `case_summary`, `case_description`, `case_product`, `case_product_version`, `case_type`, and `case_severity`. Crucially, you must also **omit** the `case_id` variable. If `case_id` is provided, the playbook skips creation and proceeds directly to upload.
+
+  * **Role-specific documentation:** [roles/ocp_must_gather/README.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/README.md)
+  * **Example (creating a case and uploading with all advanced options):**
+
+    ```shell
+    ansible-playbook -i inventory infra.support_assist.ocp_must_gather \
+      -e ocp_must_gather_server_url="https://api.my-ocp-cluster.com:6443" \
+      -e ocp_must_gather_token="sha256~..." \
+      -e ocp_must_gather_since="12h" \
+      -e ocp_must_gather_image="AAP" \
+      -e ocp_must_gather_disconnected_mode=true \
+      -e ocp_must_gather_disconnected_registry="my.mirror.registry.com/ocp/mirror" \
+      -e case_summary="Automated creation of case for OCP diagnostics" \
+      -e case_severity="3 (Normal)" \
+      -e redhat_offline_token=YOUR_OFFLINE_TOKEN_HERE
+    ```
+
+  > **Note:** To use this playbook to **create** a case, you must provide **all six mandatory variables**: `case_summary`, `case_description`, `case_product`, `case_product_version`, `case_type`, and `case_severity`. Crucially, you must also **omit** the `case_id` variable. If `case_id` is provided, the playbook skips creation and proceeds directly to upload.
+  >
 
 ### Valid Case Input Options
 
@@ -249,47 +278,52 @@ Please consult the dedicated documentation file for the full list of valid optio
 [**Full Case Option Lists:** `roles/rh_case/docs/CASE_OPTIONS.md`](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/docs/CASE_OPTIONS.md)
 
 * **`infra.support_assist.rh_case` (Utility)**: A unified playbook for creating and updating Red Hat Support Cases via the API. Automatically detects operation mode (create, update, or hybrid).
-    * **Role-specific documentation:** [roles/rh_case/README.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/README.md)
-    * **Example (creating a new case):**
-        ~~~shell
-        ansible-playbook -i inventory infra.support_assist.rh_case \
-          -e case_summary="Request for documentation update" \
-          -e case_description="Need clarification on X." \
-          -e case_severity="4 (Low)" \
-          -e case_product="Red Hat Ansible Automation Platform" \
-          -e case_product_version="2.4" \
-          -e redhat_offline_token=YOUR_OFFLINE_TOKEN_HERE
-        ~~~
-        > **Note:** The `case_product_version` must be provided as the **normalized base version** (e.g., `4.16`, `8.9`) and not the full patch version (e.g., `4.16.48`).
+  * **Role-specific documentation:** [roles/rh_case/README.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/README.md)
+  * **Example (creating a new case):**
 
-    * **Example (updating an existing case - uploading a file):**
-      ~~~shell
-      # Assuming REDHAT_OFFLINE_TOKEN is set as an environment variable
-      ansible-playbook infra.support_assist.rh_case \
-        -e case_id=01234567 \
-        -e "case_updates_needed=[{'attachment': '/path/to/local/file.log', 'attachmentDescription': 'Manual log file upload.'}]"
-      ~~~
+    ```shell
+    ansible-playbook -i inventory infra.support_assist.rh_case \
+      -e case_summary="Request for documentation update" \
+      -e case_description="Need clarification on X." \
+      -e case_severity="4 (Low)" \
+      -e case_product="Red Hat Ansible Automation Platform" \
+      -e case_product_version="2.4" \
+      -e redhat_offline_token=YOUR_OFFLINE_TOKEN_HERE
+    ```
 
-    * **Example (updating an existing case - adding a comment):**
-      ~~~shell
-      # Assuming REDHAT_OFFLINE_TOKEN is set as an environment variable
-      ansible-playbook infra.support_assist.rh_case \
-        -e case_id=01234567 \
-        -e "case_updates_needed=[{'comment': 'Adding a comment via playbook.', 'commentType': 'plaintext'}]"
-      ~~~
+    > **Note:** The `case_product_version` must be provided as the **normalized base version** (e.g., `4.16`, `8.9`) and not the full patch version (e.g., `4.16.48`).
+    >
+  * **Example (updating an existing case - uploading a file):**
 
-    * **Example (hybrid mode - create case and upload in one operation):**
-      ~~~shell
-      ansible-playbook infra.support_assist.rh_case \
-        -e case_summary="Issue with cluster" \
-        -e case_description="Experiencing connectivity issues." \
-        -e case_product="OpenShift Container Platform" \
-        -e case_product_version="4.16" \
-        -e case_type="Configuration Issue" \
-        -e case_severity="3 (Normal)" \
-        -e "case_updates_needed=[{'attachment': '/path/to/file.log', 'attachmentDescription': 'Diagnostic log'}]" \
-        -e redhat_offline_token=YOUR_OFFLINE_TOKEN_HERE
-      ~~~
+    ```shell
+    # Assuming REDHAT_OFFLINE_TOKEN is set as an environment variable
+    ansible-playbook infra.support_assist.rh_case \
+      -e case_id=01234567 \
+      -e "case_updates_needed=[{'attachment': '/path/to/local/file.log', 'attachmentDescription': 'Manual log file upload.'}]"
+    ```
+
+  * **Example (updating an existing case - adding a comment):**
+
+    ```shell
+    # Assuming REDHAT_OFFLINE_TOKEN is set as an environment variable
+    ansible-playbook infra.support_assist.rh_case \
+      -e case_id=01234567 \
+      -e "case_updates_needed=[{'comment': 'Adding a comment via playbook.', 'commentType': 'plaintext'}]"
+    ```
+
+  * **Example (hybrid mode - create case and upload in one operation):**
+
+    ```shell
+    ansible-playbook infra.support_assist.rh_case \
+      -e case_summary="Issue with cluster" \
+      -e case_description="Experiencing connectivity issues." \
+      -e case_product="OpenShift Container Platform" \
+      -e case_product_version="4.16" \
+      -e case_type="Configuration Issue" \
+      -e case_severity="3 (Normal)" \
+      -e "case_updates_needed=[{'attachment': '/path/to/file.log', 'attachmentDescription': 'Diagnostic log'}]" \
+      -e redhat_offline_token=YOUR_OFFLINE_TOKEN_HERE
+    ```
 
 ---
 
@@ -298,17 +332,20 @@ Please consult the dedicated documentation file for the full list of valid optio
 * **[aap_api_gather](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/aap_api_gather/README.md)**: Gathers diagnostic output from Ansible Automation Platform (AAP) component APIs (Controller, Hub, Gateway, EDA) and saves them as JSON files. Creates a compressed archive and prepares it for upload to a Red Hat Support Case via the `rh_case` role.
 * **[aap_api_token](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/aap_api_token/README.md)**: Obtains and manages OAuth2 API tokens for Ansible Automation Platform (AAP). Automatically detects Controller version and uses the appropriate collection (`ansible.controller` or `ansible.platform`).
 * **[ocp_must_gather](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/README.md)**: Logs into an OpenShift cluster, runs `oc adm must-gather`, and archives the result.
-    > **NEW FEATURES:**
-    > * **Privilege Pre-Check (Safety):** The role now includes an **assertion task** to verify that the authenticated user/Service Account possesses the required **`cluster-admin`** privileges **`before`** executing the long-running **`must-gather`** command, failing early with a custom formatted message if permissions are inadequate.
-    > * **Disk Space Check (Safety):** An **assertion validation** has been implemented to verify the **available disk space** on the Execution Host (EE) filesystem where the Must-Gather output directory resides. This prevents mid-execution failures due to the large size of the raw collection.
-    > * **Case Comment Template:** The content of the automatic comment posted after the Must-Gather upload can be customized via the Jinja2 template: **[roles/ocp_must_gather/templates/support_case_comment.j2](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/templates/support_case_comment.j2)**.
-    > * **Time Window (`--since`):** Use the `ocp_must_gather_since` variable (e.g., `"12h"`, `"3d"`, `"7d"`) to limit log collection to a specific time range, optimizing file size and relevance. Options include: `"1h"`, `"3h"`, `"6h"`, `"12h"`, `"24h"`, `"3d"`, `"7d"`, `"14d"`, `"30d"`, or blank for "Full History".
-    > * **Custom Feature Collection:** The `ocp_must_gather_image` variable allows selecting specialized component collections using their acronyms. Examples include **DEFAULT** (Default Must Gather Collection), **AAP** (Ansible Automation Platform), **OSSM** (OpenShift Service Mesh), **CNV** (Container Native Virtualization), and **ODF** (OpenShift Data Foundation). **All available options are listed in:** [ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md).
-    > * **Disconnected Environment:** Use the `ocp_must_gather_disconnected_mode: true` flag and provide the `ocp_must_gather_disconnected_registry` address (e.g., `my.mirror.registry.com/ocp/mirror`) to point the collection to your mirror registry. (See KCS solutions on disconnected must-gather: [https://access.redhat.com/solutions/4647561](https://access.redhat.com/solutions/4647561)).
-    > * **Cluster Name Extraction:** The role now automatically extracts the OpenShift cluster name from the provided API server URL, ensuring accurate identification in case comments and uploads.
+  > **NEW FEATURES:**
+  >
+  > * **Privilege Pre-Check (Safety):** The role now includes an **assertion task** to verify that the authenticated user/Service Account possesses the required **`cluster-admin`** privileges **`before`** executing the long-running **`must-gather`** command, failing early with a custom formatted message if permissions are inadequate.
+  > * **Disk Space Check (Safety):** An **assertion validation** has been implemented to verify the **available disk space** on the Execution Host (EE) filesystem where the Must-Gather output directory resides. This prevents mid-execution failures due to the large size of the raw collection.
+  > * **Case Comment Template:** The content of the automatic comment posted after the Must-Gather upload can be customized via the Jinja2 template: **[roles/ocp_must_gather/templates/support_case_comment.j2](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/templates/support_case_comment.j2)**.
+  > * **Time Window (`--since`):** Use the `ocp_must_gather_since` variable (e.g., `"12h"`, `"3d"`, `"7d"`) to limit log collection to a specific time range, optimizing file size and relevance. Options include: `"1h"`, `"3h"`, `"6h"`, `"12h"`, `"24h"`, `"3d"`, `"7d"`, `"14d"`, `"30d"`, or blank for "Full History".
+  > * **Custom Feature Collection:** The `ocp_must_gather_image` variable allows selecting specialized component collections using their acronyms. Examples include **DEFAULT** (Default Must Gather Collection), **AAP** (Ansible Automation Platform), **OSSM** (OpenShift Service Mesh), **CNV** (Container Native Virtualization), and **ODF** (OpenShift Data Foundation). **All available options are listed in:** [ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md).
+  > * **Disconnected Environment:** Use the `ocp_must_gather_disconnected_mode: true` flag and provide the `ocp_must_gather_disconnected_registry` address (e.g., `my.mirror.registry.com/ocp/mirror`) to point the collection to your mirror registry. (See KCS solutions on disconnected must-gather: [https://access.redhat.com/solutions/4647561](https://access.redhat.com/solutions/4647561)).
+  > * **Cluster Name Extraction:** The role now automatically extracts the OpenShift cluster name from the provided API server URL, ensuring accurate identification in case comments and uploads.
+  >
 * **[rh_case](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/README.md)**: Unified role for creating and updating Red Hat Support Cases via API. Automatically detects operation mode (create, update, or hybrid) based on provided variables.
-    > * **Case Comment Template:** The content of the automatic comment posted after case creation can be customized via the Jinja2 template: **[roles/rh_case/templates/support_case_comment.j2](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/templates/support_case_comment.j2)**.
-    > **Input Variable Options:** The full list of valid options for `case_product`, `case_type`, and `case_severity` are maintained in the dedicated documentation file: [roles/rh_case/docs/CASE_OPTIONS.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/docs/CASE_OPTIONS.md).
+  > * **Case Comment Template:** The content of the automatic comment posted after case creation can be customized via the Jinja2 template: **[roles/rh_case/templates/support_case_comment.j2](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/templates/support_case_comment.j2)**.
+  >   **Input Variable Options:** The full list of valid options for `case_product`, `case_type`, and `case_severity` are maintained in the dedicated documentation file: [roles/rh_case/docs/CASE_OPTIONS.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/docs/CASE_OPTIONS.md).
+  >
 * **[rh_token_refresh](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_token_refresh/README.md)**: Handles Red Hat API token authentication and caching.
 * **[sos_report](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/sos_report/README.md)**: Generates `sosreport` on target hosts, fetches to control node, and prepares for upload.
 
@@ -328,29 +365,60 @@ Releasing the current major version happens from the `devel` branch.
 
 ## To Do / Roadmap (in no specific order)
 
-  - [x] Add a role to use an offline token to get a refresh token for the Red Hat API
-  - [x] Add a unified role (`rh_case`) that can create cases, upload files, or add comments to a Red Hat Support Case
-  - [x] Add a role that will run `sos report` on one or more hosts
-  - [x] Add a role that will run `oc adm must-gather` on an OpenShift cluster
-  - [x] Add a playbook that can be used to attach other requested files to a Red Hat Support Case
-  - [x] Add a playbook that can be used to add comments in either `markdown` or `plaintext` to a Red Hat Support Case
-  - [x] Add a role for grabbing output from one or more Ansible Automation Platform API endpoints
-  - [ ] Add more CLI parameter options to the `sos_report` role (particularly `clean|mask`, etc.)
-  - [x] Make it easier to pick a defined scope if needed to the `ocp_must_gather` role (would replace/compliment the `container image` option)
-  - [x] Add Custom Feature Collection (acronyms): The `ocp_must_gather_image` variable allows selecting specialized component collections to the `ocp_must_gather` role - **All available options are listed in:** [ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md)
-  - [x] Add the ability to actually open a NEW Red Hat Support Case (Implemented by the unified role: [**`rh_case`**](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/README.md))
-  - [ ] Add the ability to the `sos_report` role to automatically/dynamically add more hosts to the running inventory if discovered running against a cluster (and some of the cluster hosts are missing)
-  - [x] Add Privilege Pre-Check (Safety) to verify that the authenticated user/Service Account possesses the required **`cluster-admin`** privileges **`before`** executing the long-running **`must-gather`** to the `ocp_must_gather` role
-  - [x] Add Disk Space Check (Safety) assertion validation to verify the **available disk space** on the Execution Host (EE) filesystem where the Must-Gather output directory resides to the `ocp_must_gather` role
-  - [x] Add Case Comment Template (Jinja2 customization) to the `ocp_must_gather` role
-  - [x] Add Time Window (`--since`): Use the `ocp_must_gather_since` variable to limit log collection to the `ocp_must_gather` role
-  - [x] Add Disconnected/Air-Gapp Environment flag to the `ocp_must_gather` role to point the collection to custom mirror registry. (See KCS solutions on disconnected must-gather: [https://access.redhat.com/solutions/4647561](https://access.redhat.com/solutions/4647561)).
-  - [x] Add Case Comment Template (Jinja2 customization) to the `rh_case` role
-  - [x] Add documentation for valid Case Input Options (Product, Type, Severity) - [**Full Case Option Lists:** `roles/rh_case/docs/CASE_OPTIONS.md`](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/docs/CASE_OPTIONS.md)
-  - [x] Add Cluster Name Extraction - The role now automatically extracts the OpenShift cluster name from the provided API server URL, ensuring accurate identification in case comments and uploads, to avoid user needs to be inserted manually.
-  - [ ] Add options to the `sos_report` role to gather data from an OCP nodes using the official method as guidance from Red Hat KCS: [Method 1 - Using SSH](https://access.redhat.com/solutions/3820762) or [Method 2 - Using oc debug](https://access.redhat.com/solutions/4387261) - keep in mind the SOS Report from an OCP node is different from a standard Linux host sosreport.
-  - [ ] Add an option to the `ocp_must_gather` or create a new role to gather data for one or more namespace using `oc adm inspect ns/<namespace>` as guidance from Red Hat KCS: [What are inspect logs, and how can we collect inspect logs from projects/namespaces?](https://access.redhat.com/solutions/7117361)
-  - [x] Add some lessons learned and tips how to use this automation on Ansible Automation Platform (Implemented above some useful tips/guidance: **[AAP Lessons Learned for Must-Gather Pipeline](#-aap-lessons-learned-for-must-gather-pipeline))**
+### 🩺 `sos_report` — Host & Node Diagnostics (4/9)
+
+* [X] Add a role that will run `sos report` on one or more hosts
+* [X] Add more CLI parameter options to the `sos_report` role (particularly `clean|mask`, etc.) — Implemented: `--clean`, `--case-id`, `--low-priority`, `--since`, `--only-plugins`, `--skip-plugins`, `--log-size`, `--journal-size`, `--threads`, `-z`, `--keywords`, `--domains`, `--usernames`. Includes sos version pre-flight check (>= 4.0).
+* [X] Add the ability to the `sos_report` role to automatically/dynamically add more hosts to the running inventory if discovered running against a cluster (and some of the cluster hosts are missing) — Covered by `ocp_debug` mode: auto-discovers nodes via `oc get nodes` with optional label selectors (`sos_report_ocp_node_selector`), no inventory pre-population required. SSH-based discovery was intentionally not added because [accessing OCP 4 nodes directly by SSH is not recommended](https://access.redhat.com/solutions/3820762) — use `ocp_debug` mode with `sos_report_ocp_fallback_ssh: true` for SSH fallback when `oc debug` fails.
+* [X] Add options to the `sos_report` role to gather data from OCP nodes using the official method as guidance from Red Hat KCS: [Method 1 - Using SSH](https://access.redhat.com/solutions/3820762) or [Method 2 - Using oc debug](https://access.redhat.com/solutions/4387261) — Implemented: three collection modes (`standard`, `ocp_ssh`, `ocp_debug`), auto-discovery with label selectors, SSH fallback with bastion/ProxyJump support, disk space pre-flight, and per-node summary report.
+* [ ] Add SOS report encryption support (`--encrypt-pass` / `--encrypt-key`) to the `sos_report` role for secure transmission of archives — password/key sourced from Ansible Vault or environment variable, never in cleartext
+* [ ] Add a preflight `--estimate-only` dry-run option to the `sos_report` role to approximate disk space requirements before running the actual collection — complements the existing disk space check
+* [ ] Add automatic fetch of the `private_map` obfuscation mapping file to the control node when `sos_report_clean` is enabled, so engineers can correlate obfuscated values with originals when needed
+* [ ] Add a `sos collect` mode to the `sos_report` role — `sos collect` coordinates multi-node collection natively from a central point, useful for large-scale environments as an alternative to per-node Ansible orchestration
+* [ ] Add an HTML summary report to the `sos_report` role (similar to the `api_browser.html.j2` in `aap_api_gather`) with a visual overview of all collected SOS reports: node name, size, duration, obfuscation status, fallback usage, and errors
+
+### 🔍 `ocp_must_gather` — OpenShift Cluster Diagnostics (9/10)
+
+* [X] Add a role that will run `oc adm must-gather` on an OpenShift cluster
+* [X] Make it easier to pick a defined scope if needed to the `ocp_must_gather` role (would replace/compliment the `container image` option)
+* [X] Add Custom Feature Collection (acronyms): The `ocp_must_gather_image` variable allows selecting specialized component collections to the `ocp_must_gather` role - **All available options are listed in:** [ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/ocp_must_gather/docs/MUST_GATHER_IMAGE_OPTIONS.md)
+* [X] Add Privilege Pre-Check (Safety) to verify that the authenticated user/Service Account possesses the required **`cluster-admin`** privileges **`before`** executing the long-running **`must-gather`** to the `ocp_must_gather` role
+* [X] Add Disk Space Check (Safety) assertion validation to verify the **available disk space** on the Execution Host (EE) filesystem where the Must-Gather output directory resides to the `ocp_must_gather` role
+* [X] Add Case Comment Template (Jinja2 customization) to the `ocp_must_gather` role
+* [X] Add Time Window (`--since`): Use the `ocp_must_gather_since` variable to limit log collection to the `ocp_must_gather` role
+* [X] Add Disconnected/Air-Gapp Environment flag to the `ocp_must_gather` role to point the collection to custom mirror registry. (See KCS solutions on disconnected must-gather: [https://access.redhat.com/solutions/4647561](https://access.redhat.com/solutions/4647561)).
+* [X] Add Cluster Name Extraction - The role now automatically extracts the OpenShift cluster name from the provided API server URL, ensuring accurate identification in case comments and uploads, to avoid user needs to be inserted manually.
+* [ ] Add an option to the `ocp_must_gather` or create a new role to gather data for one or more namespace using `oc adm inspect ns/<namespace>` as guidance from Red Hat KCS: [What are inspect logs, and how can we collect inspect logs from projects/namespaces?](https://access.redhat.com/solutions/7117361)
+
+### 📋 `rh_case` — Support Case Management (4/6)
+
+* [X] Add a unified role (`rh_case`) that can create cases, upload files, or add comments to a Red Hat Support Case
+* [X] Add the ability to actually open a NEW Red Hat Support Case (Implemented by the unified role: [**`rh_case`**](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/README.md))
+* [X] Add Case Comment Template (Jinja2 customization) to the `rh_case` role
+* [X] Add documentation for valid Case Input Options (Product, Type, Severity) - [**Full Case Option Lists:** `roles/rh_case/docs/CASE_OPTIONS.md`](https://github.com/redhat-cop/infra.support_assist/blob/devel/roles/rh_case/docs/CASE_OPTIONS.md)
+* [ ] Add case lookup/search capability to the `rh_case` role — query existing cases by number, status, or product to check if a case already exists before creating a new one, or to generate status reports of open cases
+* [ ] Add a case template system to the `rh_case` role — pre-defined templates for common case types (e.g. cluster unhealthy, node NotReady, etcd degraded) with `case_summary`, `case_description`, `case_product`, and `case_severity` pre-populated via `-e case_template=<name>`
+
+### 🔑 `rh_token_refresh` — Red Hat API Authentication (1/1)
+
+* [X] Add a role to use an offline token to get a refresh token for the Red Hat API
+
+### 📡 `aap_api_gather` — AAP Data Collection (1/1)
+
+* [X] Add a role for grabbing output from one or more Ansible Automation Platform API endpoints
+
+### 🔗 Playbooks & Pipelines (3/6)
+
+* [X] Add a playbook that can be used to attach other requested files to a Red Hat Support Case
+* [X] Add a playbook that can be used to add comments in either `markdown` or `plaintext` to a Red Hat Support Case
+* [X] Add some lessons learned and tips how to use this automation on Ansible Automation Platform (Implemented above some useful tips/guidance: **[AAP Lessons Learned for Must-Gather Pipeline](#-aap-lessons-learned-for-must-gather-pipeline))**
+* [ ] Add a unified pipeline playbook (`full_diagnostics.yml`) that orchestrates SOS report collection from nodes + must-gather from the cluster + case creation/update in a single execution, reducing incident response time
+* [ ] Add a notification callback option across all pipeline playbooks — a `notify_on_completion` variable that sends a summary via webhook (Slack, Teams, email) when the collection pipeline finishes, useful for background AAP jobs
+* [ ] Add a collection manifest/metadata JSON output to all diagnostic roles — a structured file in the output directory recording timestamp, node list, file sizes, collection version, sos version, `--clean` status, case ID, and other audit-trail data
+
+### 🆕 New Roles & Ideas (0/1)
+
+* [ ] Add a new `satellite_diagnostics` role to gather `foreman-debug` output and Satellite/Capsule-specific SOS report plugins for Red Hat Satellite support cases
 
 ## Support
 

@@ -1,75 +1,18 @@
 ---
-- name: Gather SOS Report(s)
-  hosts: all
+# Backward-compatible alias — kept so existing AAP job templates using
+# 'infra.support_assist.sos_report' continue to work without changes.
+# Deprecated: switch to sos_report_rhel (RHEL hosts) or sos_report_ocp (OCP nodes).
+- name: "SOS Report — deprecation notice"
+  hosts: localhost
   gather_facts: false
   tasks:
-    - name: "Block | Role Validation(s)"
-      delegate_to: localhost
-      run_once: true
-      when:
-        - upload | default(true) | bool
-      block:
-        - name: Call rh_token_refresh role
-          ansible.builtin.include_role:
-            name: infra.support_assist.rh_token_refresh
-            tasks_from: 1-pre_validation.yml
+    - name: "Deprecation warning — this playbook will be removed in a future release"
+      ansible.builtin.debug:
+        msg: >-
+          ⚠️  playbooks/sos_report.yml is deprecated and will be removed in a future release.
+          For RHEL hosts: use infra.support_assist.sos_report_rhel
+          For OCP nodes (oc debug): use infra.support_assist.sos_report_ocp
 
-        - name: Call rh_case role for validation
-          ansible.builtin.include_role:
-            name: infra.support_assist.rh_case
-            tasks_from: 1-pre_validation.yml
-
-    - name: "Block | Gather SOS Report(s)"
-      block:
-        - name: "RUN: Gather SOS Report(s)"
-          ansible.builtin.include_role:
-            name: infra.support_assist.sos_report
-      rescue:
-        - name: "Rescue | SOS Report(s) failed"
-          ansible.builtin.fail:
-            msg: >
-              [ERROR] SOS Report(s) execution failed during collection or archiving.
-              Stopping pipeline immediately; check the logs above for details.
-
-    - name: Upload Block
-      delegate_to: localhost
-      run_once: true
-      when:
-        - upload | default(true) | bool
-      block:
-        - name: Aggregate 'case_updates_needed' data from all hosts
-          ansible.builtin.set_fact:
-            case_updates_needed: |
-              {% set combined_list = [] %}
-              {% for host in ansible_play_hosts %}
-              {%   if hostvars[host].case_updates_needed is defined %}
-              {%     set _ = combined_list.extend(hostvars[host].case_updates_needed) %}
-              {%   endif %}
-              {% endfor %}
-              {{ combined_list }}
-
-        - name: "Block | Refresh Red Hat API Token"
-          block:
-            - name: Call rh_token_refresh role
-              ansible.builtin.include_role:
-                name: infra.support_assist.rh_token_refresh
-          rescue:
-            - name: "Rescue | Token Refresh failed"
-              ansible.builtin.fail:
-                msg: >
-                  [ERROR] Oh, No! => Refresh Red Hat API token failed.
-                  Stopping pipeline immediately, check the logs above for details.
-
-        - name: "Block | Create/Update Red Hat Support Case"
-          block:
-            - name: Call rh_case role (Automatically detects create/update/hybrid mode)
-              ansible.builtin.include_role:
-                name: infra.support_assist.rh_case
-          rescue:
-            - name: "Rescue | Case Creation/Update failed"
-              ansible.builtin.fail:
-                msg: >
-                  [ERROR] Oh, No! => Case creation/update failed.
-                  Stopping pipeline immediately, check the logs above for details.
-                  Check the API response for invalid subscription or product/version mismatch.
+- name: "Collect SOS Reports from RHEL hosts (via sos_report_rhel)"
+  import_playbook: sos_report_rhel.yml
 ...

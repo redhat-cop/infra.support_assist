@@ -1,0 +1,97 @@
+---
+# Pipeline playbook for collecting SOS Reports from standard RHEL hosts.
+# Targets remote inventory hosts (hosts: all) — each host runs 'sos report'
+# locally and the archive is fetched back to the control node.
+- name: "RHEL Host SOS Report Pipeline"
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    # --- STAGE 00: Preflight ---
+    # Validates Red Hat API credentials early so we don't collect reports only
+    # to discover the upload will fail.
+    - name: "[STAGE 00 - Preflight] | Block: Validate upload prerequisites"
+      tags:
+        - preflight
+      delegate_to: localhost
+      run_once: true
+      when:
+        - upload | default(true) | bool
+      block:
+        - name: "[STAGE 00 - Preflight] | 0.1) Validate Red Hat API token refresh"
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_token_refresh
+            tasks_from: 1-pre_validation.yml
+
+        - name: "[STAGE 00 - Preflight] | 0.2) Validate Red Hat Support Case parameters"
+          ansible.builtin.include_role:
+            name: infra.support_assist.rh_case
+            tasks_from: 1-pre_validation.yml
+
+    # --- STAGE 01: Collect ---
+    # The role installs sos (if missing), generates the report on each host,
+    # fetches the archive to the control node, and cleans up.
+    - name: "[STAGE 01 - Collect] | Block: Gather SOS Report(s) from RHEL hosts"
+      tags:
+        - collect
+      block:
+        - name: "[STAGE 01 - Collect] | 1.1) Run SOS Report (Install, Generate, Fetch, Cleanup)"
+          ansible.builtin.include_role:
+            name: infra.support_assist.sos_report
+      rescue:
+        - name: "[STAGE 01 - Collect] | Rescue: SOS Report collection failed"
+          ansible.builtin.fail:
+            msg: >-
+              ❌ FAILED! Oh. No! => SOS Report execution failed during
+              collection or archiving. Stopping pipeline immediately; check the
+              logs above for details.
+
+    # --- STAGE 02: Upload ---
+    # Aggregates case_updates_needed from all hosts (each host adds its own
+    # attachment entry) and uploads them all to the Red Hat Support Case.
+    - name: "[STAGE 02 - Upload] | Block: Upload to Red Hat Support Case"
+      tags:
+        - upload
+      delegate_to: localhost
+      run_once: true
+      when:
+        - upload | default(true) | bool
+      block:
+        # hosts: all — each host sets its own case_updates_needed; we must
+        # combine them into a single list on the delegate (localhost).
+        - name: "[STAGE 02 - Upload] | 2.0) Aggregate case_updates_needed from all hosts"
+          ansible.builtin.set_fact:
+            case_updates_needed: |
+              {% set combined_list = [] %}
+              {% for host in ansible_play_hosts %}
+              {%   if hostvars[host].case_updates_needed is defined %}
+              {%     set _ = combined_list.extend(hostvars[host].case_updates_needed) %}
+              {%   endif %}
+              {% endfor %}
+              {{ combined_list }}
+
+        - name: "[STAGE 02 - Upload] | Block: Refresh Red Hat API Token"
+          block:
+            - name: "[STAGE 02 - Upload] | 2.1) Refresh Red Hat API token"
+              ansible.builtin.include_role:
+                name: infra.support_assist.rh_token_refresh
+          rescue:
+            - name: "[STAGE 02 - Upload] | Rescue: Token refresh failed"
+              ansible.builtin.fail:
+                msg: >-
+                  ❌ FAILED! Oh. No! => Refresh Red Hat API token failed.
+                  Stopping pipeline immediately; check the logs above for details.
+
+        - name: "[STAGE 02 - Upload] | Block: Create/Update Red Hat Support Case"
+          block:
+            - name: "[STAGE 02 - Upload] | 2.2) Create or update Red Hat Support Case"
+              ansible.builtin.include_role:
+                name: infra.support_assist.rh_case
+          rescue:
+            - name: "[STAGE 02 - Upload] | Rescue: Case creation/update failed"
+              ansible.builtin.fail:
+                msg: >-
+                  ❌ FAILED! Oh. No! => Case creation/update failed.
+                  Stopping pipeline immediately; check the logs above for details.
+                  Check the API response for invalid subscription or product/version mismatch.
+...

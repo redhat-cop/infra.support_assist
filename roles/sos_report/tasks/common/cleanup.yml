@@ -1,0 +1,36 @@
+# --- Common: Cleanup SOS Report from target node (shared by standard and ocp_ssh modes) ---
+---
+- name: "[Common - Cleanup] | 0.0) Print execution status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Cleanup — Remove SOS Report from Target Node"
+
+- name: "[Common - Cleanup] | 0.1) Find old SOS Reports" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.find:
+    paths: /var/tmp
+    patterns: sosreport-*.tar.*
+  register: __sos_reports
+
+- name: "[Common - Cleanup] | 0.2) Delete old SOS Reports (if any were found)"
+  loop: "{{ __sos_reports.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  become: true
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+
+- name: "[Common - Cleanup] | 0.3) Print completion status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: >-
+      Cleanup Completed — {{ __sos_reports.files | length }} file(s) removed from target node
+...

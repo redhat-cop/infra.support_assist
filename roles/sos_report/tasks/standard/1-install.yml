@@ -1,0 +1,52 @@
+# --- Standard Mode: Install sos package on RHEL hosts ---
+---
+- name: "[STAGE 01 - Install] | 1.0) Print execution status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Starting Install — Ensure sos Package is Present"
+
+- name: "[STAGE 01 - Install] | 1.1) Ensure sos package is installed"
+  become: true
+  ansible.builtin.package:
+    name: sos
+    state: present
+
+# --- Version pre-flight: the role uses 'sos report' (subcommand syntax) and CLI
+# flags introduced in sos 4.0 (--clean, --low-priority, --journal-size, etc.).
+# RHEL 8.3+ and RHEL 9 ship sos 4.0+ by default. Early RHEL 8 (8.0-8.2) shipped
+# sos 3.x, which uses the legacy 'sosreport' command and lacks these flags.
+# Checking after install ensures an explicit error instead of a cryptic CLI failure.
+- name: "[STAGE 01 - Install] | 1.2) Check installed sos version" # noqa: var-naming[no-role-prefix] command-instead-of-module
+  ansible.builtin.command: rpm -q --queryformat '%{VERSION}' sos
+  register: __sos_report_installed_version
+  changed_when: false
+
+- name: "[STAGE 01 - Install] | 1.3) Assert sos version >= 4.0"
+  vars:
+    __sos_major: "{{ __sos_report_installed_version.stdout.split('.')[0] | int }}"
+  ansible.builtin.assert:
+    that:
+      - __sos_major | int >= 4
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => sos {{ __sos_report_installed_version.stdout }} is installed,
+      but this role requires sos >= 4.0. The 'sos report' subcommand and CLI options
+      (--clean, --low-priority, --journal-size, etc.) are not available in sos 3.x.
+      Update the package with 'dnf update sos' or 'yum update sos'.
+      RHEL 8.3+ and RHEL 9 ship sos 4.0+ by default.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => sos {{ __sos_report_installed_version.stdout }} is installed
+      (minimum: 4.0).
+
+- name: "[STAGE 01 - Install] | 1.4) Print completion status"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "Install Completed — sos Package is Present"
+...

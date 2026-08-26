@@ -1,0 +1,304 @@
+# --- OCP Debug Mode: SSH Fallback for a Single Node ---
+# Called from 3-collect.yml rescue block when 'oc debug' fails.
+# Uses the same support-tools container approach as ocp_ssh mode,
+# but targets a single node via dynamic inventory (add_host).
+#
+# Works with any SSH topology: direct access, bastion/jump host (ProxyJump),
+# VPN, or AAP execution environments. The sos_report_ocp_ssh_extra_args
+# variable allows injecting ProxyJump, ProxyCommand, or any SSH option.
+#
+# Connectivity pre-check: step F.4 tests SSH via the 'ssh' binary on the
+# control node (no delegate_to). This avoids Ansible's UNREACHABLE status,
+# which bypasses block/rescue and produces cryptic output. If the pre-check
+# fails, an explicit ansible.builtin.assert gives actionable troubleshooting.
+#
+# Requires:
+#   - SSH connectivity from control node (or via bastion) to the RHCOS node
+#   - Key-based authentication (RHCOS has no password auth)
+#   - The __ocp_node loop variable from 3-collect.yml
+---
+- name: "[STAGE 03 - Fallback SSH] | 3.F.0) Print fallback execution status for node '{{ __ocp_node }}'"
+  ansible.builtin.debug:
+    msg:
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+  vars:
+    message_text: "🔄 Starting SSH Fallback — Collecting SOS Report from '{{ __ocp_node }}' via SSH"
+
+# --- Step F.1: Resolve the node's internal IP from the cluster API ---
+- name: "[STAGE 03 - Fallback SSH] | 3.F.1) Get internal IP for node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.command: >
+    oc get node {{ __ocp_node }}
+    -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}'
+  register: __ocp_fallback_node_ip
+  changed_when: false
+
+- name: "[STAGE 03 - Fallback SSH] | 3.F.2) Assert node internal IP was resolved"
+  ansible.builtin.assert:
+    that:
+      - __ocp_fallback_node_ip.stdout | trim | length > 0
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => Could not resolve the internal IP for node '{{ __ocp_node }}'.
+      The 'oc get node' command returned an empty InternalIP address.
+      Verify the node exists and the authenticated user has read access.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => Resolved '{{ __ocp_node }}' → {{ __ocp_fallback_node_ip.stdout | trim }}
+
+# --- Step F.3: Add node to dynamic inventory ---
+# ansible_connection must be set explicitly to 'ssh' because the ocp_debug playbook
+# runs with 'connection: local'. Without this, delegate_to inherits the local connection
+# and all commands execute on the control node instead of the RHCOS node.
+#
+# ansible_ssh_common_args includes sos_report_ocp_ssh_extra_args so users can inject
+# ProxyJump, ProxyCommand, or any SSH option needed for bastion/jump host access.
+# In AAP, SSH keys are injected via Machine credentials (ssh-agent or key file).
+- name: "[STAGE 03 - Fallback SSH] | 3.F.3) Add node to dynamic inventory for SSH access — {{ __ocp_node }}"
+  ansible.builtin.add_host:
+    name: "{{ __ocp_node }}"
+    ansible_host: "{{ __ocp_fallback_node_ip.stdout | trim }}"
+    ansible_connection: ssh
+    ansible_user: "{{ sos_report_ocp_ssh_user }}"
+    ansible_ssh_private_key_file: "{{ sos_report_ocp_ssh_key if (sos_report_ocp_ssh_key | length > 0) else omit }}"
+    ansible_ssh_common_args: >-
+      -o StrictHostKeyChecking=no
+      -o UserKnownHostsFile=/dev/null
+      -o ConnectTimeout=30
+      {{ sos_report_ocp_ssh_extra_args }}
+    groups:
+      - sos_report_fallback_nodes
+
+# --- Step F.4: SSH connectivity pre-check ---
+# Runs the 'ssh' binary directly on the control node (no delegate_to).
+# This catches unreachable hosts BEFORE any delegate_to task runs,
+# avoiding Ansible's UNREACHABLE status which bypasses block/rescue.
+# Works with direct access, bastion/ProxyJump, VPN, and AAP EEs.
+# BatchMode=yes prevents any interactive prompt (password, host key).
+- name: "[STAGE 03 - Fallback SSH] | 3.F.4) Verify SSH connectivity to node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.command: >
+    ssh
+    -o StrictHostKeyChecking=no
+    -o UserKnownHostsFile=/dev/null
+    -o ConnectTimeout=15
+    -o BatchMode=yes
+    {{ sos_report_ocp_ssh_extra_args }}
+    {% if sos_report_ocp_ssh_key | length > 0 %}-i {{ sos_report_ocp_ssh_key }}{% endif %}
+    {{ sos_report_ocp_ssh_user }}@{{ __ocp_fallback_node_ip.stdout | trim }}
+    echo "SSH connectivity verified"
+  register: __ocp_fallback_ssh_precheck
+  ignore_errors: true
+  changed_when: false
+
+- name: "[STAGE 03 - Fallback SSH] | 3.F.5) Assert SSH connectivity to node '{{ __ocp_node }}'"
+  ansible.builtin.assert:
+    that:
+      - __ocp_fallback_ssh_precheck is not failed
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => SSH fallback cannot connect to node '{{ __ocp_node }}'
+      (IP: {{ __ocp_fallback_node_ip.stdout | trim }}).
+      Both 'oc debug' and SSH methods failed for this node.
+      Troubleshoot:
+      1) Network: Is the node reachable? Check VPN, VNET peering, bastion (ProxyJump).
+      2) SSH auth: Is the key correct? (sos_report_ocp_ssh_key or ssh-agent / AAP Machine credential).
+      3) SSH user: Is '{{ sos_report_ocp_ssh_user }}' valid on the RHCOS node? (default: 'core').
+      4) Bastion: Set sos_report_ocp_ssh_extra_args='-o ProxyJump=bastion.example.com' if needed.
+      5) Firewall: Is port 22 open on the node? (NSG, firewall rules).
+      SSH output: {{ __ocp_fallback_ssh_precheck.stderr | default('No output') }}
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => SSH connectivity verified to node '{{ __ocp_node }}'
+      (IP: {{ __ocp_fallback_node_ip.stdout | trim }}).
+
+# --- Disk space pre-flight via SSH ---
+# SSH connectivity was confirmed at F.4/F.5, so delegate_to is safe here.
+# Uses 'df' with POSIX output to check /var/tmp before the slow SOS collection.
+- name: "[STAGE 03 - Fallback SSH] | 3.F.5.1) Check available disk space on node (/var/tmp) — {{ __ocp_node }}" # noqa: var-naming[no-role-prefix]
+  delegate_to: "{{ __ocp_node }}"
+  ansible.builtin.command: df -P /var/tmp
+  register: __ocp_fallback_disk_raw
+  changed_when: false
+
+- name: "[STAGE 03 - Fallback SSH] | 3.F.5.2) Assert sufficient disk space on node '{{ __ocp_node }}'"
+  vars:
+    __avail_kb: "{{ __ocp_fallback_disk_raw.stdout_lines[1].split()[3] }}"
+  ansible.builtin.assert:
+    that:
+      - __avail_kb | int > (sos_report_min_disk_mb | int * 1024)
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => Insufficient disk space on node '{{ __ocp_node }}'.
+      Available: {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
+      in /var/tmp, required: {{ sos_report_min_disk_mb }} MB
+      (sos_report_min_disk_mb). Free up space on the node or lower the
+      threshold with '-e sos_report_min_disk_mb=<value>'.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => Node '{{ __ocp_node }}' has
+      {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
+      free in /var/tmp (minimum: {{ sos_report_min_disk_mb }} MB).
+
+# --- Steps F.6–F.13: SSH-dependent tasks wrapped in block/rescue ---
+# SSH connectivity was already confirmed at F.4/F.5, so UNREACHABLE should not occur.
+# The rescue catches operational errors (podman failure, missing files, permission errors).
+- name: "[STAGE 03 - Fallback SSH] | Block: SSH collection pipeline for node '{{ __ocp_node }}'"
+  block:
+    # --- Step F.6: Generate SOS Report via support-tools container over SSH ---
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.6) Generate SOS Report via support-tools container on '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      delegate_to: "{{ __ocp_node }}"
+      become: true
+      ansible.builtin.command: >
+        podman run --rm --privileged
+          --authfile={{ sos_report_ocp_authfile }}
+          --ipc=host --net=host --pid=host
+          -e HOST=/host -e NAME=sos-toolbox-{{ __ocp_node | lower }}
+          -e IMAGE={{ sos_report_ocp_support_tools_image }}
+          -v /run:/run
+          -v /var/log:/var/log
+          -v /etc/machine-id:/etc/machine-id
+          -v /etc/localtime:/etc/localtime
+          -v /:/host
+          {{ sos_report_ocp_support_tools_image }}
+          sos report --batch
+            -e openshift -e openshift_ovn -e openvswitch -e podman -e crio
+            -k crio.all=on -k crio.logs=on
+            -k podman.all=on -k podman.logs=on
+            -k networking.ethtool-namespaces=off
+            {% if sos_report_ocp_all_logs | bool %}--all-logs{% endif %}
+            --plugin-timeout={{ sos_report_ocp_plugin_timeout }}
+            {% if sos_report_clean | bool %}--clean{% endif %}
+            {% if sos_report_case_id | length > 0 %}--case-id={{ sos_report_case_id }}{% endif %}
+            {% if sos_report_only_plugins | length > 0 %}--only-plugins={{ sos_report_only_plugins }}{% endif %}
+            {% if sos_report_skip_plugins | length > 0 %}--skip-plugins={{ sos_report_skip_plugins }}{% endif %}
+            {% if sos_report_since | length > 0 %}--since={{ sos_report_since }}{% endif %}
+            {% if sos_report_log_size | int > 0 %}--log-size={{ sos_report_log_size }}{% endif %}
+            {% if sos_report_journal_size | int > 0 %}--journal-size={{ sos_report_journal_size }}{% endif %}
+            {% if sos_report_low_priority | bool %}--low-priority{% endif %}
+            {% if sos_report_threads | int > 0 %}--threads={{ sos_report_threads }}{% endif %}
+            {% if sos_report_compression_type != 'auto' %}-z {{ sos_report_compression_type }}{% endif %}
+            {% if sos_report_clean | bool and sos_report_clean_keywords | length > 0 %}--keywords={{ sos_report_clean_keywords }}{% endif %}
+            {% if sos_report_clean | bool and sos_report_clean_domains | length > 0 %}--domains={{ sos_report_clean_domains }}{% endif %}
+            {% if sos_report_clean | bool and sos_report_clean_usernames | length > 0 %}--usernames={{ sos_report_clean_usernames }}{% endif %}
+            --label={{ __ocp_node | lower }}
+      register: __ocp_fallback_generate_result
+      changed_when: __ocp_fallback_generate_result.rc == 0
+      async: 3600  # seconds (60 minutes) — SOS collection can be slow on large nodes
+      poll: 15  # seconds — check interval
+
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.7) Assert SOS Report generation succeeded via SSH on '{{ __ocp_node }}'"
+      ansible.builtin.assert:
+        that:
+          - __ocp_fallback_generate_result.rc == 0
+        fail_msg: >-
+          ❌ FAILED! Oh. No! => SSH fallback SOS Report generation also failed on node '{{ __ocp_node }}'.
+          Both 'oc debug' and SSH methods failed for this node.
+          Return Code: {{ __ocp_fallback_generate_result.rc }}
+          Stdout: {{ __ocp_fallback_generate_result.stdout | default('No output') }}
+          Stderr: {{ __ocp_fallback_generate_result.stderr | default('No errors') }}
+        success_msg: >-
+          ✅ PASSED! Oh. Yes! => SOS Report generated via SSH fallback on node '{{ __ocp_node }}'.
+
+    # --- Step F.8: Find the generated report on the node ---
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.8) Find SOS Report file on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      delegate_to: "{{ __ocp_node }}"
+      ansible.builtin.find:
+        paths: /var/tmp
+        patterns: sosreport-*.tar.xz
+      register: __ocp_fallback_find_result
+
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.9) Assert SOS Report file was found on node '{{ __ocp_node }}'"
+      ansible.builtin.assert:
+        that:
+          - __ocp_fallback_find_result.matched > 0
+        fail_msg: >-
+          ❌ FAILED! Oh. No! => Could not find the generated SOS Report on node '{{ __ocp_node }}'
+          via SSH. Expected 'sosreport-*.tar.xz' in /var/tmp/.
+        success_msg: >-
+          ✅ PASSED! Oh. Yes! => Found {{ __ocp_fallback_find_result.matched }} SOS Report file(s) on '{{ __ocp_node }}'.
+
+    # --- Step F.10: Fetch the report to the control node ---
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.10) Fetch SOS Report via SSH from {{ __ocp_node }}"
+      vars:
+        __dest_path: "{{ sos_report_dest }}/{{ __ocp_node | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
+        __sos_file: "{{ __ocp_fallback_find_result.files | sort(attribute='mtime', reverse=true) | first }}"
+      block:
+        - name: "[STAGE 03 - Fallback SSH] | 3.F.10.1) Ensure destination folder exists for node '{{ __ocp_node }}'"
+          ansible.builtin.file:
+            name: "{{ __dest_path }}"
+            state: directory
+            mode: "0755"
+
+        - name: "[STAGE 03 - Fallback SSH] | 3.F.10.2) Fetch SOS Report via SSH from '{{ __ocp_node }}'"
+          delegate_to: "{{ __ocp_node }}"
+          become: true
+          ansible.builtin.fetch:
+            src: "{{ __sos_file.path }}"
+            dest: "{{ __dest_path }}/"
+            flat: true
+
+        - name: "[STAGE 03 - Fallback SSH] | 3.F.10.3) Verify fetched file exists and is not empty" # noqa: var-naming[no-role-prefix]
+          ansible.builtin.stat:
+            path: "{{ __dest_path }}/{{ __sos_file.path | basename }}"
+          register: __ocp_fallback_fetched_file
+
+        - name: "[STAGE 03 - Fallback SSH] | 3.F.10.4) Assert fetched file is valid for node '{{ __ocp_node }}'"
+          ansible.builtin.assert:
+            that:
+              - __ocp_fallback_fetched_file.stat.exists
+              - __ocp_fallback_fetched_file.stat.size > 0
+            fail_msg: >-
+              ❌ FAILED! Oh. No! => The fetched SOS Report for node '{{ __ocp_node }}' via SSH is empty or missing.
+              Path: {{ __dest_path }}/{{ __sos_file.path | basename }}
+            success_msg: >-
+              ✅ PASSED! Oh. Yes! => SOS Report fetched via SSH fallback for node '{{ __ocp_node }}'
+              ({{ (__ocp_fallback_fetched_file.stat.size / 1048576) | round(2) }} MB).
+
+        - name: "[STAGE 03 - Fallback SSH] | 3.F.10.5) Build case_updates_needed variable for node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+          ansible.builtin.set_fact:
+            case_updates_needed: >-
+              {{ case_updates_needed | default([]) +
+              [{
+                'attachment': __dest_path ~ '/' ~ (__sos_file.path | basename),
+                'attachmentDescription': (
+                  "OCP Node SOS Report gathered from '" ~ __ocp_node
+                  ~ "' via SSH fallback (oc debug failed) using the 'infra.support_assist' Ansible Collection."
+                  ~ " Cluster: " ~ (__sos_report_cluster_name | default('N/A'))
+                )
+              }] }}
+
+    # --- Step F.11: Cleanup (if enabled) ---
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.11) Cleanup SOS Report from node '{{ __ocp_node }}'"
+      when: sos_report_cleanup | bool
+      delegate_to: "{{ __ocp_node }}"
+      become: true
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ __ocp_fallback_find_result.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+
+    # --- Step F.12: Track which nodes used the SSH fallback ---
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.12) Track SSH fallback usage for node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        __sos_report_fallback_nodes: "{{ __sos_report_fallback_nodes | default([]) + [__ocp_node] }}"
+
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.13) Print fallback completion status for node '{{ __ocp_node }}'"
+      ansible.builtin.debug:
+        msg:
+          - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+          - " {{ message_text }} "
+          - "{{ sos_report_separator_char * (message_text | length + sos_report_default_message_padding) | int }}"
+      vars:
+        message_text: "✅ SSH Fallback Completed — SOS Report Retrieved from '{{ __ocp_node }}' via SSH"
+
+  # --- Rescue: SSH collection pipeline failed (operational error) ---
+  # SSH connectivity was verified at F.4/F.5. If we reach here, the SSH connection
+  # worked but something else failed (podman, file operations, fetch, etc.).
+  rescue:
+    - name: "[STAGE 03 - Fallback SSH] | Rescue: SSH collection pipeline failed for node '{{ __ocp_node }}'"
+      ansible.builtin.fail:
+        msg: >-
+          ❌ FAILED! Oh. No! => SSH fallback collection pipeline failed for node '{{ __ocp_node }}'
+          (IP: {{ __ocp_fallback_node_ip.stdout | trim }}).
+          SSH connectivity was verified, but the SOS collection or fetch failed.
+          Both 'oc debug' and SSH methods failed for this node.
+          Check the task output above for the specific error (podman, file not found,
+          permission denied, fetch failure, etc.).
+...
