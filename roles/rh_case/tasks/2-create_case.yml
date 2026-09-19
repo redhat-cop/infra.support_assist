@@ -149,19 +149,7 @@
     - not (__rh_case_created_via_rest_v3 | bool)
   ansible.builtin.set_fact:
     __rh_case_v3_create_payload:
-      query: >-
-        mutation CreateNewCase($input: RedHatSupportCaseCreateInput!) {
-          redhat_support_uiapi {
-            CaseCreate(input: $input) {
-              RedHatSupportRecord {
-                Id
-                CaseNumber__c { value }
-                Subject { value }
-                Status { value }
-              }
-            }
-          }
-        }
+      query: "{{ lookup('template', 'graphql/create_new_case.graphql.j2') }}"
       variables:
         input: >-
           {{
