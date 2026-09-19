@@ -18,4 +18,18 @@ rh_case_no_log: "{{ var_no_log | default(true) | bool }}"
 
 # Post-creation comment configuration
 rh_case_post_create_comment: true  # Whether to post initial comment after case creation
+
+# REST v3 API base URL for case creation, comments, and attachments
+rh_case_api_v3_base_url: "https://api.access.redhat.com"
+
+# GraphQL fallback endpoint, used when REST v3 returns 4xx/5xx
+rh_case_graphql_url: "https://graphql.redhat.com"
+
+# Client application identifier sent with v3 attachment upload requests
+rh_case_attachment_client_id: "infra-support-assist"
+
+# v3 attachment status polling: retries × delay = total wait window
+# Default: 30 × 10 s = 300 s (5 minutes). Raise for large files close to 5 GB.
+rh_case_attachment_poll_retries: 30  # attempts
+rh_case_attachment_poll_delay: 10    # seconds between each attempt
 ...

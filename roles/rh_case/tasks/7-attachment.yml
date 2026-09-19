@@ -9,62 +9,154 @@
     message_text: "Starting Case Update and Attachment Loop for Case ID {{ case_id }}"
   run_once: true
 
-# --- Proxy Definition Tasks ---
-# (These tasks correctly define the proxy_cmd variable based on rh_case_use_proxy)
-- name: Attachment Upload | Define proxy command (if required) # noqa: var-naming[no-role-prefix]
-  ansible.builtin.set_fact:
-    proxy_cmd: " --proxy {{ rh_case_http_proxy }} "
-  when: rh_case_use_proxy | default(false)
+- name: "Attachment Upload | Get file size for presigned URL request" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.stat:
+    path: "{{ case_update.attachment }}"
+    get_checksum: false
+  register: __rh_attachment_stat
 
-# --- Curl Execution Task ---
-- name: "{{ __task_name }}" # noqa: var-naming[no-role-prefix]
-  vars:
-    __task_name: >-
-      Attachment Upload | Upload attachment to case
-      {{ case_id ~ ' | ' ~ case_update.attachment | basename }}
-  ansible.builtin.shell: | # noqa command-instead-of-module var-naming[no-role-prefix]
-    curl -s -X POST \
-      -w "\nHTTP_STATUS:%{http_code}" \
-      --max-time {{ rh_case_timeout }} \
-      -H "Authorization: Bearer {{ rh_token_refresh_api_access_token }}" \
-      {{ proxy_cmd | default('') }} \
-      -F "file=@{{ case_update.attachment }};filename={{ case_update.attachment | basename }}" \
-      -F "description={{ case_update.attachmentDescription | default('') }}" \
-      "{{ rh_token_refresh_api_base_url | default(rh_case_api_base_url) }}/support/v1/cases/{{ case_id }}/attachments/"
-  register: upload_cli_result
-  no_log: "{{ rh_case_no_log }}" # <--- To keep sensitive values out of Ansible output logs
-  failed_when: false
-  changed_when: upload_cli_result.rc == 0
-
-# --- Parsing and Validation Tasks ---
-- name: Attachment Upload | Parse curl output from loop
-  ansible.builtin.set_fact:
-    __curl_stdout: "{{ upload_cli_result.stdout | default('N/A') }}"
-    __curl_stderr: "{{ upload_cli_result.stderr | default('N/A') }}"
-    __curl_rc: "{{ upload_cli_result.rc | default('N/A') }}"
-
-- name: Attachment Upload | Extract HTTP status and response body # noqa: var-naming[no-role-prefix]
-  ansible.builtin.set_fact:
-    upload_status: "{{ (__curl_stdout | regex_search('HTTP_STATUS:(\\d+)', '\\1') | first | default(0)) | int }}"
-    upload_body_raw: "{{ __curl_stdout | regex_replace('\\nHTTP_STATUS:.*$', '') }}"
-
-- name: Attachment Upload | Assert upload succeeded (HTTP 20x)
+- name: "Attachment Upload | Assert attachment file exists"
   ansible.builtin.assert:
     that:
-      - __curl_rc | int == 0
-      - upload_status | int in [200, 201]
-    success_msg: >-
-      PASSED! Oh, Yes! => Attachment uploaded successfully to case {{ case_id }}! HTTP Status: {{ upload_status }}, Proceeding to next step...
+      - __rh_attachment_stat.stat.exists
+      - __rh_attachment_stat.stat.size > 0
     fail_msg: >-
-      FAILED! Oh, No! => Attachment upload failed!
-      Curl RC: {{ __curl_rc }} |
-      HTTP Status: {{ upload_status }} |
-      Stderr: {{ __curl_stderr }} |
-      Response Body: {{ upload_body_raw }}
+      FAILED! Attachment file not found or empty: {{ case_update.attachment }}
+    success_msg: "Attachment file found: {{ case_update.attachment | basename }} ({{ __rh_attachment_stat.stat.size | default('?') }} bytes)"
 
-- name: Attachment Upload | Set final JSON response from successful upload # noqa: var-naming[no-role-prefix]
+- name: "Attachment Upload | POST upload request to get presigned URL" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.uri:
+    url: "{{ rh_case_api_v3_base_url }}/support/v3/cases/attachments/upload"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Content-Type: "application/json"
+      Accept: "application/json"
+    body_format: json
+    body:
+      caseNumber: "{{ case_id }}"
+      fileName: "{{ case_update.attachment | basename }}"
+      fileSize: "{{ __rh_attachment_stat.stat.size | int }}"
+      description: "{{ case_update.attachmentDescription | default('') }}"
+      clientId: "{{ rh_case_attachment_client_id }}"
+    status_code:
+      - 200
+      - 201
+    return_content: true
+    validate_certs: true
+    use_proxy: "{{ rh_case_use_proxy }}"
+  register: __rh_presigned_result
+  no_log: "{{ rh_case_no_log }}"
+  environment:
+    https_proxy: "{{ rh_case_http_proxy }}"
+    http_proxy: "{{ rh_case_http_proxy }}"
+
+- name: "Attachment Upload | Assert presigned URL response received" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.assert:
+    that:
+      - __rh_presigned_result.status in [200, 201]
+      - __rh_presigned_result.json.presignedUrl is defined
+      - __rh_presigned_result.json.presignedUrl | length > 0
+      - __rh_presigned_result.json.attachmentId is defined
+    fail_msg: >-
+      FAILED! Upload initialization failed.
+      HTTP Status: {{ __rh_presigned_result.status }}
+      Response: {{ __rh_presigned_result.content | default('N/A') }}
+    success_msg: >-
+      Presigned upload URL received for {{ case_update.attachment | basename }}.
+      Attachment ID: {{ __rh_presigned_result.json.attachmentId }}.
+      Strategy: {{ __rh_presigned_result.json.uploadStrategy }}.
+
+# Ansible handles only SINGLE_PUT (files ≤ 5 GB). Files above 5 GB require
+# MULTIPART chunking with ETag collection, which is implemented in rh_case_manager.py.
+- name: "Attachment Upload | Assert SINGLE_PUT upload strategy"
+  ansible.builtin.assert:
+    that:
+      - __rh_presigned_result.json.uploadStrategy == "SINGLE_PUT"
+    fail_msg: >-
+      FAILED! Upload strategy is {{ __rh_presigned_result.json.uploadStrategy }}.
+      Files larger than 5 GB require MULTIPART upload — use rh_case_manager.py
+      for attachments above 5 GB.
+    success_msg: "Upload strategy is SINGLE_PUT — proceeding with presigned PUT."
+
+- name: "Attachment Upload | Extract attachment ID for status polling" # noqa: var-naming[no-role-prefix]
   ansible.builtin.set_fact:
-    upload_result_json: "{{ upload_body_raw }}"
+    __rh_attachment_id: "{{ __rh_presigned_result.json.attachmentId }}"
+
+- name: "Attachment Upload | PUT file to presigned URL" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.shell: | # noqa command-instead-of-module var-naming[no-role-prefix]
+    curl -s -X PUT \
+      -w "\nHTTP_STATUS:%{http_code}" \
+      --max-time {{ rh_case_timeout }} \
+      -H "Content-Type: application/octet-stream" \
+      --data-binary "@{{ case_update.attachment }}" \
+      "{{ __rh_presigned_result.json.presignedUrl }}"
+  register: __rh_v3_put_result
+  no_log: "{{ rh_case_no_log }}"
+  failed_when: false
+  changed_when: __rh_v3_put_result.rc == 0
+
+- name: "Attachment Upload | Assert PUT to presigned URL succeeded (HTTP 200)"
+  ansible.builtin.set_fact:
+    __rh_v3_put_status: >-
+      {{ (__rh_v3_put_result.stdout | regex_search('HTTP_STATUS:(\\d+)', '\\1') | first | default(0)) | int }}
+
+- name: "Attachment Upload | Validate presigned PUT response"
+  ansible.builtin.assert:
+    that:
+      - __rh_v3_put_result.rc == 0
+      - __rh_v3_put_status | int in [200, 201, 204]
+    success_msg: >-
+      PASSED! Attachment uploaded via presigned URL to case {{ case_id }}.
+      HTTP Status: {{ __rh_v3_put_status }}. Proceeding to next step...
+    fail_msg: >-
+      FAILED! Presigned URL PUT failed!
+      Curl RC: {{ __rh_v3_put_result.rc }} |
+      HTTP Status: {{ __rh_v3_put_status }} |
+      Stderr: {{ __rh_v3_put_result.stderr | default('N/A') }}
+
+# Poll until the server finishes processing the uploaded file. The status endpoint
+# returns an array — read the first element. Terminal states per spec:
+# COMPLETED, UPLOAD_FAILED, METADATA_CREATION_FAILED, DELETED.
+- name: "Attachment Upload | Poll status until COMPLETED or terminal failure" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.uri:
+    url: "{{ rh_case_api_v3_base_url }}/support/v3/cases/{{ case_id }}/attachments/{{ __rh_attachment_id }}/status"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Accept: "application/json"
+    status_code:
+      - 200
+    validate_certs: true
+    use_proxy: "{{ rh_case_use_proxy }}"
+  register: __rh_attachment_status_result
+  until: >-
+    (__rh_attachment_status_result.json | default([{}]))[0].status | default('PENDING')
+    in ['COMPLETED', 'UPLOAD_FAILED', 'METADATA_CREATION_FAILED', 'DELETED']
+  retries: "{{ rh_case_attachment_poll_retries }}"
+  delay: "{{ rh_case_attachment_poll_delay }}"
+  no_log: "{{ rh_case_no_log }}"
+  environment:
+    https_proxy: "{{ rh_case_http_proxy }}"
+    http_proxy: "{{ rh_case_http_proxy }}"
+
+- name: "Attachment Upload | Assert attachment processing COMPLETED"
+  ansible.builtin.assert:
+    that:
+      - (__rh_attachment_status_result.json | default([{}]))[0].status | default('UNKNOWN') == 'COMPLETED'
+    fail_msg: >-
+      FAILED! Attachment processing did not complete successfully.
+      Status: {{ (__rh_attachment_status_result.json | default([{}]))[0].status | default('UNKNOWN') }}
+      Attachment ID: {{ __rh_attachment_id }}
+      Response: {{ __rh_attachment_status_result.content | default('N/A') }}
+    success_msg: >-
+      PASSED! Attachment {{ __rh_attachment_id }} processed successfully for case {{ case_id }}.
+
+- name: Attachment Upload | Set upload result JSON # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    upload_result_json: "{{ __rh_presigned_result.json | to_json }}"
+
+# =============================================================================
 
 - name: Attachment Upload | Print on screen role completion status.
   ansible.builtin.debug:

@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# purpose : Template for .local/env-setup.sh — copy here and fill in real values.
+# usage   : cp config/env-setup.sh.example .local/env-setup.sh && chmod 600 .local/env-setup.sh
+#
+# After editing, source it from the repo root:
+#   source .local/env-setup.sh
+#
+# Functions available after sourcing:
+#   run_case_create   — create a test case on the selected Red Hat API environment
+#   run_case_update   — add comment/attachment to an existing case
+#   run_must_gather   — run OCP must-gather on a spoke cluster and upload to a case
+
+# =============================================================================
+# RED HAT OFFLINE TOKENS — one per API environment (leave empty if not used).
+# Generate at https://access.redhat.com/management/api
+# =============================================================================
+export REDHAT_OFFLINE_TOKEN_PROD=""    # production
+export REDHAT_OFFLINE_TOKEN_STAGE=""   # staging — required for pre-release API testing
+export REDHAT_OFFLINE_TOKEN_QA=""      # QA
+export REDHAT_OFFLINE_TOKEN_DEV=""     # dev
+
+# =============================================================================
+# TARGET CLUSTER — only required for must-gather runs.
+# =============================================================================
+export TARGET_CLUSTER=""               # spoke cluster name in ACM, e.g. acmdr-aro-lab-spoke-01
+export ACM_HUB_SERVER_URL=""           # ACM hub API endpoint, e.g. https://api.hub.example.com:6443
+# ACM_HUB_TOKEN is best sourced live (avoids stale tokens):
+#   export ACM_HUB_TOKEN=$(oc --context='acmdr-aro-lab-hub-01-sa' whoami --show-token)
+export ACM_HUB_TOKEN=""
+export KUBECONFIG="${HOME}/.kube/config"  # path to a kubeconfig with hub context
+
+# =============================================================================
+# MISC
+# =============================================================================
+export ACM_VAR_NO_LOG="false"          # false = show all output (recommended during testing)
+
+# =============================================================================
+# Source env-setup.sh from .local/ — do not modify the path below.
+# This line must come AFTER all exports above.
+# =============================================================================
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/../.local/rh-env-select.sh" 2>/dev/null || true

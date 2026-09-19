@@ -99,7 +99,7 @@
             " | DETAILS: See case comment for full report data."
           ),
           'comment': case_comment,
-          'commentType': 'markdown'
+          'commentType': 'plaintext'
         }]
       }}
   when: __must_gather_archive_name is defined

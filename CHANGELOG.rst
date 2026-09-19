@@ -4,6 +4,29 @@ infra.support\_assist Release Notes
 
 .. contents:: Topics
 
+v1.3.0
+======
+
+Major Changes
+-------------
+
+- rh_case - Migrated to CRM API v3 as the only code path. The v1 endpoints (``/v1/cases``, ``/v1/cases/{id}/comments``, ``/v1/cases/{id}/attachments``) have been removed. Case creation uses ``POST /support/v3/cases`` with GraphQL as fallback when the REST call returns 4xx or 5xx. Comments use ``POST /support/v3/cases/{n}/comments``.
+- rh_case - Replaced the legacy ``curl`` multipart attachment upload with a v3 presigned URL flow: initiate via ``POST /v3/cases/attachments/upload``, PUT the file to the presigned S3 URL, then poll for ``COMPLETED`` status. Files larger than 5 GB require MULTIPART strategy handled by ``rh_case_manager.py``.
+
+Minor Changes
+-------------
+
+- rh_case - Added ``rh_case_api_v3_base_url`` variable for the v3 REST API base URL.
+- rh_case - Added ``rh_case_graphql_url`` variable for the GraphQL fallback endpoint.
+- rh_case - Added ``rh_case_attachment_client_id`` variable (default: ``infra-support-assist``) required by the v3 attachment upload API.
+- rh_case - Added ``rh_case_attachment_poll_retries`` and ``rh_case_attachment_poll_delay`` variables for configurable attachment status polling.
+- rh_case - Updated ``roles/rh_case/README.md`` with new variables and a Mermaid flow diagram replacing the ASCII art diagram.
+
+Removed Features
+----------------
+
+- rh_case - Removed the ``rh_case_crm_api_version`` variable and all v1 API code paths. The Red Hat CRM platform decommissioned v1 endpoints on 2026-09-21. The role now uses v3 exclusively.
+
 v1.2.0
 ======
 
