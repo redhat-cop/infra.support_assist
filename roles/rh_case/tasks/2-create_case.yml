@@ -26,7 +26,7 @@
         | combine(
             (
               (
-                (case_product is defined and 'Openshift' in case_product) or
+                (case_product is defined and 'openshift' in (case_product | lower)) or
                 (cluster_id is defined and (cluster_id | length > 0))
               )
               | ternary(
@@ -57,7 +57,7 @@
       - "openshiftClusterID: {{ openshift_cluster_id_output }}"
       - "openshiftClusterVersion: {{ openshift_cluster_version_output }}"
   vars:
-    is_openshift_product: "{{ (case_product is defined) and ('Openshift' in case_product) }}"
+    is_openshift_product: "{{ (case_product is defined) and ('openshift' in (case_product | lower)) }}"
     cluster_id_provided: "{{ (cluster_id is defined) and (cluster_id | length > 0) }}"
     include_openshift_fields: "{{ is_openshift_product or cluster_id_provided }}"
     openshift_cluster_id_output: >-
@@ -72,28 +72,190 @@
       }}
   run_once: true
 
-# https://access.redhat.com/management/api/case_management#/case/createCase
-- name: "Create Case | POST '/v1/cases' to create a new RH Support Case" # noqa: var-naming[no-role-prefix]
+# v3 path: REST v3 primary with GraphQL fallback.
+# Primary: POST /v3/cases — server resolves ProductId/ContactId from human-readable names.
+# Fallback: GraphQL CreateNewCase — requires SFDC IDs from 0b-salesforce-lookup.yml.
+# Schema: https://access.redhat.com/articles/7146073
+
+# Staging SSO issues JWTs with a ~5 min TTL, shorter than the 15-min rh_token_refresh
+# cache window. Deleting the cache forces a real exchange, ensuring a fresh token for
+# both the REST v3 primary attempt and any GraphQL fallback mutation.
+- name: "Create Case | Invalidate token cache before API call (v3)" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.file:
+    path: "{{ rh_token_refresh_token_cache_file }}"
+    state: absent
+  run_once: true
+
+- name: "Create Case | Re-fetch access token before API call (v3)"
+  ansible.builtin.include_role:
+    name: infra.support_assist.rh_token_refresh
+  run_once: true
+
+# Primary: REST v3 POST /v3/cases.
+# Uses the same human-readable field names as v1 (product, version, summary, etc.).
+# OpenShift cluster fields are excluded — not part of CreateCaseV3Request spec.
+# failed_when: false so a non-2xx response flows to the GraphQL fallback below.
+- name: "Create Case | POST REST v3 /v3/cases (primary)" # noqa: var-naming[no-role-prefix]
   ansible.builtin.uri:
-    url: "{{ rh_token_refresh_api_base_url | default(rh_case_api_base_url) }}/support/v1/cases"
+    url: "{{ rh_case_api_v3_base_url }}/support/v3/cases"
     method: POST
     headers:
       Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
-      Accept: "application/json"
       Content-Type: "application/json"
+      Accept: "application/json"
     body_format: json
-    body: "{{ case_body }}"
+    body: >-
+      {{
+        {
+          "summary": case_summary | trim,
+          "description": case_description | default(case_summary),
+          "product": case_product,
+          "version": case_product_version.split('.')[:2] | join('.'),
+          "severity": case_severity,
+          "caseType": case_type,
+          "accountNumberRef": account_number_ref,
+          "caseLanguage": "en"
+        }
+      }}
     status_code:
       - 200
       - 201
     return_content: true
     validate_certs: true
     use_proxy: "{{ rh_case_use_proxy }}"
-  register: case_creation_result
-  no_log: "{{ rh_case_no_log }}" # <--- To keep sensitive values out of Ansible output logs
+  register: __rh_case_create_result_v3_rest
+  failed_when: false
+  no_log: "{{ rh_case_no_log }}"
   environment:
     https_proxy: "{{ rh_case_http_proxy }}"
     http_proxy: "{{ rh_case_http_proxy }}"
+  run_once: true
+
+- name: "Create Case | Set REST v3 primary success flag" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    __rh_case_created_via_rest_v3: >-
+      {{ (__rh_case_create_result_v3_rest.status | default(0)) | int in [200, 201] }}
+  run_once: true
+
+# GraphQL fallback — included only when REST v3 returns a non-2xx status.
+# Resolves the four SFDC IDs needed by the CreateNewCase mutation.
+- name: "Create Case | Run Salesforce ID lookup for GraphQL fallback (v3)" # noqa: var-naming[no-role-prefix]
+  when:
+    - not (__rh_case_created_via_rest_v3 | bool)
+  ansible.builtin.include_tasks: 0b-salesforce-lookup.yml
+
+- name: "Create Case | Build GraphQL CreateNewCase payload (v3 fallback)" # noqa: var-naming[no-role-prefix]
+  when:
+    - not (__rh_case_created_via_rest_v3 | bool)
+  ansible.builtin.set_fact:
+    __rh_case_v3_create_payload:
+      query: >-
+        mutation CreateNewCase($input: RedHatSupportCaseCreateInput!) {
+          redhat_support_uiapi {
+            CaseCreate(input: $input) {
+              RedHatSupportRecord {
+                Id
+                CaseNumber__c { value }
+                Subject { value }
+                Status { value }
+              }
+            }
+          }
+        }
+      variables:
+        input: >-
+          {{
+            {
+              "RedHatSupportCase": {
+                "Subject": case_summary | trim,
+                "Description": case_description | default(case_summary),
+                "Priority": case_severity,
+                "ProductId": rh_case_sf_product_id,
+                "RecordTypeId": rh_case_sf_record_type_id,
+                "ContactId": rh_case_sf_contact_id,
+                "Origin": "Web",
+                "Language": "en_US"
+              }
+            }
+            | combine(
+                (
+                  (
+                    (case_product is defined and 'openshift' in (case_product | lower)) or
+                    (cluster_id is defined and (cluster_id | length > 0))
+                  )
+                  | ternary(
+                      {"RedHatSupportCase": {"Cluster_UUID__c": (cluster_id | default('Not Applicable'))}},
+                      {}
+                    )
+                ),
+                recursive=true
+              )
+          }}
+  run_once: true
+
+- name: "Create Case | POST GraphQL CreateNewCase (v3 fallback)" # noqa: var-naming[no-role-prefix]
+  when:
+    - not (__rh_case_created_via_rest_v3 | bool)
+  ansible.builtin.uri:
+    url: "{{ rh_case_graphql_url }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Content-Type: "application/json"
+      Accept: "application/json"
+      Accept-Encoding: "identity"
+      apollographql-client-name: "{{ rh_case_graphql_client_name }}"
+      apollographql-client-version: "{{ rh_case_graphql_client_version }}"
+    body_format: json
+    body: "{{ __rh_case_v3_create_payload }}"
+    status_code:
+      - 200
+    return_content: true
+    validate_certs: true
+    use_proxy: "{{ rh_case_use_proxy }}"
+  register: __rh_case_create_result_v3_graphql
+  no_log: "{{ rh_case_no_log }}"
+  environment:
+    https_proxy: "{{ rh_case_http_proxy }}"
+    http_proxy: "{{ rh_case_http_proxy }}"
+  run_once: true
+
+- name: "Create Case | Assert no GraphQL errors in CreateNewCase response (v3 fallback)"
+  when:
+    - not (__rh_case_created_via_rest_v3 | bool)
+  ansible.builtin.assert:
+    that:
+      - __rh_case_create_result_v3_graphql.status == 200
+      - __rh_case_create_result_v3_graphql.json.data is defined
+      - __rh_case_create_result_v3_graphql.json.data.redhat_support_uiapi.CaseCreate is defined
+      - (__rh_case_create_result_v3_graphql.json.errors | default([])) | length == 0
+    fail_msg: >-
+      FAILED! Both REST v3 primary and GraphQL fallback failed for case creation.
+      REST v3 — HTTP {{ __rh_case_create_result_v3_rest.status | default('N/A') }}: {{ __rh_case_create_result_v3_rest.content | default('N/A') | truncate(200) }}
+      GraphQL — HTTP {{ __rh_case_create_result_v3_graphql.status | default('N/A') }}
+      GraphQL errors: {{ __rh_case_create_result_v3_graphql.json.errors | default([]) | to_json }}
+    success_msg: "Case created via GraphQL fallback"
+  run_once: true
+
+# rh_case_sf_case_id is needed by 8-comment.yml GraphQL fallback in HYBRID mode.
+# Set it from the GraphQL response; REST v3 path does not return a Salesforce Id.
+- name: "Create Case | Set Salesforce case ID fact from GraphQL fallback response" # noqa: var-naming[no-role-prefix]
+  when:
+    - not (__rh_case_created_via_rest_v3 | bool)
+  ansible.builtin.set_fact:
+    rh_case_sf_case_id: >-
+      {{ __rh_case_create_result_v3_graphql.json.data.redhat_support_uiapi.CaseCreate.RedHatSupportRecord.Id }}
+  run_once: true
+
+# Consolidate into case_creation_result for 3-post_validation.yml.
+# __rh_case_created_via_rest_v3 (bool) tells post_validation which response format to parse.
+- name: "Create Case | Consolidate result into case_creation_result" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    case_creation_result: >-
+      {{ __rh_case_create_result_v3_rest
+         if (__rh_case_created_via_rest_v3 | default(false) | bool)
+         else __rh_case_create_result_v3_graphql }}
+  run_once: true
 
 - name: "Create Case | Print on screen create case complete."
   ansible.builtin.debug:

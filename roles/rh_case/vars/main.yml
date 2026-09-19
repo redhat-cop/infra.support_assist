@@ -2,4 +2,11 @@
 ---
 rh_case_base_url: "https://access.redhat.com"
 rh_case_api_base_url: "https://api.access.redhat.com"
+
+# GraphQL endpoints and v3 API identifiers
+rh_case_graphql_url: "https://graphql.redhat.com"           # POST target for all GraphQL operations
+rh_case_graphql_client_name: "infra.support_assist"         # apollographql-client-name header value
+rh_case_graphql_client_version: "2.0.0"                     # apollographql-client-version header value
+rh_case_attachment_client_id: "sct-portal"                  # clientId required by v3 attachment upload API
+rh_case_api_v3_base_url: "https://api.access.redhat.com"    # base URL for /support/v3/ REST endpoints
 ...

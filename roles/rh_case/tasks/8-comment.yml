@@ -9,39 +9,125 @@
     message_text: "Starting Comment Update for Case ID {{ case_id }}"
   run_once: true
 
-- name: "Comment | Add comment to case {{ case_id }}" # noqa: var-naming[no-role-prefix]
+# REST v3 primary with GraphQL fallback.
+# Primary: POST /v3/cases/{caseNumber}/comments — requires commentBody + contentType (both required by spec).
+# Fallback: GraphQL CaseComment__cCreate — requires rh_case_sf_case_id (SFDC Case Id, not CaseNumber).
+# Accept-Encoding: identity disables gzip on the GraphQL path — Ansible uri module does not decompress.
+# Schema: https://access.redhat.com/articles/7146073
+
+- name: "Comment | POST REST v3 comment (primary) to case {{ case_id }}" # noqa: var-naming[no-role-prefix]
   ansible.builtin.uri:
-    url: "{{ rh_token_refresh_api_base_url | default(rh_case_api_base_url) }}/support/v1/cases/{{ case_id }}/comments"
+    url: "{{ rh_case_api_v3_base_url }}/support/v3/cases/{{ case_id }}/comments"
     method: POST
     headers:
       Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
-      Accept: "application/json"
       Content-Type: "application/json"
+      Accept: "application/json"
     body_format: json
     body:
       commentBody: "{{ case_update.comment }}"
-      contentType: "{{ case_update.commentType | default('markdown') }}"
+      contentType: "plaintext"
+    status_code:
+      - 200
+      - 201
+    return_content: true
+    validate_certs: true
+    use_proxy: "{{ rh_case_use_proxy | default(false) }}"
+  register: __rh_comment_result_v3_rest
+  failed_when: false
+  no_log: "{{ rh_case_no_log }}"
+  environment:
+    https_proxy: "{{ rh_case_http_proxy }}"
+    http_proxy: "{{ rh_case_http_proxy }}"
+
+- name: "Comment | Set REST v3 comment success flag" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    __rh_case_comment_via_rest_v3: >-
+      {{ (__rh_comment_result_v3_rest.status | default(0)) | int in [200, 201] }}
+
+# GraphQL fallback — runs only when REST v3 returns a non-2xx status.
+# rh_case_sf_case_id may already be set (from GraphQL CREATE fallback in HYBRID mode).
+# If not set, 0b-salesforce-lookup.yml resolves it via GetSupportCase.
+- name: "Comment | Resolve SFDC Case Id for GraphQL fallback (v3)" # noqa: var-naming[no-role-prefix]
+  when:
+    - not (__rh_case_comment_via_rest_v3 | bool)
+    - rh_case_sf_case_id is not defined or rh_case_sf_case_id | default('') | length == 0
+  ansible.builtin.include_tasks: 0b-salesforce-lookup.yml
+
+- name: "Comment | Build GraphQL CaseComment__cCreate payload (v3 fallback)" # noqa: var-naming[no-role-prefix]
+  when:
+    - not (__rh_case_comment_via_rest_v3 | bool)
+  ansible.builtin.set_fact:
+    __rh_comment_v3_payload:
+      query: >-
+        mutation CreateCaseComment($input: RedHatSupportCaseComment__cCreateInput!) {
+          redhat_support_uiapi {
+            CaseComment__cCreate(input: $input) {
+              RedHatSupportRecord {
+                Id
+                Body__c { value }
+                Case__c { value }
+              }
+            }
+          }
+        }
+      variables:
+        input:
+          RedHatSupportCaseComment__c:
+            Case__c: "{{ rh_case_sf_case_id }}"
+            Body__c: "{{ case_update.comment }}"
+            Visibility__c: "Public"
+
+- name: "Comment | POST GraphQL comment (v3 fallback) to case {{ case_id }}" # noqa: var-naming[no-role-prefix]
+  when:
+    - not (__rh_case_comment_via_rest_v3 | bool)
+  ansible.builtin.uri:
+    url: "{{ rh_case_graphql_url }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Content-Type: "application/json"
+      Accept: "application/json"
+      Accept-Encoding: "identity"
+      apollographql-client-name: "{{ rh_case_graphql_client_name }}"
+      apollographql-client-version: "{{ rh_case_graphql_client_version }}"
+    body_format: json
+    body: "{{ __rh_comment_v3_payload }}"
     status_code:
       - 200
     return_content: true
     validate_certs: true
     use_proxy: "{{ rh_case_use_proxy | default(false) }}"
-  register: __comment_api_result
-  no_log: "{{ rh_case_no_log }}" # <--- To keep sensitive values out of Ansible output logs
+  register: __rh_comment_result_v3_graphql
+  no_log: "{{ rh_case_no_log }}"
   environment:
     https_proxy: "{{ rh_case_http_proxy }}"
     http_proxy: "{{ rh_case_http_proxy }}"
 
-- name: Comment | Assert comment creation succeeded (HTTP 200)
+- name: "Comment | Consolidate result into __comment_api_result" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.set_fact:
+    __comment_api_result: >-
+      {{ __rh_comment_result_v3_rest if (__rh_case_comment_via_rest_v3 | default(false) | bool)
+         else __rh_comment_result_v3_graphql | default({}) }}
+
+- name: "Comment | Assert comment creation succeeded"
   ansible.builtin.assert:
     that:
-      - __comment_api_result.status == 200
+      - __comment_api_result.status | default(0) | int in [200, 201]
+      - >-
+        (__rh_case_comment_via_rest_v3 | default(false) | bool) or
+        (
+          (__comment_api_result.json.errors | default([])) | length == 0 and
+          __comment_api_result.json.data.redhat_support_uiapi.CaseComment__cCreate is defined
+        )
     success_msg: >-
-      PASSED! Oh, Yes! => Comment added successfully to case {{ case_id }}! HTTP Status: {{ __comment_api_result.status }}. Proceeding to next step...
+      PASSED! Oh, Yes! => Comment added to case {{ case_id }} via {{ 'REST v3' if (__rh_case_comment_via_rest_v3 | default(false) | bool) else 'GraphQL fallback' }}.
+      HTTP {{ __comment_api_result.status }}. Proceeding to next step...
     fail_msg: >-
-      FAILED! Oh, No! => Failed to add comment to case {{ case_id }}!
-      HTTP Status: {{ __comment_api_result.status }}
-      Response Body: {{ __comment_api_result.content | default('N/A') }}
+      FAILED! Oh, No! => Failed to add comment to case {{ case_id }}.
+      REST v3 — HTTP {{ __rh_comment_result_v3_rest.status | default('N/A') }}: {{ __rh_comment_result_v3_rest.content | default('N/A') | truncate(200) }}
+      GraphQL — HTTP {{ __rh_comment_result_v3_graphql.status | default('N/A') }}
+      GraphQL errors: {{ __rh_comment_result_v3_graphql.json.errors | default([]) | to_json }}
 
 - name: Comment | Notify success after update/upload
   ansible.builtin.debug:
