@@ -1,0 +1,11 @@
+mutation CreateCaseComment($input: RedHatSupportCaseComment__cCreateInput!) {
+  redhat_support_uiapi {
+    CaseComment__cCreate(input: $input) {
+      RedHatSupportRecord {
+        Id
+        Body__c { value }
+        Case__c { value }
+      }
+    }
+  }
+}

@@ -14,8 +14,8 @@ This unified role provides comprehensive support case management capabilities, c
 
 - **Automated case creation** – Creates support cases via the Red Hat Support API
 - **Case ID retrieval** – Returns the newly created case ID for use in subsequent tasks
-- **File uploads** – Uploads files of any size using `curl` for robust streaming support
-- **Comment support** – Adds comments in either `markdown` or `plaintext` format
+- **File uploads** – Uploads files via presigned URL (v3 REST API)
+- **Comment support** – Adds comments in `plaintext` format
 - **Batch operations** – Process multiple attachments and comments in a single run
 - **Template-based comments** – Supports Jinja2 templates for customizable initial case comments
 - **Account validation** – Retrieves and validates account information from the API token
@@ -26,7 +26,7 @@ This unified role provides comprehensive support case management capabilities, c
 - **On Control Node (Execution Host):**
   - Network access to the **Red Hat API endpoint** (`https://api.access.redhat.com`)
   - A valid Red Hat API access token (provided by the `rh_token_refresh` role)
-  - `curl`: Required for file uploads (must be installed and in the system's `PATH`)
+  - `curl`: Only required when using the `rh_case_manager.py` CLI helper (not needed for the Ansible role itself)
 
 ## Operation Modes
 
@@ -103,7 +103,7 @@ Each item in the `case_updates_needed` list can contain:
 | `attachment` | Full path to the local file to upload. | `string` | No* |
 | `attachmentDescription` | Description for the file being attached. | `string` | No |
 | `comment` | Text of the comment to add to the case. | `string` | No* |
-| `commentType` | Format of the comment: `markdown` (default) or `plaintext`. | `string` | No |
+| `commentType` | Format of the comment: `plaintext`. The v3 API uses plaintext for all comments. | `string` | No |
 
 > **\*** Each object must contain either `attachment` or `comment` (or both).
 
@@ -120,12 +120,16 @@ Each item in the `case_updates_needed` list can contain:
 
 | Variable | Description | Type | Required | Default |
 |----------|-------------|------|----------|---------|
+| `rh_case_api_v3_base_url` | REST v3 API base URL for case creation, comments, and attachments. | `string` | No | `https://api.access.redhat.com` |
+| `rh_case_graphql_url` | GraphQL fallback endpoint, used when REST v3 returns 4xx/5xx. | `string` | No | `https://graphql.redhat.com` |
+| `rh_case_attachment_client_id` | Client identifier sent with v3 attachment upload requests. Required by the v3 attachment API. | `string` | No | `infra-support-assist` |
+| `rh_case_attachment_poll_retries` | Number of status-poll attempts after a v3 attachment PUT. Each attempt waits `rh_case_attachment_poll_delay` seconds. Raise for files close to 5 GB. | `int` | No | `30` |
+| `rh_case_attachment_poll_delay` | Seconds between each v3 attachment status-poll attempt. | `int` | No | `10` |
 | `rh_case_http_proxy` | HTTP/HTTPS proxy URL for API requests (e.g., `http://proxy.example.com:8080`). | `string` | No | `""` |
 | `rh_case_use_proxy` | Whether to use proxy for this role (falls back to `use_proxy`). | `bool` | No | `false` |
 | `rh_case_no_log` | Suppress sensitive output in logs. | `bool` | No | `true` |
-| `rh_case_timeout` | Timeout in seconds for each `curl` file upload command. | `int` | No | `1800` (30 min) |
+| `rh_case_timeout` | Timeout in seconds for file upload operations. | `int` | No | `1800` (30 min) |
 | `rh_case_post_create_comment` | Whether to post initial comment after case creation. | `bool` | No | `true` |
-| `initial_comment_type` | Content type for initial post-creation comment (`markdown` or `plaintext`). | `string` | No | `markdown` |
 
 ## Dependencies
 
@@ -234,10 +238,10 @@ Please consult the dedicated documentation file for the full list of valid optio
       - attachment: "/tmp/must-gather.tar.gz"
         attachmentDescription: "OCP must-gather output"
       - comment: |
-          ### Automation Complete
+          Automation Complete
 
-          Attached is the `must-gather` output from the cluster.
-        commentType: "markdown"
+          Attached is the must-gather output from the cluster.
+        commentType: "plaintext"
 
   tasks:
     - name: Refresh API token
@@ -300,13 +304,12 @@ Please consult the dedicated documentation file for the full list of valid optio
       - attachment: "/tmp/sos_reports/case_01234567/server2/sosreport-server2.tar.xz"
         attachmentDescription: "SOS Report from server2"
       - comment: |
-          ### Automation Complete
+          Automation Complete
 
-          Attached are the `sosreport` files from the following hosts:
-
-          * `server1.example.com`
-          * `server2.example.com`
-        commentType: "markdown"
+          Attached are the sosreport files from the following hosts:
+          - server1.example.com
+          - server2.example.com
+        commentType: "plaintext"
 
   tasks:
     - name: Refresh API token
@@ -328,36 +331,27 @@ To disable the automatic post-creation comment, set `rh_case_post_create_comment
 
 ## How It Works
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                        rh_case                                  │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Mode Detection                                              │
-│     └── Determines: create, update, or hybrid                   │
-│                                                                 │
-│  2. Pre-validation                                              │
-│     ├── Verify API token                                        │
-│     ├── Retrieve account info                                   │
-│     ├── Validate create fields (if create/hybrid)               │
-│     └── Validate update fields (if update/hybrid)               │
-│                                                                 │
-│  3. Create Case (if create/hybrid)                              │
-│     ├── Build case payload                                      │
-│     ├── POST to /v1/cases                                       │
-│     ├── Validate response                                       │
-│     └── Extract case_id                                         │
-│                                                                 │
-│  4. Post-Creation Comment (if enabled)                          │
-│     └── POST comment via template                               │
-│                                                                 │
-│  5. Update Case (if update/hybrid)                              │
-│     └── Loop through case_updates_needed                        │
-│         ├── Upload attachments (via curl)                       │
-│         └── Add comments                                        │
-│                                                                 │
-│  6. Display Summary                                             │
-│     └── Show case details and URL                               │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    A[rh_case invoked] --> B[Mode Detection\ncreate / update / hybrid]
+    B --> C[Pre-validation\ntoken · account · fields]
+
+    C --> D{create or hybrid?}
+    D -- yes --> F[POST /v3/cases\nREST primary]
+    F -- success --> G[case_id extracted]
+    F -- 4xx/5xx --> H[GraphQL fallback\nResolveCaseLookupData\n→ CreateNewCase]
+    H --> G
+    D -- no --> J{update or hybrid?}
+    G --> J
+
+    J -- yes --> K[Loop case_updates_needed]
+    K --> L{item type}
+    L -- attachment --> N[POST /v3/cases/attachments/upload\n→ PUT presignedUrl\n→ poll status]
+    L -- comment --> Q[POST /v3/cases/n/comments\nREST primary\nfallback: GraphQL]
+
+    N --> S[Display Summary]
+    Q --> S
+    J -- no --> S
 ```
 
 ## License

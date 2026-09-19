@@ -1,0 +1,283 @@
+---
+# Resolves Salesforce object IDs required for the GraphQL fallback path.
+# Called lazily from 2-create_case.yml and 8-comment.yml only when REST v3 fails.
+# The GraphQL API accepts only internal SFDC IDs — not product names or account numbers.
+#
+# For CREATE/HYBRID mode: runs ResolveCaseLookupData to get product/account/contact IDs.
+# For UPDATE/HYBRID mode: queries RedHatSupportCase by CaseNumber to get the SFDC Case Id.
+#
+# All queries use the nested redhat_support_uiapi schema structure:
+#   https://access.redhat.com/articles/7146073
+#
+# Facts set for CREATE/HYBRID:
+#   rh_case_sf_product_id, rh_case_sf_account_id,
+#   rh_case_sf_record_type_id, rh_case_sf_contact_id
+#
+# Facts set for UPDATE/HYBRID (also written from GraphQL create response in 2-create_case.yml):
+#   rh_case_sf_case_id
+
+- name: "SF Lookup | Print on screen lookup start"
+  ansible.builtin.debug:
+    msg:
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
+      - " {{ message_text }} "
+      - "{{ rh_case_separator_char * (message_text | length + rh_case_default_message_padding) | int }}"
+  vars:
+    message_text: "Resolving Salesforce IDs via GraphQL (v3 mode)"
+  run_once: true
+
+# --- CREATE / HYBRID: resolve product, account, contact, and record type IDs ---
+
+# The access token is a JWT. Decode the payload section (base64url, middle segment)
+# to extract preferred_username — needed for the Contact sub-query.
+# Token is passed via env var to avoid it appearing in process listings.
+# Written as a one-liner to avoid YAML block-scalar folding newlines to spaces.
+- name: "SF Lookup | Extract SSO username from access token JWT (create/hybrid)" # noqa: var-naming[no-role-prefix]
+  when: operation_mode in ['create', 'hybrid']
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "-c"
+      - >-
+        import base64,json,os,sys;t=os.environ.get('RH_ACCESS_TOKEN','');
+        p=t.split('.')[1] if '.' in t else '';
+        p+='='*(4-len(p)%4);
+        d=json.loads(base64.b64decode(p.replace('-','+').replace('_','/')));
+        sys.stdout.write(d.get('preferred_username',''))
+  environment:
+    RH_ACCESS_TOKEN: "{{ rh_token_refresh_api_access_token }}"
+  register: __rh_sso_username_cmd
+  no_log: "{{ rh_case_no_log }}"
+  changed_when: false
+  run_once: true
+
+- name: "SF Lookup | Set SSO username fact (create/hybrid)" # noqa: var-naming[no-role-prefix]
+  when: operation_mode in ['create', 'hybrid']
+  ansible.builtin.set_fact:
+    __rh_case_sso_username: "{{ __rh_sso_username_cmd.stdout | default('') }}"
+  run_once: true
+
+# Single query that resolves all four IDs in one round-trip.
+# Each alias (Contact, Account, RecordType, Product) is an independent sub-query.
+- name: "SF Lookup | Build ResolveCaseLookupData query payload (create/hybrid)" # noqa: var-naming[no-role-prefix]
+  when: operation_mode in ['create', 'hybrid']
+  ansible.builtin.set_fact:
+    __rh_sf_lookup_payload:
+      query: "{{ lookup('template', 'graphql/resolve_case_lookup_data.graphql.j2') }}"
+      variables:
+        ssoUser: "{{ __rh_case_sso_username }}"
+        accountNumber: "{{ account_number_ref }}"
+        # Salesforce product Name includes the version: "Red Hat Enterprise Linux 9.4"
+        # VersionName__c stores only the version: "9.4"
+        productName: "{{ case_product }} {{ case_product_version.split('.')[:2] | join('.') }}"
+        versionName: "{{ case_product_version.split('.')[:2] | join('.') }}"
+  run_once: true
+
+- name: "SF Lookup | POST GraphQL ResolveCaseLookupData (create/hybrid)" # noqa: var-naming[no-role-prefix]
+  when: operation_mode in ['create', 'hybrid']
+  ansible.builtin.uri:
+    url: "{{ rh_case_graphql_url }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Content-Type: "application/json"
+      Accept: "application/json"
+      Accept-Encoding: "identity"
+      apollographql-client-name: "{{ rh_case_graphql_client_name }}"
+      apollographql-client-version: "{{ rh_case_graphql_client_version }}"
+    body_format: json
+    body: "{{ __rh_sf_lookup_payload }}"
+    status_code:
+      - 200
+    return_content: true
+    validate_certs: true
+    use_proxy: "{{ rh_case_use_proxy }}"
+  register: __rh_sf_lookup_result
+  no_log: "{{ rh_case_no_log }}"
+  environment:
+    https_proxy: "{{ rh_case_http_proxy }}"
+    http_proxy: "{{ rh_case_http_proxy }}"
+  run_once: true
+
+- name: "SF Lookup | Assert lookup succeeded and returned valid IDs (create/hybrid)"
+  when: operation_mode in ['create', 'hybrid']
+  ansible.builtin.assert:
+    that:
+      - __rh_sf_lookup_result.status == 200
+      - __rh_sf_lookup_result.json.data is defined
+      - (__rh_sf_lookup_result.json.errors | default([])) | length == 0
+      - >-
+        __rh_sf_lookup_result.json.data.redhat_support_uiapi.Product.RedHatSupportProduct2.edges
+        | default([]) | length > 0
+    fail_msg: >-
+      FAILED! GraphQL ResolveCaseLookupData lookup failed.
+      HTTP Status: {{ __rh_sf_lookup_result.status }}
+      GraphQL errors: {{ __rh_sf_lookup_result.json.errors | default([]) | to_json }}
+      Product edges: {{ __rh_sf_lookup_result.json.data.redhat_support_uiapi.Product.RedHatSupportProduct2.edges | default([]) | to_json }}
+      Verify product name and version match the Red Hat product catalog exactly.
+    success_msg: "Salesforce IDs resolved for product: {{ case_product }}"
+  run_once: true
+
+- name: "SF Lookup | Set Salesforce product/account/contact/recordtype ID facts (create/hybrid)" # noqa: var-naming[no-role-prefix]
+  when: operation_mode in ['create', 'hybrid']
+  ansible.builtin.set_fact:
+    rh_case_sf_product_id: >-
+      {{
+        __rh_sf_lookup_result.json.data.redhat_support_uiapi.Product.RedHatSupportProduct2.edges
+        | first | json_query('node.Id') | default('')
+      }}
+    rh_case_sf_account_id: >-
+      {{
+        __rh_sf_lookup_result.json.data.redhat_support_uiapi.Account.RedHatSupportAccount.edges
+        | default([]) | first | json_query('node.Id') | default('')
+      }}
+    rh_case_sf_record_type_id: >-
+      {{
+        __rh_sf_lookup_result.json.data.redhat_support_uiapi.RecordType.RedHatSupportRecordType.edges
+        | default([]) | first | json_query('node.Id') | default('')
+      }}
+    rh_case_sf_contact_id: >-
+      {{
+        __rh_sf_lookup_result.json.data.redhat_support_uiapi.Contact.RedHatSupportContact.edges
+        | default([]) | first | json_query('node.Id') | default('')
+      }}
+  run_once: true
+
+- name: "SF Lookup | Print resolved product/account IDs (create/hybrid)"
+  when: operation_mode in ['create', 'hybrid']
+  ansible.builtin.debug:
+    msg:
+      - "Product:     {{ case_product }} {{ case_product_version }} → {{ rh_case_sf_product_id }}"
+      - "Account ID:  {{ rh_case_sf_account_id }}"
+      - "RecordType:  {{ rh_case_sf_record_type_id }}"
+      - "Contact ID:  {{ rh_case_sf_contact_id }}"
+  run_once: true
+
+# --- UPDATE: resolve the Salesforce Id of an existing case by CaseNumber ---
+# The comment mutation requires Case__c (SFDC Id), not the CaseNumber.
+
+# Fields match article 7146073 GetCaseAndComments schema.
+# Product.VersionName__c is confirmed on RedHatSupportProduct2; it is reachable
+# via the Case→Product relationship with the same field name.
+# Description is absent from the article examples — not included to avoid schema errors.
+- name: "SF Lookup | Build case lookup query payload (update)" # noqa: var-naming[no-role-prefix]
+  when: operation_mode in ['update', 'hybrid']
+  ansible.builtin.set_fact:
+    __rh_sf_case_lookup_payload:
+      query: "{{ lookup('template', 'graphql/get_support_case.graphql.j2') }}"
+      variables:
+        caseNumber: "{{ case_id }}"
+  run_once: true
+
+- name: "SF Lookup | POST GraphQL case lookup by CaseNumber (update)" # noqa: var-naming[no-role-prefix]
+  when: operation_mode in ['update', 'hybrid']
+  ansible.builtin.uri:
+    url: "{{ rh_case_graphql_url }}"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rh_token_refresh_api_access_token }}"
+      Content-Type: "application/json"
+      Accept: "application/json"
+      Accept-Encoding: "identity"
+      apollographql-client-name: "{{ rh_case_graphql_client_name }}"
+      apollographql-client-version: "{{ rh_case_graphql_client_version }}"
+    body_format: json
+    body: "{{ __rh_sf_case_lookup_payload }}"
+    status_code:
+      - 200
+    return_content: true
+    validate_certs: true
+    use_proxy: "{{ rh_case_use_proxy }}"
+  register: __rh_sf_case_lookup_result
+  no_log: "{{ rh_case_no_log }}"
+  environment:
+    https_proxy: "{{ rh_case_http_proxy }}"
+    http_proxy: "{{ rh_case_http_proxy }}"
+  run_once: true
+
+- name: "SF Lookup | Assert case lookup returned a Salesforce Id (update)"
+  when: operation_mode in ['update', 'hybrid']
+  ansible.builtin.assert:
+    that:
+      - __rh_sf_case_lookup_result.status == 200
+      - __rh_sf_case_lookup_result.json.data is defined
+      - (__rh_sf_case_lookup_result.json.errors | default([])) | length == 0
+      - >-
+        __rh_sf_case_lookup_result.json.data.redhat_support_uiapi.query.RedHatSupportCase.edges
+        | default([]) | length > 0
+    fail_msg: >-
+      FAILED! Could not resolve Salesforce Id for case {{ case_id }}.
+      HTTP Status: {{ __rh_sf_case_lookup_result.status }}
+      GraphQL errors: {{ __rh_sf_case_lookup_result.json.errors | default([]) | to_json }}
+      Response: {{ __rh_sf_case_lookup_result.content | default('N/A') | truncate(400) }}
+    success_msg: "Salesforce Id resolved for case {{ case_id }}"
+  run_once: true
+
+- name: "SF Lookup | Set Salesforce case Id fact (update)" # noqa: var-naming[no-role-prefix]
+  when: operation_mode in ['update', 'hybrid']
+  ansible.builtin.set_fact:
+    rh_case_sf_case_id: >-
+      {{
+        __rh_sf_case_lookup_result.json.data.redhat_support_uiapi.query.RedHatSupportCase.edges
+        | first | json_query('node.Id') | default('')
+      }}
+  run_once: true
+
+- name: "SF Lookup | Print resolved case Salesforce Id (update)"
+  when: operation_mode in ['update', 'hybrid']
+  ansible.builtin.debug:
+    msg: "Case {{ case_id }} → Salesforce Id: {{ rh_case_sf_case_id }}"
+  run_once: true
+
+# Set case metadata facts so the display handler and downstream tasks have
+# consistent variables.
+- name: "SF Lookup | Set case metadata facts from GraphQL response (update)" # noqa: var-naming[no-role-prefix]
+  when: operation_mode in ['update', 'hybrid']
+  ansible.builtin.set_fact:
+    case_summary: >-
+      {{
+        __rh_sf_case_lookup_result.json.data.redhat_support_uiapi.query.RedHatSupportCase.edges
+        | first | json_query('node.Subject.value') | default('N/A')
+      }}
+    case_severity: >-
+      {{
+        __rh_sf_case_lookup_result.json.data.redhat_support_uiapi.query.RedHatSupportCase.edges
+        | first | json_query('node.Priority.value') | default('N/A')
+      }}
+    case_type: >-
+      {{
+        __rh_sf_case_lookup_result.json.data.redhat_support_uiapi.query.RedHatSupportCase.edges
+        | first | json_query('node.Type.value') | default('N/A')
+      }}
+    case_product: >-
+      {{
+        __rh_sf_case_lookup_result.json.data.redhat_support_uiapi.query.RedHatSupportCase.edges
+        | first | json_query('node.Product.Name.value') | default('N/A')
+      }}
+    case_product_version: >-
+      {{
+        __rh_sf_case_lookup_result.json.data.redhat_support_uiapi.query.RedHatSupportCase.edges
+        | first | json_query('node.Product.VersionName__c.value') | default('N/A')
+      }}
+    __rh_case_status: >-
+      {{
+        __rh_sf_case_lookup_result.json.data.redhat_support_uiapi.query.RedHatSupportCase.edges
+        | first | json_query('node.Status.value') | default('')
+      }}
+  run_once: true
+
+# Mirror the Archived guard from 1-pre_validation.yml (which only runs for v1).
+# Cases closed >180 days become read-only; fail early rather than getting a 403 mid-run.
+- name: "SF Lookup | \U0001F6E1️ Fail if case is Archived (read-only in new CRM) (v3/update)"
+  when:
+    - operation_mode == 'update'
+    - __rh_case_status | lower == 'archived'
+  ansible.builtin.fail:
+    msg: >-
+      FAILED! Case {{ case_id }} is Archived.
+      Archived cases (closed >180 days) are read-only in the new CRM platform.
+      No comments, attachments, or updates can be applied.
+      Open a new case if further support is needed.
+  run_once: true
+
+...

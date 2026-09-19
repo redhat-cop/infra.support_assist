@@ -1,0 +1,43 @@
+query ResolveCaseLookupData(
+  $ssoUser: String,
+  $accountNumber: String,
+  $productName: String,
+  $versionName: String
+) {
+  redhat_support_uiapi {
+    Contact: query {
+      RedHatSupportContact(where: { SSOUserName__c: { eq: $ssoUser } }, first: 1) {
+        edges { node { Id AccountId { value } } }
+      }
+    }
+    Account: query {
+      RedHatSupportAccount(where: { AccountNumber: { eq: $accountNumber } }, first: 1) {
+        edges { node { Id } }
+      }
+    }
+    RecordType: query {
+      RedHatSupportRecordType(
+        where: {
+          SobjectType: { eq: "Case" },
+          DeveloperName: { eq: "Technical_Support" }
+        }
+        first: 1
+      ) {
+        edges { node { Id } }
+      }
+    }
+    Product: query {
+      RedHatSupportProduct2(
+        where: {
+          and: [
+            { Name: { eq: $productName } },
+            { VersionName__c: { eq: $versionName } }
+          ]
+        }
+        first: 1
+      ) {
+        edges { node { Id Name { value } VersionName__c { value } } }
+      }
+    }
+  }
+}

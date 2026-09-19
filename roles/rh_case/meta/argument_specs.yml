@@ -94,8 +94,8 @@ argument_specs:
         default: true
         version_added: 0.2.0-devel
       initial_comment_type:
-        description: 'Content type for initial post-creation comment (markdown or plaintext, default: markdown).'
+        description: 'Content type for initial post-creation comment. The v3 API uses plaintext for all comments.'
         type: str
-        default: 'markdown'
+        default: 'plaintext'
         version_added: 0.2.0-devel
 ...
