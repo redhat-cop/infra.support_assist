@@ -1,0 +1,29 @@
+---
+breaking_changes:
+  - rh_case - Remove all v1 API code paths and the
+    ``rh_case_crm_api_version`` variable. The Red Hat CRM platform
+    decommissions v1 endpoints on 2026-09-21
+    (https://access.redhat.com/articles/7146730). The role now uses
+    v3 exclusively.
+  - rh_case - Convert Jinja2 comment templates from markdown to
+    plaintext. The v3 API no longer renders markdown in case comments.
+  - ocp_must_gather - Change ``commentType`` from ``markdown`` to
+    ``plaintext`` in the case update payload to match the v3 API.
+
+major_changes:
+  - rh_case - Migrate to CRM API v3 as the only code path. Case
+    creation uses ``POST /v3/cases`` (REST primary) with GraphQL
+    ``CreateNewCase`` as fallback when REST returns 4xx/5xx. Comments
+    use ``POST /v3/cases/{n}/comments`` with GraphQL fallback.
+  - rh_case - Replace the legacy ``curl`` multipart attachment upload
+    with a v3 presigned URL flow - initiate via
+    ``POST /v3/cases/attachments/upload``, PUT the file to the
+    presigned S3 URL, then poll for ``COMPLETED`` status.
+  - rh_case - Add ``0b-salesforce-lookup.yml`` task file for
+    GraphQL-based Salesforce ID resolution (product, contact,
+    record type) used by the GraphQL fallback path.
+
+minor_changes:
+  - rh_case - Add ``rh_case_attachment_poll_retries`` (default 30)
+    and ``rh_case_attachment_poll_delay`` (default 10s) variables for
+    configurable attachment status polling.
