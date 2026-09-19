@@ -1,0 +1,23 @@
+query GetSupportCase($caseNumber: String) {
+  redhat_support_uiapi {
+    query {
+      RedHatSupportCase(where: { CaseNumber__c: { eq: $caseNumber } }) {
+        edges {
+          node {
+            Id
+            CaseNumber__c { value }
+            Subject { value }
+            Status { value }
+            Priority { value }
+            Type { value }
+            Product {
+              Id
+              Name { value }
+              VersionName__c { value }
+            }
+          }
+        }
+      }
+    }
+  }
+}

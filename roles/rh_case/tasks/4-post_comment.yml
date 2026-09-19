@@ -65,18 +65,7 @@
     - rh_case_sf_case_id is defined and rh_case_sf_case_id | length > 0
   ansible.builtin.set_fact:
     __rh_comment_v3_payload:
-      query: >-
-        mutation CreateCaseComment($input: RedHatSupportCaseComment__cCreateInput!) {
-          redhat_support_uiapi {
-            CaseComment__cCreate(input: $input) {
-              RedHatSupportRecord {
-                Id
-                Body__c { value }
-                Case__c { value }
-              }
-            }
-          }
-        }
+      query: "{{ lookup('template', 'graphql/create_case_comment.graphql.j2') }}"
       variables:
         input:
           RedHatSupportCaseComment__c:

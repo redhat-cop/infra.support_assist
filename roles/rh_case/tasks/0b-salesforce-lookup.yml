@@ -63,50 +63,7 @@
   when: operation_mode in ['create', 'hybrid']
   ansible.builtin.set_fact:
     __rh_sf_lookup_payload:
-      query: >-
-        query ResolveCaseLookupData(
-          $ssoUser: String,
-          $accountNumber: String,
-          $productName: String,
-          $versionName: String
-        ) {
-          redhat_support_uiapi {
-            Contact: query {
-              RedHatSupportContact(where: { SSOUserName__c: { eq: $ssoUser } }, first: 1) {
-                edges { node { Id AccountId { value } } }
-              }
-            }
-            Account: query {
-              RedHatSupportAccount(where: { AccountNumber: { eq: $accountNumber } }, first: 1) {
-                edges { node { Id } }
-              }
-            }
-            RecordType: query {
-              RedHatSupportRecordType(
-                where: {
-                  SobjectType: { eq: "Case" },
-                  DeveloperName: { eq: "Technical_Support" }
-                }
-                first: 1
-              ) {
-                edges { node { Id } }
-              }
-            }
-            Product: query {
-              RedHatSupportProduct2(
-                where: {
-                  and: [
-                    { Name: { eq: $productName } },
-                    { VersionName__c: { eq: $versionName } }
-                  ]
-                }
-                first: 1
-              ) {
-                edges { node { Id Name { value } VersionName__c { value } } }
-              }
-            }
-          }
-        }
+      query: "{{ lookup('template', 'graphql/resolve_case_lookup_data.graphql.j2') }}"
       variables:
         ssoUser: "{{ __rh_case_sso_username }}"
         accountNumber: "{{ account_number_ref }}"
@@ -207,30 +164,7 @@
   when: operation_mode in ['update', 'hybrid']
   ansible.builtin.set_fact:
     __rh_sf_case_lookup_payload:
-      query: >-
-        query GetSupportCase($caseNumber: String) {
-          redhat_support_uiapi {
-            query {
-              RedHatSupportCase(where: { CaseNumber__c: { eq: $caseNumber } }) {
-                edges {
-                  node {
-                    Id
-                    CaseNumber__c { value }
-                    Subject { value }
-                    Status { value }
-                    Priority { value }
-                    Type { value }
-                    Product {
-                      Id
-                      Name { value }
-                      VersionName__c { value }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+      query: "{{ lookup('template', 'graphql/get_support_case.graphql.j2') }}"
       variables:
         caseNumber: "{{ case_id }}"
   run_once: true

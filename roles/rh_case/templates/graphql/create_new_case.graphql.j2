@@ -1,0 +1,12 @@
+mutation CreateNewCase($input: RedHatSupportCaseCreateInput!) {
+  redhat_support_uiapi {
+    CaseCreate(input: $input) {
+      RedHatSupportRecord {
+        Id
+        CaseNumber__c { value }
+        Subject { value }
+        Status { value }
+      }
+    }
+  }
+}
