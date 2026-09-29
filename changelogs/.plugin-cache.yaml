@@ -21,7 +21,7 @@ objects:
       name: rh_token_refresh
       version_added: null
     sos_report:
-      description: Auto-generated specs for sos_report role - main entry point
+      description: Gather SOS Reports from managed hosts or OCP nodes
       name: sos_report
       version_added: null
 plugins:
@@ -40,4 +40,4 @@ plugins:
   strategy: {}
   test: {}
   vars: {}
-version: 1.2.0
+version: 2.0.0
