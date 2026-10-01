@@ -22,9 +22,9 @@
   vars:
     message_text: "Starting Collect — SOS Report on Node '{{ __ocp_node }}' via oc debug"
 
-# --- Disk space pre-flight: verify /var/tmp has enough room for the SOS report ---
+# --- Disk space pre-flight: verify sos_report_tmp_dir has enough room ---
 # Intentionally placed OUTSIDE the block/rescue below.
-# If disk space is insufficient, SSH fallback would also fail (same /var/tmp path),
+# If disk space is insufficient, SSH fallback would also fail (same tmp path),
 # so falling through to the rescue block would waste time and produce a confusing error.
 # A pre-flight failure here surfaces a clear, actionable message and skips the node
 # entirely, including the SSH fallback path.
@@ -33,12 +33,12 @@
 # then converts to MB. No official Ansible module exists for remote disk checks
 # via 'oc debug' — the node is not in inventory, so ansible.builtin.setup (facts)
 # is not an option here.
-- name: "[STAGE 03 - Collect] | 3.0.1) Check available disk space on node (/var/tmp) — {{ __ocp_node }}" # noqa: var-naming[no-role-prefix]
+- name: "[STAGE 03 - Collect] | 3.0.1) Check available disk space on node ({{ sos_report_tmp_dir }}) — {{ __ocp_node }}" # noqa: var-naming[no-role-prefix]
   ansible.builtin.shell:
     cmd: >
       set -o pipefail &&
       oc debug node/{{ __ocp_node }} --
-      chroot /host df -P /var/tmp | awk 'NR==2 {print $4}'
+      chroot /host df -P {{ sos_report_tmp_dir }} | awk 'NR==2 {print $4}'
     executable: /bin/bash
   register: __ocp_node_disk_avail_kb
   changed_when: false
@@ -50,13 +50,13 @@
     fail_msg: >-
       ❌ FAILED! Oh. No! => Insufficient disk space on node '{{ __ocp_node }}'.
       Available: {{ ((__ocp_node_disk_avail_kb.stdout | trim | int) / 1024) | round(0) | int }} MB
-      in /var/tmp, required: {{ sos_report_min_disk_mb }} MB
+      in {{ sos_report_tmp_dir }}, required: {{ sos_report_min_disk_mb }} MB
       (sos_report_min_disk_mb). Free up space on the node or lower the
       threshold with '-e sos_report_min_disk_mb=<value>'.
     success_msg: >-
       ✅ PASSED! Oh. Yes! => Node '{{ __ocp_node }}' has
       {{ ((__ocp_node_disk_avail_kb.stdout | trim | int) / 1024) | round(0) | int }} MB
-      free in /var/tmp (minimum: {{ sos_report_min_disk_mb }} MB).
+      free in {{ sos_report_tmp_dir }} (minimum: {{ sos_report_min_disk_mb }} MB).
 
 # --- Primary method: oc debug ---
 - name: "[STAGE 03 - Collect] | Block: Attempt SOS collection via oc debug on node '{{ __ocp_node }}'"
@@ -77,6 +77,7 @@
             -v /:/host \
             {{ sos_report_ocp_support_tools_image }} \
             sos report --batch \
+              --tmp-dir=/host{{ sos_report_tmp_dir }} \
               -e openshift -e openshift_ovn -e openvswitch -e podman -e crio \
               -k crio.all=on -k crio.logs=on \
               -k podman.all=on -k podman.logs=on \
@@ -119,7 +120,7 @@
     - name: "[STAGE 03 - Collect] | 3.3) Find SOS Report filename on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
       ansible.builtin.shell: |
         set -o pipefail
-        oc debug node/{{ __ocp_node }} -- bash -c 'ls -t /host/var/tmp/sosreport-*.tar.xz 2>/dev/null | head -1'
+        oc debug node/{{ __ocp_node }} -- bash -c 'ls -t /host{{ sos_report_tmp_dir }}/sosreport-*.tar.xz 2>/dev/null | head -1'
       register: __ocp_debug_find_result
       changed_when: false
 
@@ -136,7 +137,7 @@
           - __ocp_debug_sos_filename.endswith('.tar.xz')
         fail_msg: >-
           ❌ FAILED! Oh. No! => Could not locate the generated SOS Report on node '{{ __ocp_node }}'.
-          Expected a file matching 'sosreport-*.tar.xz' in /host/var/tmp/.
+          Expected a file matching 'sosreport-*.tar.xz' in /host{{ sos_report_tmp_dir }}/.
           ls output: {{ __ocp_debug_find_result.stdout | default('empty') }}
         success_msg: >-
           ✅ PASSED! Oh. Yes! => Found SOS Report: {{ __ocp_debug_sos_filename }}

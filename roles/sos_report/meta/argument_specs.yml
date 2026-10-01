@@ -29,11 +29,22 @@ argument_specs:
         type: bool
         default: true
         version_added: 0.1.0-devel
+      sos_report_tmp_dir:
+        description: >-
+          Directory on the target host where sos stores temporary data and the
+          finished archive (--tmp-dir). Also used for disk-space pre-flight,
+          find, fetch, and cleanup. Override when hosts do not use the sos
+          default of /var/tmp. In OCP modes the role prefixes the path with
+          /host so it resolves on the node filesystem inside support-tools.
+        type: path
+        default: /var/tmp
+        version_added: 2.1.0-devel
       sos_report_min_disk_mb:
         description: >-
-          Minimum free disk space in MB required on the target node's /var/tmp
-          before generating a SOS report. The check runs per-node before the
-          collection begins. If insufficient, the task fails with a clear message.
+          Minimum free disk space in MB required on the target node's
+          sos_report_tmp_dir before generating a SOS report. The check runs
+          per-node before the collection begins. If insufficient, the task
+          fails with a clear message.
         type: int
         default: 500
         version_added: 1.2.0-devel

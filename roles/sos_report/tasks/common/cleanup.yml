@@ -11,7 +11,7 @@
 
 - name: "[Common - Cleanup] | 0.1) Find old SOS Reports" # noqa: var-naming[no-role-prefix]
   ansible.builtin.find:
-    paths: /var/tmp
+    paths: "{{ sos_report_tmp_dir }}"
     patterns: sosreport-*.tar.*
   register: __sos_reports
 
