@@ -1,0 +1,29 @@
+---
+version: 2
+updates:
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "ci(deps)"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    open-pull-requests-limit: 5
+
+  # Python dependencies (if any)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+      - "python"
+    open-pull-requests-limit: 3
+...
