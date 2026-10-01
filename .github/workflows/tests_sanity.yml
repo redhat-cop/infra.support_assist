@@ -28,7 +28,7 @@ jobs:
       ANSIBLE_GALAXY_SERVER_CERTIFIED_TOKEN: ${{ secrets.crc_publish_key }}
       ANSIBLE_GALAXY_SERVER_GALAXY_URL: https://galaxy.ansible.com/api/
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
           repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
@@ -77,7 +77,7 @@ jobs:
       ANSIBLE_GALAXY_SERVER_CERTIFIED_TOKEN: ${{ secrets.crc_publish_key }}
       ANSIBLE_GALAXY_SERVER_GALAXY_URL: https://galaxy.ansible.com/api/
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0

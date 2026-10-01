@@ -22,7 +22,7 @@ jobs:
   markdown-link-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: tcort/github-action-markdown-link-check@v1
         with:
           use-quiet-mode: 'yes'
@@ -73,7 +73,7 @@ jobs:
           - sos_report
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
