@@ -110,10 +110,12 @@
 
 # --- Disk space pre-flight via SSH ---
 # SSH connectivity was confirmed at F.4/F.5, so delegate_to is safe here.
-# Uses 'df' with POSIX output to check /var/tmp before the slow SOS collection.
-- name: "[STAGE 03 - Fallback SSH] | 3.F.5.1) Check available disk space on node (/var/tmp) — {{ __ocp_node }}" # noqa: var-naming[no-role-prefix]
+# Uses 'df' with POSIX output to check sos_report_tmp_dir before the slow SOS collection.
+- name: "[STAGE 03 - Fallback SSH] | 3.F.5.1) Check available disk space on node {{ __task_name_modifier }}" # noqa: var-naming[no-role-prefix]
+  vars:
+    __task_name_modifier: "({{ sos_report_tmp_dir }}) — {{ __ocp_node }}"
   delegate_to: "{{ __ocp_node }}"
-  ansible.builtin.command: df -P /var/tmp
+  ansible.builtin.command: df -P {{ sos_report_tmp_dir }}
   register: __ocp_fallback_disk_raw
   changed_when: false
 
@@ -126,13 +128,13 @@
     fail_msg: >-
       ❌ FAILED! Oh. No! => Insufficient disk space on node '{{ __ocp_node }}'.
       Available: {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
-      in /var/tmp, required: {{ sos_report_min_disk_mb }} MB
+      in {{ sos_report_tmp_dir }}, required: {{ sos_report_min_disk_mb }} MB
       (sos_report_min_disk_mb). Free up space on the node or lower the
       threshold with '-e sos_report_min_disk_mb=<value>'.
     success_msg: >-
       ✅ PASSED! Oh. Yes! => Node '{{ __ocp_node }}' has
       {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
-      free in /var/tmp (minimum: {{ sos_report_min_disk_mb }} MB).
+      free in {{ sos_report_tmp_dir }} (minimum: {{ sos_report_min_disk_mb }} MB).
 
 # --- Steps F.6–F.13: SSH-dependent tasks wrapped in block/rescue ---
 # SSH connectivity was already confirmed at F.4/F.5, so UNREACHABLE should not occur.
@@ -156,6 +158,7 @@
           -v /:/host
           {{ sos_report_ocp_support_tools_image }}
           sos report --batch
+            --tmp-dir=/host{{ sos_report_tmp_dir }}
             -e openshift -e openshift_ovn -e openvswitch -e podman -e crio
             -k crio.all=on -k crio.logs=on
             -k podman.all=on -k podman.logs=on
@@ -198,7 +201,7 @@
     - name: "[STAGE 03 - Fallback SSH] | 3.F.8) Find SOS Report file on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
       delegate_to: "{{ __ocp_node }}"
       ansible.builtin.find:
-        paths: /var/tmp
+        paths: "{{ sos_report_tmp_dir }}"
         patterns: sosreport-*.tar.xz
       register: __ocp_fallback_find_result
 
@@ -208,7 +211,7 @@
           - __ocp_fallback_find_result.matched > 0
         fail_msg: >-
           ❌ FAILED! Oh. No! => Could not find the generated SOS Report on node '{{ __ocp_node }}'
-          via SSH. Expected 'sosreport-*.tar.xz' in /var/tmp/.
+          via SSH. Expected 'sosreport-*.tar.xz' in {{ sos_report_tmp_dir }}/.
         success_msg: >-
           ✅ PASSED! Oh. Yes! => Found {{ __ocp_fallback_find_result.matched }} SOS Report file(s) on '{{ __ocp_node }}'.
 

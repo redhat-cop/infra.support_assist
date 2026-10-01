@@ -15,6 +15,20 @@
       ✅ PASSED! Oh. Yes! => sos_report_mode is valid: '{{ sos_report_mode }}'.
   run_once: true
 
+- name: "Main | 0.1) Assert sos_report_tmp_dir is an absolute path"
+  ansible.builtin.assert:
+    that:
+      - sos_report_tmp_dir is defined
+      - sos_report_tmp_dir | length > 0
+      - sos_report_tmp_dir is match('^/')
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => 'sos_report_tmp_dir' must be an absolute path
+      (start with '/'). Current value: '{{ sos_report_tmp_dir }}'.
+      Example: '-e sos_report_tmp_dir=/data/sos'.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => sos_report_tmp_dir is valid: '{{ sos_report_tmp_dir }}'.
+  run_once: true
+
 - name: "Main | Print on screen role initiation status"
   ansible.builtin.debug:
     msg:

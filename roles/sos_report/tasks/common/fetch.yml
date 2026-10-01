@@ -11,7 +11,7 @@
 
 - name: "[Common - Fetch] | 0.1) Find the generated SOS Report" # noqa: var-naming[no-role-prefix]
   ansible.builtin.find:
-    paths: /var/tmp
+    paths: "{{ sos_report_tmp_dir }}"
     patterns: sosreport-*.tar.xz
     age: -5m  # reports created in the last 5 minutes
   register: __found_sos_report
@@ -21,10 +21,12 @@
     that:
       - __found_sos_report.matched > 0
     fail_msg: >-
-      ❌ FAILED! Oh. No! => No SOS Report found in /var/tmp/ (pattern: sosreport-*.tar.xz, age < 5m).
+      ❌ FAILED! Oh. No! => No SOS Report found in {{ sos_report_tmp_dir }}/
+      (pattern: sosreport-*.tar.xz, age < 5m).
       The report may have failed to generate or the file may be older than expected.
     success_msg: >-
-      ✅ PASSED! Oh. Yes! => Found {{ __found_sos_report.matched }} SOS Report file(s) in /var/tmp/.
+      ✅ PASSED! Oh. Yes! => Found {{ __found_sos_report.matched }} SOS Report
+      file(s) in {{ sos_report_tmp_dir }}/.
 
 - name: "[Common - Fetch] | 0.3) Fetch and build case update entries"
   when: __found_sos_report.matched > 0
