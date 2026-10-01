@@ -111,7 +111,9 @@
 # --- Disk space pre-flight via SSH ---
 # SSH connectivity was confirmed at F.4/F.5, so delegate_to is safe here.
 # Uses 'df' with POSIX output to check sos_report_tmp_dir before the slow SOS collection.
-- name: "[STAGE 03 - Fallback SSH] | 3.F.5.1) Check available disk space on node ({{ sos_report_tmp_dir }}) — {{ __ocp_node }}" # noqa: var-naming[no-role-prefix]
+- name: "[STAGE 03 - Fallback SSH] | 3.F.5.1) Check available disk space on node {{ __task_name_modifier }}" # noqa: var-naming[no-role-prefix]
+  vars:
+    __task_name_modifier: "({{ sos_report_tmp_dir }}) — {{ __ocp_node }}"
   delegate_to: "{{ __ocp_node }}"
   ansible.builtin.command: df -P {{ sos_report_tmp_dir }}
   register: __ocp_fallback_disk_raw

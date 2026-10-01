@@ -33,7 +33,9 @@
 # then converts to MB. No official Ansible module exists for remote disk checks
 # via 'oc debug' — the node is not in inventory, so ansible.builtin.setup (facts)
 # is not an option here.
-- name: "[STAGE 03 - Collect] | 3.0.1) Check available disk space on node ({{ sos_report_tmp_dir }}) — {{ __ocp_node }}" # noqa: var-naming[no-role-prefix]
+- name: "[STAGE 03 - Collect] | 3.0.1) Check available disk space on node {{ __task_name_modifier }}" # noqa: var-naming[no-role-prefix]
+  vars:
+    __task_name_modifier: "({{ sos_report_tmp_dir }}) — {{ __ocp_node }}"
   ansible.builtin.shell:
     cmd: >
       set -o pipefail &&
