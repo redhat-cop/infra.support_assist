@@ -199,11 +199,13 @@
     # __ocp_debug_sos_remote_path already carries the /host prefix (set at 3.4
     # from the 'ls /host...' output), so it is used verbatim here. Prefixing it
     # again produces /host/host/... and the rm silently matches nothing.
+    # Both checksum suffixes are listed because sos 4.x writes .sha256 while
+    # older releases wrote .md5; rm -f ignores whichever one is absent.
     - name: "[STAGE 03 - Collect] | 3.7) Cleanup SOS Report from node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
       when: sos_report_cleanup | bool
       ansible.builtin.shell: |
         oc debug node/{{ __ocp_node }} -- bash -c \
-          'rm -f {{ __ocp_debug_sos_remote_path }} {{ __ocp_debug_sos_remote_path }}.md5'
+          'rm -f {{ __ocp_debug_sos_remote_path }} {{ __ocp_debug_sos_remote_path }}.sha256 {{ __ocp_debug_sos_remote_path }}.md5'
       changed_when: true
 
   # --- Fallback: SSH-based collection when oc debug fails ---
