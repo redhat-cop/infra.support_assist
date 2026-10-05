@@ -60,7 +60,7 @@ The role supports three collection modes via the `sos_report_mode` variable:
 |----------|-------------|------|----------|---------|
 | `case_id` | Red Hat Support Case number (e.g., `01234567`). Used for naming and organization. | `string` | Yes | — |
 | `sos_report_dest` | Base directory on the control node where fetched reports are stored. | `path` | No | `/tmp/sos_reports` |
-| `sos_report_tmp_dir` | Directory on the target host for sos temp data and the finished archive (`--tmp-dir`). Also used for disk pre-flight, find, fetch, and cleanup. | `path` | No | `/var/tmp` |
+| `sos_report_tmp_dir` | Directory on the target host for sos temp data and the finished archive (`--tmp-dir`). Also used for disk pre-flight, find, fetch, and cleanup. Absolute path, no trailing slash. | `path` | No | `/var/tmp` |
 | `sos_report_cleanup` | Remove the generated sosreport from target hosts after fetching. | `bool` | No | `true` (via `clean` variable) |
 | `sos_report_mode` | Collection mode: `standard`, `ocp_ssh`, or `ocp_debug`. | `string` | No | `standard` |
 

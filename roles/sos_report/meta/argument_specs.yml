@@ -36,6 +36,7 @@ argument_specs:
           find, fetch, and cleanup. Override when hosts do not use the sos
           default of /var/tmp. In OCP modes the role prefixes the path with
           /host so it resolves on the node filesystem inside support-tools.
+          Must be an absolute path with no trailing slash.
         type: path
         default: /var/tmp
         version_added: 2.1.0-devel

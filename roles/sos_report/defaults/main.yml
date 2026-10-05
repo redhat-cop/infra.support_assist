@@ -170,6 +170,7 @@ sos_report_clean_usernames: ""
 # (e.g. customers who always run 'sos report --tmp-dir=/data/sos').
 # In OCP modes the role passes --tmp-dir=/host{{ sos_report_tmp_dir }} so the
 # path resolves on the node filesystem mounted at /host inside support-tools.
+# Absolute path, no trailing slash: both are enforced in tasks/main.yml.
 sos_report_tmp_dir: "/var/tmp"
 
 # --- Disk Space Pre-Flight ---
