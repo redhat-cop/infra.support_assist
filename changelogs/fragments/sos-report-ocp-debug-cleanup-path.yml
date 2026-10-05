@@ -1,0 +1,7 @@
+---
+bugfixes:
+  - sos_report - Fix the ``ocp_debug`` cleanup step deleting nothing on the
+    node. The remote path already carries the ``/host`` prefix from the
+    discovery step, so prefixing it again produced ``/host/host/...`` and the
+    ``rm`` matched no file. Reports are now removed from the node when
+    ``sos_report_cleanup`` is enabled.

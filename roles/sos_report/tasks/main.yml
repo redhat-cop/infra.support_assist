@@ -15,6 +15,36 @@
       ✅ PASSED! Oh. Yes! => sos_report_mode is valid: '{{ sos_report_mode }}'.
   run_once: true
 
+- name: "Main | 0.1) Assert sos_report_tmp_dir is an absolute path"
+  ansible.builtin.assert:
+    that:
+      - sos_report_tmp_dir is defined
+      - sos_report_tmp_dir | length > 0
+      - sos_report_tmp_dir is match('^/')
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => 'sos_report_tmp_dir' must be an absolute path
+      (start with '/'). Current value: '{{ sos_report_tmp_dir }}'.
+      Example: '-e sos_report_tmp_dir=/data/sos'.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => sos_report_tmp_dir is valid: '{{ sos_report_tmp_dir }}'.
+  run_once: true
+
+# A trailing slash breaks the OCP SSH mode: the path is concatenated with
+# '/sosreport-*' to build a regex, and '/data/sos/' yields '//sosreport-' which
+# never matches the single-slash path sos prints. Rejected here so the failure
+# names the real cause instead of surfacing as "report not found" later.
+- name: "Main | 0.2) Assert sos_report_tmp_dir has no trailing slash"
+  ansible.builtin.assert:
+    that:
+      - sos_report_tmp_dir is not match('.*/$')
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => 'sos_report_tmp_dir' must not end with a trailing
+      slash. Current value: '{{ sos_report_tmp_dir }}'.
+      Use '{{ sos_report_tmp_dir | regex_replace("/+$", "") }}' instead.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => sos_report_tmp_dir has no trailing slash.
+  run_once: true
+
 - name: "Main | Print on screen role initiation status"
   ansible.builtin.debug:
     msg:
