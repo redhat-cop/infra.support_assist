@@ -6,7 +6,8 @@
 # to run 'sos report' with OCP-specific plugins enabled.
 #
 # The container mounts the host's root filesystem at /host, and sos report
-# writes to /host/var/tmp/ (which maps to /var/tmp/ on the host).
+# writes to /host{{ sos_report_tmp_dir }}/ (which maps to {{ sos_report_tmp_dir }}/
+# on the host). --tmp-dir is therefore passed with the /host prefix.
 ---
 - name: "[STAGE 01 - OCP SSH Generate] | 1.0) Print execution status"
   ansible.builtin.debug:
@@ -23,12 +24,12 @@
       - 'ansible_user_id'
       - 'ansible_fqdn'
 
-# --- Disk space pre-flight: verify /var/tmp has enough room for the SOS report ---
+# --- Disk space pre-flight: verify sos_report_tmp_dir has enough room ---
 # Runs on the RHCOS node via SSH before the slow support-tools container collection.
 # No Ansible module reports free disk space without full gather_facts;
 # a targeted 'df' is cheaper and consistent with the other mode checks.
-- name: "[STAGE 01 - OCP SSH Generate] | 1.1.1) Check available disk space on node (/var/tmp)" # noqa: var-naming[no-role-prefix]
-  ansible.builtin.command: df -P /var/tmp
+- name: "[STAGE 01 - OCP SSH Generate] | 1.1.1) Check available disk space on node ({{ sos_report_tmp_dir }})" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.command: df -P {{ sos_report_tmp_dir }}
   register: __sos_report_disk_raw
   changed_when: false
 
@@ -41,13 +42,13 @@
     fail_msg: >-
       ❌ FAILED! Oh. No! => Insufficient disk space on '{{ inventory_hostname }}'.
       Available: {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
-      in /var/tmp, required: {{ sos_report_min_disk_mb }} MB
+      in {{ sos_report_tmp_dir }}, required: {{ sos_report_min_disk_mb }} MB
       (sos_report_min_disk_mb). Free up space or lower the threshold
       with '-e sos_report_min_disk_mb=<value>'.
     success_msg: >-
       ✅ PASSED! Oh. Yes! => Node '{{ inventory_hostname }}' has
       {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
-      free in /var/tmp (minimum: {{ sos_report_min_disk_mb }} MB).
+      free in {{ sos_report_tmp_dir }} (minimum: {{ sos_report_min_disk_mb }} MB).
 
 - name: "[STAGE 01 - OCP SSH Generate] | 1.2) Generate SOS Report via support-tools container" # noqa: var-naming[no-role-prefix]
   register: __sos_report_output
@@ -68,6 +69,7 @@
       -v /:/host
       {{ sos_report_ocp_support_tools_image }}
       sos report --batch
+        --tmp-dir=/host{{ sos_report_tmp_dir }}
         -e openshift -e openshift_ovn -e openvswitch -e podman -e crio
         -k crio.all=on -k crio.logs=on
         -k podman.all=on -k podman.logs=on
@@ -91,7 +93,7 @@
 
 - name: "[STAGE 01 - OCP SSH Generate] | 1.3) Set SOS Report location variable"
   ansible.builtin.set_fact:
-    sos_report_location: "{{ __sos_report_output.stdout | regex_search('/host/var/tmp/sosreport-.*.tar.xz') | regex_replace('^/host', '') | regex_replace('\\t', '') }}"
+    sos_report_location: "{{ __sos_report_output.stdout | regex_search('/host' ~ sos_report_tmp_dir ~ '/sosreport-.*.tar.xz') | regex_replace('^/host', '') | regex_replace('\\t', '') }}"
 
 - name: "[STAGE 01 - OCP SSH Generate] | 1.4) Assert SOS Report was generated successfully"
   ansible.builtin.assert:

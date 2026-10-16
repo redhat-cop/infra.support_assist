@@ -15,12 +15,12 @@
       - 'ansible_user_id'
       - 'ansible_fqdn'
 
-# --- Disk space pre-flight: verify /var/tmp has enough room for the SOS report ---
+# --- Disk space pre-flight: verify sos_report_tmp_dir has enough room ---
 # Runs on the target RHEL host via SSH before the slow sos collection.
 # No Ansible module reports free disk space without full gather_facts;
 # a targeted 'df' is cheaper and consistent with the OCP mode checks.
-- name: "[STAGE 02 - Generate] | 2.1.1) Check available disk space on target host (/var/tmp)" # noqa: var-naming[no-role-prefix]
-  ansible.builtin.command: df -P /var/tmp
+- name: "[STAGE 02 - Generate] | 2.1.1) Check available disk space on target host ({{ sos_report_tmp_dir }})" # noqa: var-naming[no-role-prefix]
+  ansible.builtin.command: df -P {{ sos_report_tmp_dir }}
   register: __sos_report_disk_raw
   changed_when: false
 
@@ -33,13 +33,13 @@
     fail_msg: >-
       ❌ FAILED! Oh. No! => Insufficient disk space on '{{ inventory_hostname }}'.
       Available: {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
-      in /var/tmp, required: {{ sos_report_min_disk_mb }} MB
+      in {{ sos_report_tmp_dir }}, required: {{ sos_report_min_disk_mb }} MB
       (sos_report_min_disk_mb). Free up space or lower the threshold
       with '-e sos_report_min_disk_mb=<value>'.
     success_msg: >-
       ✅ PASSED! Oh. Yes! => Host '{{ inventory_hostname }}' has
       {{ ((__avail_kb | int) / 1024) | round(0) | int }} MB
-      free in /var/tmp (minimum: {{ sos_report_min_disk_mb }} MB).
+      free in {{ sos_report_tmp_dir }} (minimum: {{ sos_report_min_disk_mb }} MB).
 
 - name: "[STAGE 02 - Generate] | 2.2) Generate the SOS Report" # noqa: var-naming[no-role-prefix]
   register: __sos_report_output
@@ -49,6 +49,7 @@
   poll: 10  # seconds — check interval
   ansible.builtin.command: >
     sos report --batch
+      --tmp-dir={{ sos_report_tmp_dir }}
       {% if sos_report_aap_containerized | bool %}-k aap_containerized.username={{ ansible_user_id }}{% endif %}
       {% if sos_report_clean | bool %}--clean{% endif %}
       {% if sos_report_case_id | length > 0 %}--case-id={{ sos_report_case_id }}{% endif %}

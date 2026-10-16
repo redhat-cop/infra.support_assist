@@ -164,14 +164,23 @@ sos_report_clean_domains: ""
 # Example: "admin,deployer,svc-account".
 sos_report_clean_usernames: ""
 
+# Directory on the target host where sos stores temporary data and the
+# finished archive (--tmp-dir). Also used for disk-space pre-flight, find,
+# fetch, and cleanup. Override when hosts redirect sos away from the default
+# (e.g. customers who always run 'sos report --tmp-dir=/data/sos').
+# In OCP modes the role passes --tmp-dir=/host{{ sos_report_tmp_dir }} so the
+# path resolves on the node filesystem mounted at /host inside support-tools.
+# Absolute path, no trailing slash: both are enforced in tasks/main.yml.
+sos_report_tmp_dir: "/var/tmp"
+
 # --- Disk Space Pre-Flight ---
-# Minimum free disk space required on the target node's /var/tmp before
-# generating a SOS report. The check runs per-node at the start of Stage 03,
-# before the (potentially slow) sos collection begins. If the node does not
-# meet this threshold, the task fails immediately with a clear message.
-# Master/control-plane nodes typically produce 30-40 MB reports;
+# Minimum free disk space required on the target node's sos_report_tmp_dir
+# before generating a SOS report. The check runs per-node at the start of
+# Stage 03, before the (potentially slow) sos collection begins. If the node
+# does not meet this threshold, the task fails immediately with a clear
+# message. Master/control-plane nodes typically produce 30-40 MB reports;
 # workers produce 15-30 MB. The default allows comfortable headroom.
-sos_report_min_disk_mb: 500  # megabytes — minimum free space in /var/tmp
+sos_report_min_disk_mb: 500  # megabytes — minimum free space in sos_report_tmp_dir
 
 # --- Visual Output ---
 # Separator character used in banner messages for log readability.

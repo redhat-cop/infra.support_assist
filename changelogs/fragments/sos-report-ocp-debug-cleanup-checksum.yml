@@ -1,0 +1,6 @@
+---
+bugfixes:
+  - sos_report - Remove the ``.sha256`` checksum file alongside the archive
+    during ``ocp_debug`` cleanup. Only ``.md5`` was listed, which sos 4.x no
+    longer writes, so the checksum was left behind on the node. Both suffixes
+    are now passed to ``rm -f``.

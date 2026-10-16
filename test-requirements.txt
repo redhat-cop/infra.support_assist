@@ -1,5 +1,9 @@
+# Keep ansible-core unpinned on the upper bound so Molecule CI can track
+# supported releases. Use molecule-plugins (not the deprecated
+# molecule-podman package) which is compatible with ansible-core 2.19+.
+# podman: active CI roles; docker: kept for ignored legacy molecule scenarios.
+ansible-core>=2.16
 pytest-ansible
 pytest-xdist
 molecule
-molecule-plugins[docker]
-molecule-podman
+molecule-plugins[podman,docker]>=25.8.12

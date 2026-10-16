@@ -1,0 +1,8 @@
+---
+minor_changes:
+  - sos_report - Add ``sos_report_tmp_dir`` (default ``/var/tmp``) to control
+    the sos ``--tmp-dir`` destination on target hosts. Disk-space pre-flight,
+    find, fetch, and cleanup now use the same path across standard, ocp_ssh,
+    ocp_debug, and SSH fallback modes. OCP container runs pass
+    ``--tmp-dir=/host{{ sos_report_tmp_dir }}``. The value is validated as an
+    absolute path with no trailing slash.
