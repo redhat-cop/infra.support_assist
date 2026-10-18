@@ -4,6 +4,20 @@ infra.support\_assist Release Notes
 
 .. contents:: Topics
 
+v2.1.0
+======
+
+Minor Changes
+-------------
+
+- sos_report - Add ``sos_report_tmp_dir`` (default ``/var/tmp``) to control the sos ``--tmp-dir`` destination on target hosts. Disk-space pre-flight, find, fetch, and cleanup now use the same path across standard, ocp_ssh, ocp_debug, and SSH fallback modes. OCP container runs pass ``--tmp-dir=/host{{ sos_report_tmp_dir }}``. The value is validated as an absolute path with no trailing slash.
+
+Bugfixes
+--------
+
+- sos_report - Fix the ``ocp_debug`` cleanup step deleting nothing on the node. The remote path already carries the ``/host`` prefix from the discovery step, so prefixing it again produced ``/host/host/...`` and the ``rm`` matched no file. Reports are now removed from the node when ``sos_report_cleanup`` is enabled.
+- sos_report - Remove the ``.sha256`` checksum file alongside the archive during ``ocp_debug`` cleanup. Only ``.md5`` was listed, which sos 4.x no longer writes, so the checksum was left behind on the node. Both suffixes are now passed to ``rm -f``.
+
 v2.0.0
 ======
 
