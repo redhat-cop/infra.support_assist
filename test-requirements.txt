@@ -2,7 +2,7 @@
 # supported releases. Use molecule-plugins (not the deprecated
 # molecule-podman package) which is compatible with ansible-core 2.19+.
 # podman: active CI roles; docker: kept for ignored legacy molecule scenarios.
-ansible-core>=2.16
+ansible-core>=2.21.5
 pytest-ansible
 pytest-xdist
 molecule
