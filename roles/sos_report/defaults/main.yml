@@ -115,6 +115,17 @@ sos_report_only_plugins: ""
 # plugins. Example: "docker,podman".
 sos_report_skip_plugins: ""
 
+# Enable plugins that sos would not run by default (--enable-plugins).
+# Comma-separated list of plugin names. Unlike --only-plugins, the default
+# plugin set still runs. Example: "ebpf,sar".
+# In OCP modes these are added to the openshift plugins the role always enables.
+sos_report_enable_plugins: ""
+
+# Free-text label added to the archive filename (--label). Letters, digits,
+# '-' and '_' only. Leave empty to use the lowercased inventory hostname
+# (standard / ocp_ssh) or node name (ocp_debug). Example: "prod-db".
+sos_report_label: ""
+
 # Collect only data newer than this date (--since). Format: YYYYMMDD or
 # YYYYMMDDHHMMSS. Limits archived files and journals to entries after the
 # given date. Useful to narrow reports to a specific incident window.

@@ -55,6 +55,7 @@
       {% if sos_report_case_id | length > 0 %}--case-id={{ sos_report_case_id }}{% endif %}
       {% if sos_report_only_plugins | length > 0 %}--only-plugins={{ sos_report_only_plugins }}{% endif %}
       {% if sos_report_skip_plugins | length > 0 %}--skip-plugins={{ sos_report_skip_plugins }}{% endif %}
+      {% if sos_report_enable_plugins | length > 0 %}--enable-plugins={{ sos_report_enable_plugins }}{% endif %}
       {% if sos_report_since | length > 0 %}--since={{ sos_report_since }}{% endif %}
       {% if sos_report_log_size | int > 0 %}--log-size={{ sos_report_log_size }}{% endif %}
       {% if sos_report_journal_size | int > 0 %}--journal-size={{ sos_report_journal_size }}{% endif %}
@@ -64,11 +65,13 @@
       {% if sos_report_clean | bool and sos_report_clean_keywords | length > 0 %}--keywords={{ sos_report_clean_keywords }}{% endif %}
       {% if sos_report_clean | bool and sos_report_clean_domains | length > 0 %}--domains={{ sos_report_clean_domains }}{% endif %}
       {% if sos_report_clean | bool and sos_report_clean_usernames | length > 0 %}--usernames={{ sos_report_clean_usernames }}{% endif %}
-      --label={{ inventory_hostname | lower }}
+      --label={{ sos_report_label if sos_report_label | length > 0 else inventory_hostname | lower }}
 
 - name: "[STAGE 02 - Generate] | 2.3) Set SOS Report location variable"
   ansible.builtin.set_fact:
-    sos_report_location: "{{ __sos_report_output.stdout | regex_search('.*/sosreport-.*.tar.xz') | regex_replace('\\t', '') }}"
+    # Matches every archive suffix sos produces (.tar.xz, .tar.gz, or plain .tar).
+    sos_report_location: >-
+      {{ __sos_report_output.stdout | regex_search('/\S*/sosreport-\S+?\.tar(\.(xz|gz))?') | default('', true) }}
 
 - name: "[STAGE 02 - Generate] | 2.4) Assert SOS Report was generated successfully"
   ansible.builtin.assert:
