@@ -9,27 +9,28 @@
   vars:
     message_text: "Starting Fetch — Retrieve SOS Report to Control Node"
 
-- name: "[Common - Fetch] | 0.1) Find the generated SOS Report" # noqa: var-naming[no-role-prefix]
-  ansible.builtin.find:
-    paths: "{{ sos_report_tmp_dir }}"
-    patterns: sosreport-*.tar.xz
-    age: -5m  # reports created in the last 5 minutes
+# sos_report_location is parsed from the sos output by the generate stage, so
+# the exact archive from this run is fetched. A time-windowed find would miss
+# reports whose collection outlasts the window, and could pick up stale
+# archives from earlier runs when cleanup is disabled.
+- name: "[Common - Fetch] | 0.1) Check the generated SOS Report exists" # noqa: var-naming[no-role-prefix]
+  become: true
+  ansible.builtin.stat:
+    path: "{{ sos_report_location }}"
+    get_checksum: false
   register: __found_sos_report
 
 - name: "[Common - Fetch] | 0.2) Assert SOS Report file was found"
   ansible.builtin.assert:
     that:
-      - __found_sos_report.matched > 0
+      - __found_sos_report.stat.exists
     fail_msg: >-
-      ❌ FAILED! Oh. No! => No SOS Report found in {{ sos_report_tmp_dir }}/
-      (pattern: sosreport-*.tar.xz, age < 5m).
-      The report may have failed to generate or the file may be older than expected.
+      ❌ FAILED! Oh. No! => SOS Report '{{ sos_report_location }}' reported by
+      sos was not found on '{{ inventory_hostname }}'.
     success_msg: >-
-      ✅ PASSED! Oh. Yes! => Found {{ __found_sos_report.matched }} SOS Report
-      file(s) in {{ sos_report_tmp_dir }}/.
+      ✅ PASSED! Oh. Yes! => Found SOS Report '{{ sos_report_location }}'.
 
 - name: "[Common - Fetch] | 0.3) Fetch and build case update entries"
-  when: __found_sos_report.matched > 0
   vars:
     __dest_path: "{{ sos_report_dest }}/{{ inventory_hostname | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
   block:
@@ -45,24 +46,18 @@
       become: false
 
     - name: "[Common - Fetch] | 0.3.2) Fetch the SOS Report to the control node"
-      loop: "{{ __found_sos_report.files }}"
-      loop_control:
-        label: "{{ item.path | basename }}"
       become: true
       ansible.builtin.fetch:
-        src: "{{ item.path }}"
+        src: "{{ sos_report_location }}"
         dest: "{{ __dest_path }}/"
         flat: true
 
     - name: "[Common - Fetch] | 0.3.3) Build case_updates_needed variable" # noqa: var-naming[no-role-prefix]
-      loop: "{{ __found_sos_report.files }}"
-      loop_control:
-        label: "{{ item.path | basename }}"
       ansible.builtin.set_fact:
         case_updates_needed: >-
           {{ case_updates_needed | default([]) +
           [{
-            'attachment': __dest_path ~ '/' ~ item.path | basename,
+            'attachment': __dest_path ~ '/' ~ sos_report_location | basename,
             'attachmentDescription': (
               "Gathered from '" ~ ansible_fqdn
               ~ "' using the 'infra.support_assist' Ansible Collection. Inventory Hostname: '"

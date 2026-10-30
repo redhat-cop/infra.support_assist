@@ -169,6 +169,7 @@
             {% if sos_report_case_id | length > 0 %}--case-id={{ sos_report_case_id }}{% endif %}
             {% if sos_report_only_plugins | length > 0 %}--only-plugins={{ sos_report_only_plugins }}{% endif %}
             {% if sos_report_skip_plugins | length > 0 %}--skip-plugins={{ sos_report_skip_plugins }}{% endif %}
+            {% if sos_report_enable_plugins | length > 0 %}--enable-plugins={{ sos_report_enable_plugins }}{% endif %}
             {% if sos_report_since | length > 0 %}--since={{ sos_report_since }}{% endif %}
             {% if sos_report_log_size | int > 0 %}--log-size={{ sos_report_log_size }}{% endif %}
             {% if sos_report_journal_size | int > 0 %}--journal-size={{ sos_report_journal_size }}{% endif %}
@@ -178,7 +179,7 @@
             {% if sos_report_clean | bool and sos_report_clean_keywords | length > 0 %}--keywords={{ sos_report_clean_keywords }}{% endif %}
             {% if sos_report_clean | bool and sos_report_clean_domains | length > 0 %}--domains={{ sos_report_clean_domains }}{% endif %}
             {% if sos_report_clean | bool and sos_report_clean_usernames | length > 0 %}--usernames={{ sos_report_clean_usernames }}{% endif %}
-            --label={{ __ocp_node | lower }}
+            --label={{ sos_report_label if sos_report_label | length > 0 else __ocp_node | lower }}
       register: __ocp_fallback_generate_result
       changed_when: __ocp_fallback_generate_result.rc == 0
       async: 3600  # seconds (60 minutes) — SOS collection can be slow on large nodes
@@ -202,7 +203,10 @@
       delegate_to: "{{ __ocp_node }}"
       ansible.builtin.find:
         paths: "{{ sos_report_tmp_dir }}"
-        patterns: sosreport-*.tar.xz
+        patterns:
+          - sosreport-*.tar.xz
+          - sosreport-*.tar.gz
+          - sosreport-*.tar
       register: __ocp_fallback_find_result
 
     - name: "[STAGE 03 - Fallback SSH] | 3.F.9) Assert SOS Report file was found on node '{{ __ocp_node }}'"
@@ -211,7 +215,7 @@
           - __ocp_fallback_find_result.matched > 0
         fail_msg: >-
           ❌ FAILED! Oh. No! => Could not find the generated SOS Report on node '{{ __ocp_node }}'
-          via SSH. Expected 'sosreport-*.tar.xz' in {{ sos_report_tmp_dir }}/.
+          via SSH. Expected 'sosreport-*.tar[.xz|.gz]' in {{ sos_report_tmp_dir }}/.
         success_msg: >-
           ✅ PASSED! Oh. Yes! => Found {{ __ocp_fallback_find_result.matched }} SOS Report file(s) on '{{ __ocp_node }}'.
 

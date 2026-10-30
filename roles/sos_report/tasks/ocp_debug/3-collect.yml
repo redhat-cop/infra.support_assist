@@ -90,6 +90,7 @@
               {% if sos_report_case_id | length > 0 %}--case-id={{ sos_report_case_id }}{% endif %} \
               {% if sos_report_only_plugins | length > 0 %}--only-plugins={{ sos_report_only_plugins }}{% endif %} \
               {% if sos_report_skip_plugins | length > 0 %}--skip-plugins={{ sos_report_skip_plugins }}{% endif %} \
+              {% if sos_report_enable_plugins | length > 0 %}--enable-plugins={{ sos_report_enable_plugins }}{% endif %} \
               {% if sos_report_since | length > 0 %}--since={{ sos_report_since }}{% endif %} \
               {% if sos_report_log_size | int > 0 %}--log-size={{ sos_report_log_size }}{% endif %} \
               {% if sos_report_journal_size | int > 0 %}--journal-size={{ sos_report_journal_size }}{% endif %} \
@@ -99,7 +100,7 @@
               {% if sos_report_clean | bool and sos_report_clean_keywords | length > 0 %}--keywords={{ sos_report_clean_keywords }}{% endif %} \
               {% if sos_report_clean | bool and sos_report_clean_domains | length > 0 %}--domains={{ sos_report_clean_domains }}{% endif %} \
               {% if sos_report_clean | bool and sos_report_clean_usernames | length > 0 %}--usernames={{ sos_report_clean_usernames }}{% endif %} \
-              --label={{ __ocp_node | lower }}
+              --label={{ sos_report_label if sos_report_label | length > 0 else __ocp_node | lower }}
         '
       register: __ocp_debug_generate_result
       changed_when: __ocp_debug_generate_result.rc == 0
@@ -122,7 +123,7 @@
     - name: "[STAGE 03 - Collect] | 3.3) Find SOS Report filename on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
       ansible.builtin.shell: |
         set -o pipefail
-        oc debug node/{{ __ocp_node }} -- bash -c 'ls -t /host{{ sos_report_tmp_dir }}/sosreport-*.tar.xz 2>/dev/null | head -1'
+        oc debug node/{{ __ocp_node }} -- bash -c 'ls -t /host{{ sos_report_tmp_dir }}/sosreport-*.tar.xz /host{{ sos_report_tmp_dir }}/sosreport-*.tar.gz /host{{ sos_report_tmp_dir }}/sosreport-*.tar 2>/dev/null | head -1'
       register: __ocp_debug_find_result
       changed_when: false
 
@@ -136,10 +137,10 @@
         that:
           - __ocp_debug_sos_filename is defined
           - __ocp_debug_sos_filename | length > 0
-          - __ocp_debug_sos_filename.endswith('.tar.xz')
+          - __ocp_debug_sos_filename is search('\.tar(\.(xz|gz))?$')
         fail_msg: >-
           ❌ FAILED! Oh. No! => Could not locate the generated SOS Report on node '{{ __ocp_node }}'.
-          Expected a file matching 'sosreport-*.tar.xz' in /host{{ sos_report_tmp_dir }}/.
+          Expected a file matching 'sosreport-*.tar[.xz|.gz]' in /host{{ sos_report_tmp_dir }}/.
           ls output: {{ __ocp_debug_find_result.stdout | default('empty') }}
         success_msg: >-
           ✅ PASSED! Oh. Yes! => Found SOS Report: {{ __ocp_debug_sos_filename }}
