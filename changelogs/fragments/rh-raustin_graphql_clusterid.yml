@@ -1,0 +1,4 @@
+---
+bugfixes:
+  - rh_case - Fixed GraphQL case creation failure by updating the invalid cluster ID field to `OpenshiftClusterID__c`
+...
