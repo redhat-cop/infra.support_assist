@@ -172,7 +172,7 @@
                     (cluster_id is defined and (cluster_id | length > 0))
                   )
                   | ternary(
-                      {"RedHatSupportCase": {"Cluster_UUID__c": (cluster_id | default('Not Applicable'))}},
+                      {"RedHatSupportCase": {"OpenshiftClusterID__c": (cluster_id | default('Not Applicable'))}},
                       {}
                     )
                 ),
