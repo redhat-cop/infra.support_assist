@@ -10,7 +10,7 @@
     message_text: "Executing Post-Case Creation Validation Steps and Fact Setting"
   run_once: true
 
-# REST v3 primary: server returns HTTP 200/201 with caseNumber at the top level.
+# REST v3 primary: server returns HTTP 200/201 with locations array. This is the case URI.
 # GraphQL fallback: server returns HTTP 200 with data nested under redhat_support_uiapi.CaseCreate.
 # __rh_case_created_via_rest_v3 (bool set by 2-create_case.yml) selects which format to parse.
 
@@ -21,22 +21,22 @@
     that:
       - case_creation_result is defined
       - case_creation_result.status | int in [200, 201]
-      - case_creation_result.json.caseNumber is defined
-      - case_creation_result.json.caseNumber | length > 0
+      - case_creation_result.json.locations is defined
+      - case_creation_result.json.locations | length > 0
     fail_msg: >-
-      FAILED! REST v3 case creation response missing caseNumber.
+      FAILED! REST v3 case creation response missing locations.
       HTTP Status: {{ case_creation_result.status | default('N/A') }}
       Response: {{ case_creation_result.content | default('N/A') | truncate(400) }}
     success_msg: >-
       PASSED! Case created via REST v3.
-      Case Number: {{ case_creation_result.json.caseNumber }}
+      Case Location: {{ case_creation_result.json.locations }}
   run_once: true
 
 - name: "Post Validation | Extract Case Number and set as global fact (primary)" # noqa: var-naming[no-role-prefix]
   when:
     - __rh_case_created_via_rest_v3 | default(false) | bool
   ansible.builtin.set_fact:
-    new_case_id: "{{ case_creation_result.json.caseNumber }}"
+    new_case_id: "{{ case_creation_result.json.locations | first | basename }}"
   run_once: true
 
 # GraphQL fallback: returns HTTP 200 with data nested under redhat_support_uiapi.CaseCreate.
