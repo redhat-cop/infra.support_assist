@@ -1,0 +1,3 @@
+---
+bugfixes:
+  - rh_case - Fixed REST v3 JSON response handling in 3-post_validation.yml
