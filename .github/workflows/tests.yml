@@ -8,12 +8,34 @@ concurrency:
 on: # yamllint disable-line rule:truthy
   pull_request:
     branches: [devel]
+  # Merge queue runs execute in this repo's context, so secrets are available
+  # even for PRs from forks. This is where the full suite is enforced.
+  merge_group:
+    branches: [devel]
   workflow_dispatch:
   # TO-DO: Below is an example cron scheduler. Uncomment and tweak it as per your requirement
   # schedule:
     # - cron: '0 0 * * *'
 
 jobs:
+  # Secrets are not exposed to pull_request runs from forks or Dependabot.
+  # Jobs that need CRC_PUBLISH_KEY are skipped there; all_green still requires
+  # them to pass in the merge queue (merge_group) and on workflow_dispatch.
+  check-secrets:
+    runs-on: ubuntu-latest
+    outputs:
+      has_crc: ${{ steps.check.outputs.has_crc }}
+    steps:
+      - id: check
+        env:
+          CRC_PUBLISH_KEY: ${{ secrets.CRC_PUBLISH_KEY }}
+        run: |
+          if [ -n "$CRC_PUBLISH_KEY" ]; then
+            echo "has_crc=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_crc=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::CRC_PUBLISH_KEY is not available (fork/Dependabot PR). Sanity, unit and molecule tests will be skipped here and must pass in the merge queue."
+          fi
   changelog:
     uses: ansible/ansible-content-actions/.github/workflows/changelog.yaml@main
     if: github.event_name == 'pull_request'
@@ -29,10 +51,13 @@ jobs:
           use-verbose-mode: 'yes'
           check-modified-files-only: 'yes'
           config-file: '.mlc_config.json'
-          base-branch: ${{ github.base_ref || github.ref_name || 'main' }}
+          base-branch: ${{ github.base_ref || (github.event_name == 'merge_group' && 'devel') || github.ref_name || 'main' }}
   ansible-lint:
     uses: ansible/ansible-content-actions/.github/workflows/ansible_lint.yaml@main
   sanity:
+    needs:
+      - check-secrets
+    if: needs.check-secrets.outputs.has_crc == 'true'
     # Local workflow: certified hub env must live on real jobs (not on caller-only `uses:` jobs).
     uses: ./.github/workflows/tests_sanity.yml
     with:
@@ -44,6 +69,8 @@ jobs:
   unit-galaxy:
     needs:
       - ansible-lint
+      - check-secrets
+    if: needs.check-secrets.outputs.has_crc == 'true'
     uses: ./.github/workflows/tests_unit.yml
     with:
       extra_matrix_entries: >-
@@ -52,6 +79,9 @@ jobs:
       crc_publish_key: ${{ secrets.CRC_PUBLISH_KEY }}
   molecule:
     name: Molecule Tests
+    needs:
+      - check-secrets
+    if: needs.check-secrets.outputs.has_crc == 'true'
     runs-on: ubuntu-latest
     env:
       ANSIBLE_GALAXY_SERVER_LIST: certified,galaxy
@@ -140,6 +170,7 @@ jobs:
   all_green:
     if: ${{ always() }}
     needs:
+      - check-secrets
       - changelog
       - build-import
       - sanity
@@ -149,14 +180,48 @@ jobs:
       - markdown-link-check
     runs-on: ubuntu-latest
     steps:
-      - run: >-
-          python -c "assert 'failure' not in
-          set([
-          '${{ needs.changelog.result }}',
-          '${{ needs.build-import.result }}',
-          '${{ needs.sanity.result }}',
-          '${{ needs.unit-galaxy.result }}',
-          '${{ needs.ansible-lint.result }}',
-          '${{ needs.markdown-link-check.result }}',
-          '${{ needs.molecule.result }}'
-          ])"
+      - env:
+          EVENT_NAME: ${{ github.event_name }}
+          HAS_CRC: ${{ needs.check-secrets.outputs.has_crc }}
+          CHECK_SECRETS: ${{ needs.check-secrets.result }}
+          CHANGELOG: ${{ needs.changelog.result }}
+          BUILD_IMPORT: ${{ needs.build-import.result }}
+          ANSIBLE_LINT: ${{ needs.ansible-lint.result }}
+          MARKDOWN_LINK_CHECK: ${{ needs.markdown-link-check.result }}
+          SANITY: ${{ needs.sanity.result }}
+          UNIT_GALAXY: ${{ needs.unit-galaxy.result }}
+          MOLECULE: ${{ needs.molecule.result }}
+        run: |
+          rc=0
+          check_not_failed() {
+            echo "$1: $2"
+            case "$2" in
+              failure|cancelled) echo "::error::$1 $2"; rc=1 ;;
+            esac
+          }
+          check_not_failed check-secrets "$CHECK_SECRETS"
+          check_not_failed changelog "$CHANGELOG"
+          check_not_failed build-import "$BUILD_IMPORT"
+          check_not_failed ansible-lint "$ANSIBLE_LINT"
+          check_not_failed markdown-link-check "$MARKDOWN_LINK_CHECK"
+          check_not_failed sanity "$SANITY"
+          check_not_failed unit-galaxy "$UNIT_GALAXY"
+          check_not_failed molecule "$MOLECULE"
+
+          # Secret-dependent suites may only be skipped on pull_request runs that
+          # genuinely lack the secret. Everywhere else (merge queue, manual runs,
+          # same-repo PRs) they must have actually run and succeeded.
+          require_success() {
+            if [ "$2" != "success" ]; then
+              echo "::error::$1 must succeed for $EVENT_NAME (got '$2'; has_crc=$HAS_CRC)"
+              rc=1
+            fi
+          }
+          if [ "$EVENT_NAME" != "pull_request" ] || [ "$HAS_CRC" = "true" ]; then
+            require_success sanity "$SANITY"
+            require_success unit-galaxy "$UNIT_GALAXY"
+            require_success molecule "$MOLECULE"
+          else
+            echo "::warning::Sanity/unit/molecule skipped (no CRC_PUBLISH_KEY). They will be enforced in the merge queue."
+          fi
+          exit $rc
