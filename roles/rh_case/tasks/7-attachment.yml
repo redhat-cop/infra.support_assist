@@ -108,11 +108,13 @@
 
 # regex_findall returns [] when curl produced no output (e.g. curl missing or
 # connection refused), so 'last | default(0)' yields 0 and the assert below
-# reports the real failure. Single backslash: '>-' does no escape processing.
+# reports the real failure. '[0-9]' instead of '\d' keeps the pattern free of
+# backslashes, so YAML and Jinja escape handling cannot alter it on any
+# ansible-core version.
 - name: "Attachment Upload | Extract HTTP status from presigned PUT response"
   ansible.builtin.set_fact:
     __rh_v3_put_status: >-
-      {{ (__rh_v3_put_result.stdout | default('') | regex_findall('HTTP_STATUS:(\d+)') | last | default(0)) | int }}
+      {{ (__rh_v3_put_result.stdout | default('') | regex_findall('HTTP_STATUS:([0-9]+)') | last | default(0)) | int }}
 
 - name: "Attachment Upload | Validate presigned PUT response"
   ansible.builtin.assert:

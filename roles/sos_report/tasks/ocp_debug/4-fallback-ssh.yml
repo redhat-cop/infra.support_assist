@@ -270,16 +270,24 @@
               }] }}
 
     # --- Step F.11: Cleanup (if enabled) ---
+    # Remove only the archive fetched at F.10 (and its checksum file). Other
+    # sosreport archives in sos_report_tmp_dir may belong to the customer or to
+    # concurrent runs. sos 4.x writes .sha256, older releases wrote .md5.
     - name: "[STAGE 03 - Fallback SSH] | 3.F.11) Cleanup SOS Report from node '{{ __ocp_node }}'"
       when: sos_report_cleanup | bool
       delegate_to: "{{ __ocp_node }}"
       become: true
+      vars:
+        __sos_file_path: "{{ (__ocp_fallback_find_result.files | sort(attribute='mtime', reverse=true) | first).path }}"
       ansible.builtin.file:
-        path: "{{ item.path }}"
+        path: "{{ item }}"
         state: absent
-      loop: "{{ __ocp_fallback_find_result.files }}"
+      loop:
+        - "{{ __sos_file_path }}"
+        - "{{ __sos_file_path }}.sha256"
+        - "{{ __sos_file_path }}.md5"
       loop_control:
-        label: "{{ item.path | basename }}"
+        label: "{{ item | basename }}"
 
     # --- Step F.12: Track which nodes used the SSH fallback ---
     - name: "[STAGE 03 - Fallback SSH] | 3.F.12) Track SSH fallback usage for node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
