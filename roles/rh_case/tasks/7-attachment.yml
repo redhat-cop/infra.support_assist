@@ -83,23 +83,42 @@
   ansible.builtin.set_fact:
     __rh_attachment_id: "{{ __rh_presigned_result.json.attachmentId }}"
 
+# Proxy handling mirrors the 'use_proxy' semantics of the uri tasks: when
+# rh_case_use_proxy is false, curl must also ignore any proxy inherited from
+# the execution environment. The proxy is passed via environment variables
+# (which curl reads) rather than '--proxy', so proxy credentials embedded in
+# the URL do not appear in the process list. When rh_case_http_proxy is empty
+# the environment is left untouched and curl uses any inherited proxy.
+# failed_when: false lets the assert below report curl's RC and stderr, which
+# would otherwise be hidden by no_log.
 - name: "Attachment Upload | PUT file to presigned URL" # noqa: var-naming[no-role-prefix]
   ansible.builtin.shell: | # noqa command-instead-of-module var-naming[no-role-prefix]
-    curl -s -X PUT \
+    curl -sS -X PUT \
       -w "\nHTTP_STATUS:%{http_code}" \
       --max-time {{ rh_case_timeout }} \
+    {% if not rh_case_use_proxy | bool %}
+      --noproxy '*' \
+    {% endif %}
       -H "Content-Type: application/octet-stream" \
       --data-binary "@{{ case_update.attachment }}" \
       "{{ __rh_presigned_result.json.presignedUrl }}"
   register: __rh_v3_put_result
   no_log: "{{ rh_case_no_log }}"
+  environment: >-
+    {{ {'https_proxy': rh_case_http_proxy, 'http_proxy': rh_case_http_proxy}
+       if (rh_case_use_proxy | bool and rh_case_http_proxy | length > 0) else {} }}
   failed_when: false
   changed_when: __rh_v3_put_result.rc == 0
 
-- name: "Attachment Upload | Assert PUT to presigned URL succeeded (HTTP 200)"
+# regex_findall returns [] when curl produced no output (e.g. curl missing or
+# connection refused), so 'last | default(0)' yields 0 and the assert below
+# reports the real failure. '[0-9]' instead of '\d' keeps the pattern free of
+# backslashes, so YAML and Jinja escape handling cannot alter it on any
+# ansible-core version.
+- name: "Attachment Upload | Extract HTTP status from presigned PUT response"
   ansible.builtin.set_fact:
     __rh_v3_put_status: >-
-      {{ (__rh_v3_put_result.stdout | regex_search('HTTP_STATUS:(\\d+)', '\\1') | first | default(0)) | int }}
+      {{ (__rh_v3_put_result.stdout | default('') | regex_findall('HTTP_STATUS:([0-9]+)') | last | default(0)) | int }}
 
 - name: "Attachment Upload | Validate presigned PUT response"
   ansible.builtin.assert:
@@ -111,6 +130,7 @@
       HTTP Status: {{ __rh_v3_put_status }}. Proceeding to next step...
     fail_msg: >-
       FAILED! Presigned URL PUT failed!
+      {{ 'curl itself failed (not an HTTP error) — see Stderr.' if __rh_v3_put_result.rc != 0 else '' }}
       Curl RC: {{ __rh_v3_put_result.rc }} |
       HTTP Status: {{ __rh_v3_put_status }} |
       Stderr: {{ __rh_v3_put_result.stderr | default('N/A') }}

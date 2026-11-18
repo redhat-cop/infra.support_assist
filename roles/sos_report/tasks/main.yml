@@ -45,6 +45,19 @@
       ✅ PASSED! Oh. Yes! => sos_report_tmp_dir has no trailing slash.
   run_once: true
 
+# The label is interpolated into shell commands (including the single-quoted
+# 'bash -c' used by oc debug), and sos itself strips anything outside this set.
+- name: "Main | 0.3) Assert sos_report_label contains only safe characters"
+  ansible.builtin.assert:
+    that:
+      - sos_report_label is match('^[A-Za-z0-9_-]*$')
+    fail_msg: >-
+      ❌ FAILED! Oh. No! => 'sos_report_label' may only contain letters, digits,
+      '-' and '_'. Current value: '{{ sos_report_label }}'.
+    success_msg: >-
+      ✅ PASSED! Oh. Yes! => sos_report_label is valid: '{{ sos_report_label }}'.
+  run_once: true
+
 - name: "Main | Print on screen role initiation status"
   ansible.builtin.debug:
     msg:

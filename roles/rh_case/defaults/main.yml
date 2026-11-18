@@ -10,7 +10,7 @@ rh_case_separator_char: "*"
 rh_case_default_message_padding: 4
 
 # Proxy configuration
-rh_case_use_proxy: "{{ use_proxy | default(false) }}"
+rh_case_use_proxy: "{{ use_proxy | default(false) | bool }}"
 rh_case_http_proxy: "{{ http_proxy | default('') }}"
 
 # Logging configuration

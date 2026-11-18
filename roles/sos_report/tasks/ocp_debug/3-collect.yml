@@ -90,6 +90,7 @@
               {% if sos_report_case_id | length > 0 %}--case-id={{ sos_report_case_id }}{% endif %} \
               {% if sos_report_only_plugins | length > 0 %}--only-plugins={{ sos_report_only_plugins }}{% endif %} \
               {% if sos_report_skip_plugins | length > 0 %}--skip-plugins={{ sos_report_skip_plugins }}{% endif %} \
+              {% if sos_report_enable_plugins | length > 0 %}--enable-plugins={{ sos_report_enable_plugins }}{% endif %} \
               {% if sos_report_since | length > 0 %}--since={{ sos_report_since }}{% endif %} \
               {% if sos_report_log_size | int > 0 %}--log-size={{ sos_report_log_size }}{% endif %} \
               {% if sos_report_journal_size | int > 0 %}--journal-size={{ sos_report_journal_size }}{% endif %} \
@@ -99,7 +100,7 @@
               {% if sos_report_clean | bool and sos_report_clean_keywords | length > 0 %}--keywords={{ sos_report_clean_keywords }}{% endif %} \
               {% if sos_report_clean | bool and sos_report_clean_domains | length > 0 %}--domains={{ sos_report_clean_domains }}{% endif %} \
               {% if sos_report_clean | bool and sos_report_clean_usernames | length > 0 %}--usernames={{ sos_report_clean_usernames }}{% endif %} \
-              --label={{ __ocp_node | lower }}
+              --label={{ sos_report_label if sos_report_label | length > 0 else __ocp_node | lower }}
         '
       register: __ocp_debug_generate_result
       changed_when: __ocp_debug_generate_result.rc == 0
@@ -119,28 +120,46 @@
           ✅ PASSED! Oh. Yes! => SOS Report generated successfully on node '{{ __ocp_node }}'.
 
     # --- Step 2: Find the generated report filename ---
-    - name: "[STAGE 03 - Collect] | 3.3) Find SOS Report filename on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+    # sos runs in the container with --tmp-dir=/host<tmp_dir>, so it prints
+    # '/host<tmp_dir>/sosreport-....tar.xz'. The oc debug pod also mounts the
+    # node root at /host, so that printed path is used verbatim by the fetch
+    # and cleanup steps. Parsing the output pins this run's archive; the
+    # newest-file 'ls -t' below is only a fallback for sos versions whose
+    # output differs.
+    - name: "[STAGE 03 - Collect] | 3.3) Parse SOS Report path from sos output on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        __ocp_debug_sos_remote_path: >-
+          {{ __ocp_debug_generate_result.stdout | default('')
+             | regex_search('/host' ~ (sos_report_tmp_dir | regex_escape) ~ '/sosreport-\S+?\.tar(\.(xz|gz))?')
+             | default('', true) }}
+
+    - name: "[STAGE 03 - Collect] | 3.3.1) Output parse failed — find newest SOS Report on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      when: __ocp_debug_sos_remote_path | length == 0
       ansible.builtin.shell: |
         set -o pipefail
-        oc debug node/{{ __ocp_node }} -- bash -c 'ls -t /host{{ sos_report_tmp_dir }}/sosreport-*.tar.xz 2>/dev/null | head -1'
+        oc debug node/{{ __ocp_node }} -- bash -c 'ls -t /host{{ sos_report_tmp_dir }}/sosreport-*.tar.xz /host{{ sos_report_tmp_dir }}/sosreport-*.tar.gz /host{{ sos_report_tmp_dir }}/sosreport-*.tar 2>/dev/null | head -1'
       register: __ocp_debug_find_result
       changed_when: false
 
     - name: "[STAGE 03 - Collect] | 3.4) Set SOS Report filename for node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      vars:
+        __path: >-
+          {{ __ocp_debug_sos_remote_path if __ocp_debug_sos_remote_path | length > 0
+             else (__ocp_debug_find_result.stdout | default('') | trim) }}
       ansible.builtin.set_fact:
-        __ocp_debug_sos_remote_path: "{{ __ocp_debug_find_result.stdout | trim }}"
-        __ocp_debug_sos_filename: "{{ __ocp_debug_find_result.stdout | trim | basename }}"
+        __ocp_debug_sos_remote_path: "{{ __path }}"
+        __ocp_debug_sos_filename: "{{ __path | basename }}"
 
     - name: "[STAGE 03 - Collect] | 3.5) Assert SOS Report file was found on node '{{ __ocp_node }}'"
       ansible.builtin.assert:
         that:
           - __ocp_debug_sos_filename is defined
           - __ocp_debug_sos_filename | length > 0
-          - __ocp_debug_sos_filename.endswith('.tar.xz')
+          - __ocp_debug_sos_filename is search('\.tar(\.(xz|gz))?$')
         fail_msg: >-
           ❌ FAILED! Oh. No! => Could not locate the generated SOS Report on node '{{ __ocp_node }}'.
-          Expected a file matching 'sosreport-*.tar.xz' in /host{{ sos_report_tmp_dir }}/.
-          ls output: {{ __ocp_debug_find_result.stdout | default('empty') }}
+          Expected a file matching 'sosreport-*.tar[.xz|.gz]' in /host{{ sos_report_tmp_dir }}/.
+          ls output: {{ __ocp_debug_find_result.stdout | default('empty', true) }}
         success_msg: >-
           ✅ PASSED! Oh. Yes! => Found SOS Report: {{ __ocp_debug_sos_filename }}
 
@@ -197,8 +216,9 @@
     # Remove only the specific file collected in this run to avoid deleting
     # reports from concurrent runs or manually generated archives.
     # __ocp_debug_sos_remote_path already carries the /host prefix (set at 3.4
-    # from the 'ls /host...' output), so it is used verbatim here. Prefixing it
-    # again produces /host/host/... and the rm silently matches nothing.
+    # from the sos output or the 'ls /host...' fallback), so it is used
+    # verbatim here. Prefixing it again produces /host/host/... and the rm
+    # silently matches nothing.
     # Both checksum suffixes are listed because sos 4.x writes .sha256 while
     # older releases wrote .md5; rm -f ignores whichever one is absent.
     - name: "[STAGE 03 - Collect] | 3.7) Cleanup SOS Report from node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]

@@ -79,6 +79,22 @@ argument_specs:
         type: str
         default: ""
         version_added: 1.2.0-devel
+      sos_report_enable_plugins:
+        description: >-
+          Enable plugins that sos would not run by default (--enable-plugins).
+          Comma-separated list of plugin names. In OCP modes these are added
+          to the openshift plugins the role always enables.
+        type: str
+        default: ""
+        version_added: 2.2.0-devel
+      sos_report_label:
+        description: >-
+          Free-text label added to the archive filename (--label). Letters,
+          digits, '-' and '_' only. Empty uses the lowercased inventory
+          hostname (standard / ocp_ssh) or node name (ocp_debug).
+        type: str
+        default: ""
+        version_added: 2.2.0-devel
       sos_report_since:
         description: >-
           Collect only data newer than this date (--since). Format: YYYYMMDD or
