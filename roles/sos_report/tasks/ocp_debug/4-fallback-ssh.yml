@@ -198,9 +198,22 @@
         success_msg: >-
           ✅ PASSED! Oh. Yes! => SOS Report generated via SSH fallback on node '{{ __ocp_node }}'.
 
-    # --- Step F.8: Find the generated report on the node ---
-    - name: "[STAGE 03 - Fallback SSH] | 3.F.8) Find SOS Report file on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+    # --- Step F.8: Locate the generated report on the node ---
+    # sos runs in the container with --tmp-dir=/host<tmp_dir>, so it prints
+    # '/host<tmp_dir>/sosreport-....tar.xz'. Stripping '/host' gives the path on
+    # the node. Parsing the output pins this run's archive; the newest-file
+    # find below is only a fallback for sos versions whose output differs.
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.8.1) Parse SOS Report path from sos output on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      ansible.builtin.set_fact:
+        __ocp_fallback_sos_path: >-
+          {{ __ocp_fallback_generate_result.stdout | default('')
+             | regex_search('/host' ~ (sos_report_tmp_dir | regex_escape) ~ '/sosreport-\S+?\.tar(\.(xz|gz))?')
+             | default('', true) | regex_replace('^/host', '') }}
+
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.8.2) Output parse failed — find newest SOS Report file on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      when: __ocp_fallback_sos_path | length == 0
       delegate_to: "{{ __ocp_node }}"
+      become: true
       ansible.builtin.find:
         paths: "{{ sos_report_tmp_dir }}"
         patterns:
@@ -209,21 +222,27 @@
           - sosreport-*.tar
       register: __ocp_fallback_find_result
 
+    - name: "[STAGE 03 - Fallback SSH] | 3.F.8.3) Output parse failed — use newest SOS Report file on node '{{ __ocp_node }}'" # noqa: var-naming[no-role-prefix]
+      when:
+        - __ocp_fallback_sos_path | length == 0
+        - __ocp_fallback_find_result.matched | default(0) > 0
+      ansible.builtin.set_fact:
+        __ocp_fallback_sos_path: "{{ (__ocp_fallback_find_result.files | sort(attribute='mtime', reverse=true) | first).path }}"
+
     - name: "[STAGE 03 - Fallback SSH] | 3.F.9) Assert SOS Report file was found on node '{{ __ocp_node }}'"
       ansible.builtin.assert:
         that:
-          - __ocp_fallback_find_result.matched > 0
+          - __ocp_fallback_sos_path | length > 0
         fail_msg: >-
           ❌ FAILED! Oh. No! => Could not find the generated SOS Report on node '{{ __ocp_node }}'
           via SSH. Expected 'sosreport-*.tar[.xz|.gz]' in {{ sos_report_tmp_dir }}/.
         success_msg: >-
-          ✅ PASSED! Oh. Yes! => Found {{ __ocp_fallback_find_result.matched }} SOS Report file(s) on '{{ __ocp_node }}'.
+          ✅ PASSED! Oh. Yes! => Found SOS Report '{{ __ocp_fallback_sos_path }}' on '{{ __ocp_node }}'.
 
     # --- Step F.10: Fetch the report to the control node ---
     - name: "[STAGE 03 - Fallback SSH] | 3.F.10) Fetch SOS Report via SSH from {{ __ocp_node }}"
       vars:
         __dest_path: "{{ sos_report_dest }}/{{ __ocp_node | lower | regex_replace('[^a-zA-Z0-9_-]', '-') }}"
-        __sos_file: "{{ __ocp_fallback_find_result.files | sort(attribute='mtime', reverse=true) | first }}"
       block:
         - name: "[STAGE 03 - Fallback SSH] | 3.F.10.1) Ensure destination folder exists for node '{{ __ocp_node }}'"
           ansible.builtin.file:
@@ -235,13 +254,13 @@
           delegate_to: "{{ __ocp_node }}"
           become: true
           ansible.builtin.fetch:
-            src: "{{ __sos_file.path }}"
+            src: "{{ __ocp_fallback_sos_path }}"
             dest: "{{ __dest_path }}/"
             flat: true
 
         - name: "[STAGE 03 - Fallback SSH] | 3.F.10.3) Verify fetched file exists and is not empty" # noqa: var-naming[no-role-prefix]
           ansible.builtin.stat:
-            path: "{{ __dest_path }}/{{ __sos_file.path | basename }}"
+            path: "{{ __dest_path }}/{{ __ocp_fallback_sos_path | basename }}"
           register: __ocp_fallback_fetched_file
 
         - name: "[STAGE 03 - Fallback SSH] | 3.F.10.4) Assert fetched file is valid for node '{{ __ocp_node }}'"
@@ -251,7 +270,7 @@
               - __ocp_fallback_fetched_file.stat.size > 0
             fail_msg: >-
               ❌ FAILED! Oh. No! => The fetched SOS Report for node '{{ __ocp_node }}' via SSH is empty or missing.
-              Path: {{ __dest_path }}/{{ __sos_file.path | basename }}
+              Path: {{ __dest_path }}/{{ __ocp_fallback_sos_path | basename }}
             success_msg: >-
               ✅ PASSED! Oh. Yes! => SOS Report fetched via SSH fallback for node '{{ __ocp_node }}'
               ({{ (__ocp_fallback_fetched_file.stat.size / 1048576) | round(2) }} MB).
@@ -261,7 +280,7 @@
             case_updates_needed: >-
               {{ case_updates_needed | default([]) +
               [{
-                'attachment': __dest_path ~ '/' ~ (__sos_file.path | basename),
+                'attachment': __dest_path ~ '/' ~ (__ocp_fallback_sos_path | basename),
                 'attachmentDescription': (
                   "OCP Node SOS Report gathered from '" ~ __ocp_node
                   ~ "' via SSH fallback (oc debug failed) using the 'infra.support_assist' Ansible Collection."
@@ -277,15 +296,13 @@
       when: sos_report_cleanup | bool
       delegate_to: "{{ __ocp_node }}"
       become: true
-      vars:
-        __sos_file_path: "{{ (__ocp_fallback_find_result.files | sort(attribute='mtime', reverse=true) | first).path }}"
       ansible.builtin.file:
         path: "{{ item }}"
         state: absent
       loop:
-        - "{{ __sos_file_path }}"
-        - "{{ __sos_file_path }}.sha256"
-        - "{{ __sos_file_path }}.md5"
+        - "{{ __ocp_fallback_sos_path }}"
+        - "{{ __ocp_fallback_sos_path }}.sha256"
+        - "{{ __ocp_fallback_sos_path }}.md5"
       loop_control:
         label: "{{ item | basename }}"
 
